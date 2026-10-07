@@ -1,6 +1,6 @@
 # ADR-0015: Phase 0 tooling choices
 
-- **Status:** Accepted
+- **Status:** Accepted (prototype LLM superseded by ADR-0018)
 - **Date:** 2026-10-07
 
 ## Decision

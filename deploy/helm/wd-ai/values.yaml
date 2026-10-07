@@ -43,9 +43,11 @@ litellm:
   # alias -> backend. `ollama_chat/<model>` and `ollama/<model>` entries also tell the Ollama
   # pod what to pull.
   models:
-    - { alias: default-chat, model: "ollama_chat/gpt-oss:20b" }
-    - { alias: lyrics-writer, model: "ollama_chat/gpt-oss:20b" }
-    - { alias: moderator, model: "ollama_chat/gpt-oss:20b" }
+    # `params` become extra litellm_params. Gemma 4 thinks by default; off for chat and lyrics
+    # (ADR-0018). The moderator keeps thinking until a refusal evaluation says otherwise.
+    - { alias: default-chat, model: "ollama_chat/gemma4:e4b", params: { think: false } }
+    - { alias: lyrics-writer, model: "ollama_chat/gemma4:e4b", params: { think: false } }
+    - { alias: moderator, model: "ollama_chat/gemma4:e4b" }
     - { alias: embedder, model: "ollama/nomic-embed-text" }   # 768 dims; see ADR-0017
   resources:
     requests: { cpu: 100m, memory: 512Mi }
@@ -55,11 +57,11 @@ ollama:
   enabled: true
   externalUrl: ""                        # set to use an Ollama outside the cluster
   image: ollama/ollama:latest
-  storage: 30Gi
+  storage: 20Gi
   storageClass: ""
   resources:
-    requests: { cpu: "1", memory: 8Gi }
-    limits: { memory: 24Gi }
+    requests: { cpu: "1", memory: 6Gi }
+    limits: { memory: 12Gi }
   # GPU: set e.g. { "nvidia.com/gpu": 1 } in a cloud overlay (Phase 4)
   gpuResources: {}
   nodeSelector: {}

@@ -1,15 +1,19 @@
 model_list:
+  # Gemma 4 "thinks" by default: reasoning tokens count against max_tokens, double the latency and
+  # did not improve lyric quality in our test. Off for creative/chat aliases (ADR-0018).
   - model_name: default-chat
     litellm_params:
-      model: ollama_chat/gpt-oss:20b
+      model: ollama_chat/gemma4:e4b
       api_base: os.environ/OLLAMA_BASE_URL
+      think: false
   - model_name: lyrics-writer
     litellm_params:
-      model: ollama_chat/gpt-oss:20b
+      model: ollama_chat/gemma4:e4b
       api_base: os.environ/OLLAMA_BASE_URL
+      think: false
   - model_name: moderator
     litellm_params:
-      model: ollama_chat/gpt-oss:20b
+      model: ollama_chat/gemma4:e4b
       api_base: os.environ/OLLAMA_BASE_URL
   - model_name: embedder
     litellm_params:

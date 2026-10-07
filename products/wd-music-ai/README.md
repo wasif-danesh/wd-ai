@@ -139,5 +139,6 @@ products/wd-music-ai/
 ## Decisions (prototype)
 
 - Shared Next.js app with route groups (ADR-0014).
-- LLM for lyrics and moderation: `gpt-oss:20b` via Ollama (swap to a smaller model if too slow).
+- LLM for lyrics and moderation: `gemma4:e4b` via Ollama (ADR-0018). Evaluate lyric quality and
+  the `check_request` guardrail on it; `gemma4:12b` is the planned upgrade if either falls short.
 - Daily quota: 10 songs per user. Audio format: MP3.

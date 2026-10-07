@@ -19,5 +19,6 @@
 | [0015](0015-phase-0-tooling-choices.md) | Phase 0 tooling choices | Accepted |
 | [0016](0016-helm-chart-structure.md) | One umbrella Helm chart, plain Ingress, in-cluster state for non-prod | Accepted |
 | [0017](0017-platform-core-design.md) | Platform core: capability layer, usage events, storage and RAG | Accepted |
+| [0018](0018-default-text-model-gemma4-e4b.md) | Default text model: Gemma 4 E4B | Accepted |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.

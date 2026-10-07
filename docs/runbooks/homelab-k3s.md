@@ -10,7 +10,7 @@ is tested on kind (`make kind-up && make kind-test`). Record anything that diffe
 
 | Need | Notes |
 |---|---|
-| Linux host, amd64 or arm64 | 16 GB RAM or more recommended for `gpt-oss:20b` on CPU; 30+ GB free disk |
+| Linux host, amd64 or arm64 | 8 GB RAM minimum, 16 GB recommended, for `gemma4:e4b` on CPU; 25+ GB free disk |
 | Internet access | To pull images from GHCR and Docker Hub, the model from the Ollama registry, and the chart from GitHub. A fully offline lab needs a registry mirror and a local Git server first |
 | `cgroup2` | `stat -fc %T /sys/fs/cgroup` should print `cgroup2fs` |
 | CI has pushed images | The `images` job on `main` publishes `ghcr.io/wasif-danesh/wd-ai/{api,web,media-worker}:latest` |
@@ -66,7 +66,7 @@ then runs the migration Job as a PostSync hook.
 
 ## 5. Wait for the model
 
-The Ollama pod downloads `gpt-oss:20b` (about 13 GB) on first start and is not Ready until it
+The Ollama pod downloads `gemma4:e4b` (about 10 GB) on first start and is not Ready until it
 finishes. The model lives on a PVC, so this happens once.
 
 ```bash

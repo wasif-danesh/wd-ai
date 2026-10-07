@@ -11,6 +11,9 @@ data:
         litellm_params:
           model: {{ .model }}
           api_base: os.environ/OLLAMA_BASE_URL
+          {{- with .params }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
     {{- end }}
     litellm_settings:
       drop_params: true

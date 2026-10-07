@@ -7,7 +7,7 @@ ingress:
 ollama:
   enabled: true
   storageClass: local-path   # k3s default provisioner
-  storage: 30Gi
+  storage: 20Gi
   # Phase 4 (GPU): after the NVIDIA GPU Operator is installed, uncomment.
   # gpuResources: { nvidia.com/gpu: 1 }
   # tolerations: [{ key: nvidia.com/gpu, operator: Exists, effect: NoSchedule }]

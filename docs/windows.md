@@ -57,7 +57,7 @@ Podman needs cgroup delegation for kind; see [runbooks/linux-kind.md](runbooks/l
 
 ## Tips
 
-- **Memory:** WSL2 uses up to half of your RAM by default. `gpt-oss:20b` needs about 16 GB; raise
+- **Memory:** WSL2 uses up to half of your RAM by default. `gemma4:e4b` needs about 8 GB (16 GB is comfortable); raise
   the limit in `%UserProfile%\.wslconfig` (`[wsl2]` then `memory=20GB`) and run `wsl --shutdown`.
 - **Docker Desktop instead of Podman:** `CONTAINER_ENGINE=docker make dev` works, because the
   repo uses the standard Compose spec. Enable WSL integration for your distro in Docker Desktop.

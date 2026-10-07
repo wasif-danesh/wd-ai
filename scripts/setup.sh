@@ -182,13 +182,13 @@ if [ "$TOOLS_ONLY" != "1" ]; then
   if [ "$PLATFORM" = "darwin" ]; then mem_gb=$(( $(sysctl -n hw.memsize) / 1073741824 ))
   else mem_gb=$(( $(awk '/MemTotal/{print $2}' /proc/meminfo) / 1048576 )); fi
   free_gb=$(df -Pk "$HOME" | awk 'NR==2{print int($4/1048576)}')
-  [ "$mem_gb" -ge 16 ] || warn "Only ${mem_gb} GB RAM: gpt-oss:20b needs ~16 GB and may be very slow or fail. Edit deploy/compose/litellm.yaml to use a smaller model."
+  [ "$mem_gb" -ge 8 ] || warn "Only ${mem_gb} GB RAM: the default model (gemma4:e4b) needs about 8 GB and may be very slow or fail. Edit deploy/compose/litellm.yaml to use a smaller model."
   [ "$PLATFORM" = "darwin" ] && [ "$ARCH" = "x86_64" ] && warn "Intel Mac: Ollama runs CPU-only, so replies will be slow."
 
   for m in $(required_models); do
     if ollama_has_model "$m"; then ok "model $m already pulled"; continue; fi
-    [ "$free_gb" -ge 20 ] || warn "Only ${free_gb} GB free disk; $m needs ~13 GB."
-    confirm "Download model $m now (large download, ~13 GB for gpt-oss:20b)?" \
+    [ "$free_gb" -ge 15 ] || warn "Only ${free_gb} GB free disk; models need roughly 10 GB in total."
+    confirm "Download model $m now (gemma4:e4b is about 10 GB; embeddings about 0.3 GB)?" \
       && ollama pull "$m" || { bad "Model $m not pulled"; exit 1; }
   done
 fi

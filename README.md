@@ -55,7 +55,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 |---|---|
 | Streaming run API (`/products/{id}/runs`, reconnect, resume) | Working |
 | LangGraph runtime with Postgres checkpointer, one-node `hello` graph | Working |
-| LiteLLM gateway to local Ollama (`gpt-oss:20b`) | Working |
+| LiteLLM gateway to local Ollama (default model `gemma4:e4b`) | Working |
 | Next.js page + BFF streaming tokens end to end | Working |
 | Typed contracts: Pydantic models and generated TypeScript types | Working |
 | Database migrations (tenants, users, threads, jobs, usage events) | Working |
@@ -102,8 +102,8 @@ administrator rights, a reboot, or are needed to run the setup at all. Do these 
 
 **Every platform**
 
-- An internet connection, and about 25 GB of free disk (the default model is about 13 GB).
-- 16 GB of RAM or more for the default `gpt-oss:20b` model. With less, switch to a smaller model
+- An internet connection, and about 15 GB of free disk (the default model is about 10 GB).
+- 8 GB of RAM or more for the default `gemma4:e4b` model (16 GB is more comfortable). With less, switch to a smaller model
   (see [Hardware notes](#hardware-notes)).
 - A GPU is optional. Apple Silicon (Metal) and NVIDIA GPUs speed up replies; CPU-only works but
   is slow.
@@ -157,7 +157,7 @@ and also installs `kind`, `helm` and `kubectl`.
      into `~/.local/bin`. pnpm comes from Corepack. No Homebrew or sudo is needed for those.
 2. Creates and starts the Podman VM on macOS, and checks it has enough memory (offers to resize).
 3. Starts Ollama and pulls every model named in `deploy/compose/litellm.yaml`
-   (`gpt-oss:20b`, about 13 GB). On Linux it also checks that containers can reach Ollama and
+   (`gemma4:e4b`, about 10 GB, plus `nomic-embed-text`). On Linux it also checks that containers can reach Ollama and
    offers a fix if not.
 4. Creates `.env` from `.env.example` and generates random secrets. Nothing is printed.
 5. Runs `uv sync --all-packages` and `pnpm install`.
@@ -171,7 +171,7 @@ missing and points back to `make setup`.
 
 ### Hardware notes
 
-- `gpt-oss:20b` needs about 16 GB of RAM and 20 GB of free disk. Setup warns when a machine is
+- `gemma4:e4b` needs about 8 GB of RAM and 15 GB of free disk. Setup warns when a machine is
   short. To use a smaller or faster model, change the `ollama_chat/...` entries in
   `deploy/compose/litellm.yaml`; setup and preflight read the model names from there.
 - Ollama runs natively on the host so it can use the GPU. On Apple Silicon it uses Metal. On
@@ -328,7 +328,8 @@ make kind-up / kind-test / kind-down   # local Kubernetes (see above)
 | No reply, or an error on the page | Check Ollama is up and lists the model: `curl localhost:11434/api/tags` |
 | LiteLLM exits at start | `podman logs wd-ai-litellm-1`. It needs `LITELLM_API_KEY` set in `.env` |
 | Port already in use | `make down`, then try again |
-| Slow first reply | The model loads on first use, and `gpt-oss` is a reasoning model. Try a smaller model |
+| Slow first reply | The model loads into memory on first use. CPU-only machines are slower; try `gemma4:e2b` |
+| Empty reply with a small `max_tokens` | Gemma 4 "thinking" uses the token budget. It is off for the chat and lyrics aliases; keep budgets generous for the `moderator` ([ADR-0018](docs/decisions/0018-default-text-model-gemma4-e4b.md)) |
 | `podman compose` cannot connect | Run `podman machine start` |
 | `make dev` says "Not ready" | Run `make setup`; it fixes every item the preflight lists |
 | `command not found` right after setup (Linux, WSL) | Tools are installed in `~/.local/bin`. Add it to your PATH (`export PATH="$HOME/.local/bin:$PATH"` in `~/.profile`) and reopen the shell |
