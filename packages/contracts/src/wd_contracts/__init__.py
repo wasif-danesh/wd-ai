@@ -12,6 +12,7 @@ from wd_contracts.events import (
     SseEvent,
     TokenEvent,
     format_sse,
+    format_sse_dict,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "SseEvent",
     "TokenEvent",
     "format_sse",
+    "format_sse_dict",
 ]

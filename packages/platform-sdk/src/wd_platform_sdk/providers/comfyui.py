@@ -35,6 +35,7 @@ class ComfyUIProvider:
             product_id=ctx.product_id,
             user_id=ctx.user_id,
             run_id=ctx.run_id,
+            thread_id=ctx.thread_id,
             capability=capability,
             workflow=wf.name,
             prompt=graph,

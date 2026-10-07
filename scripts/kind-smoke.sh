@@ -14,6 +14,14 @@ check "usage_events table exists" "kubectl -n $NS exec statefulset/wd-ai-postgre
 check "rag_chunks table + pgvector extension exist" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select to_regclass('public.rag_chunks'), (select count(*) from pg_extension where extname='vector')\" | grep -q 'rag_chunks|1'"
 check "web serves / (HTTP 200)" "curl -fsS -m 10 -o /dev/null http://localhost:3000/"
 
+# Media pipeline: queue -> worker (stub mode) -> object storage -> completion -> graph resumes.
+# Needs no LLM or GPU, so it also runs in CI.
+media="$(curl -sN -m 120 -X POST http://localhost:3000/api/products/media-demo/runs \
+  -H 'content-type: application/json' -d '{"input":{"prompt":"a lighthouse"}}' 2>&1)"
+check "media job: queued, ran, completed" "printf '%s' \"\$media\" | grep -q 'event: job_progress' && printf '%s' \"\$media\" | grep -q '\"status\": \"completed\"'"
+check "media run finished with done and an image URL" "printf '%s' \"\$media\" | tail -4 | grep -q 'event: done' && printf '%s' \"\$media\" | grep -q 'image_url'"
+check "worker usage recorded (job.completed)" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select count(*) from usage_events where kind='job.completed'\" | grep -qv '^0\$'"
+
 out="$(curl -sN -m 300 -X POST http://localhost:3000/api/products/hello/runs \
   -H 'content-type: application/json' -d '{"input":{"message":"Say hi"}}' 2>&1)"
 last="$(printf '%s' "$out" | grep '^event:' | tail -1 | awk '{print $2}')"

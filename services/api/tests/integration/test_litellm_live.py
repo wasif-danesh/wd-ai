@@ -2,8 +2,12 @@ from pathlib import Path
 
 from sqlalchemy import text
 from wd_api.rag import DIMENSIONS, RagService
-from wd_api.usage_postgres import PostgresUsageRecorder
-from wd_platform_sdk import ProviderDeps, build_capabilities, load_product_config
+from wd_platform_sdk import (
+    PostgresUsageRecorder,
+    ProviderDeps,
+    build_capabilities,
+    load_product_config,
+)
 
 PRODUCTS = Path(__file__).resolve().parents[4] / "products"
 

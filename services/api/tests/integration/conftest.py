@@ -3,6 +3,7 @@ LiteLLM + Ollama). Each test skips itself when its service is not reachable, so 
 works on any machine and CI runs the subset it has services for."""
 
 import socket
+from pathlib import Path
 from urllib.parse import urlparse
 
 import pytest
@@ -10,6 +11,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 from wd_api.config import get_settings
 from wd_platform_sdk import RunContext, reset_context, set_context
+
+PRODUCTS_DIR = Path(__file__).resolve().parents[4] / "products"
 
 
 def _reachable(url: str, default_port: int) -> bool:
@@ -63,3 +66,20 @@ def litellm_settings():
     if not s.litellm_api_key or not _reachable(s.litellm_base_url, 4000):
         pytest.skip("LiteLLM not reachable or LITELLM_API_KEY unset")
     return s
+
+
+@pytest.fixture
+async def redis_conn():
+    """A real Redis on its own database (15), so tests cannot touch the dev stack's queues."""
+    import os
+
+    from redis.asyncio import Redis
+
+    url = os.environ.get("INTEGRATION_REDIS_URL", "redis://localhost:6379/15")
+    if not _reachable(url, 6379):
+        pytest.skip("Redis not reachable")
+    conn = Redis.from_url(url, decode_responses=True)
+    await conn.flushdb()
+    yield conn
+    await conn.flushdb()
+    await conn.aclose()

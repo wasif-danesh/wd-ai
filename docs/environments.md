@@ -25,6 +25,10 @@ environment. Differences live in env vars and Helm values overlays.
 - **Native on the host:** Ollama and ComfyUI. Containers on macOS cannot use the Metal GPU.
   Containers reach them at `host.containers.internal`, configured through
   `OLLAMA_BASE_URL` / `COMFYUI_BASE_URL`.
+- **Media worker modes:** `COMFYUI_MODE=stub` (the default in `.env.example`) returns placeholder
+  images and audio, so every machine can run the whole media flow. `COMFYUI_MODE=real` drives
+  ComfyUI at `COMFYUI_BASE_URL` (a native ComfyUI on the Mac works at
+  `http://host.containers.internal:8188`).
 - **Heavy models:** ACE-Step and FLUX.2 klein may be slow or incomplete on Apple Silicon. Set
   `COMFYUI_BASE_URL` to the home lab ComfyUI over Tailscale, or run the worker in stub mode
   (returns sample files) for UI work.

@@ -45,13 +45,19 @@ prove them while the code is small.
 - [x] Usage events written for LLM calls
 - [ ] Follow-up (Phase 4): deploy object storage in the Helm chart when the media worker needs it
 
-## Phase 4: Media pipeline (when the GPU arrives)
+## Phase 4: Media pipeline
 
-- [ ] Redis queue, media worker, job callbacks that resume graphs
-- [ ] ComfyUI client (`/prompt` + WebSocket progress), workflow + map loading
-- [ ] Progress over Redis pub/sub → SSE `job_progress`
-- [ ] GPU Operator with time-slicing on k3s; ComfyUI and Ollama pods
-- [ ] LLM unload before generation; one job at a time per GPU
+- [x] Redis queue, media worker, job completion that resumes graphs (ADR-0021)
+- [x] ComfyUI client (`/prompt` + WebSocket progress), workflow + map loading; verified against
+      a fake server and a real local ComfyUI (a real image, `make test-comfyui`)
+- [x] Progress over Redis → SSE `job_progress` with queue positions; run events in Redis Streams
+      so any API replica can serve or resume a run
+- [x] LLM unload before generation; one job at a time per GPU id; retries and idempotent redelivery
+- [x] Object storage and the worker in the Helm chart (SeaweedFS); stub mode runs the whole flow
+      without a GPU, on kind and in CI
+- [ ] GPU Operator with time-slicing on k3s; ComfyUI and Ollama pods: manifests and steps are
+      written (`deploy/k8s/gpu-time-slicing.yaml`, `comfyui.*` chart values, runbook) but need
+      the GPU host to be tested. Also needs a ComfyUI container image chosen for your GPU
 
 ## Phase 5: `wd-music-ai` MVP
 
@@ -60,6 +66,9 @@ See [product spec](../products/wd-music-ai/README.md).
 - [ ] Song graph: guardrails → lyrics → approve → music job → cover job → done
 - [ ] ACE-Step 1.5 and FLUX.2 klein 4B workflows + map files (licences verified)
 - [ ] Auth.js with Google, GitHub, Microsoft; FastAPI validates the token
+- [ ] Secured upload endpoint for user files (images, audio): identity required, size and type
+      limits (images 10 MB, audio 25 MB), writes to `ScopedStorage` and returns the storage key
+      that runs take as `image_key` / `audio_key`. A public API addition, so it needs an ADR first
 - [ ] Per-user daily quota
 - [ ] UI: idea form, lyrics editor, queue position, player, cover, history
 
@@ -69,6 +78,16 @@ See [product spec](../products/wd-music-ai/README.md).
 - [ ] OpenTofu module for it; add-ons; workload identity; External Secrets
 - [ ] vLLM or hosted LLM via LiteLLM; KEDA scale-to-zero GPU workers
 - [ ] Promotion flow from staging to prod
+
+## Backlog (not yet scheduled)
+
+- [ ] Upload endpoint ADR and design (see Phase 5): the multimodal inputs from ADR-0020 only
+      work for files already in storage until this exists
+- [ ] Evaluate the `check_request` guardrail and lyric quality on `gemma4:e4b`; move the
+      moderator to `gemma4:12b` if they fall short (ADR-0018)
+- [ ] Evaluate audio input on real recordings, not only synthetic speech (ADR-0020)
+- [ ] Pin the SeaweedFS image to a version instead of `:latest`
+- [ ] Roll out new staging images automatically (pinned tags or Image Updater)
 
 ## Deferred (seams already in place)
 

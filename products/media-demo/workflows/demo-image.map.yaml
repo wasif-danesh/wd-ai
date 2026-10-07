@@ -1,0 +1,14 @@
+workflow: demo-image.json
+licence: "Developer-local sample; check the model card before using these weights in a product"
+models:
+  - diffusion_models/z_image_turbo_bf16.safetensors
+  - text_encoders/qwen_3_4b.safetensors
+  - vae/ae.safetensors
+inputs:
+  prompt: { node: "4", field: text }
+  seed: { node: "8", field: seed }
+  steps: { node: "8", field: steps }
+  width: { node: "6", field: width }
+  height: { node: "6", field: height }
+outputs:
+  image: { node: "10", type: image }

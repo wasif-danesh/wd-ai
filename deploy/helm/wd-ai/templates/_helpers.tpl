@@ -51,6 +51,26 @@ imagePullSecrets:
 {{- end }}
 {{- end -}}
 
+{{- define "wd.storageEndpoint" -}}
+{{- if .Values.storage.enabled -}}http://{{ .Release.Name }}-storage:8333{{- else -}}{{ .Values.storage.endpoint }}{{- end -}}
+{{- end -}}
+
+{{- define "wd.comfyuiUrl" -}}
+{{- if .Values.comfyui.enabled -}}http://{{ .Release.Name }}-comfyui:{{ .Values.comfyui.port }}{{- else -}}{{ .Values.env.COMFYUI_BASE_URL }}{{- end -}}
+{{- end -}}
+
+{{/* Object storage settings for the API and the media worker. */}}
+{{- define "wd.storageEnv" -}}
+- { name: STORAGE_ENDPOINT, value: {{ include "wd.storageEndpoint" . | quote }} }
+- { name: STORAGE_PUBLIC_ENDPOINT, value: {{ .Values.storage.publicEndpoint | quote }} }
+- { name: STORAGE_BUCKET, value: {{ .Values.storage.bucket | quote }} }
+- { name: STORAGE_REGION, value: {{ .Values.storage.region | quote }} }
+- { name: STORAGE_ACCESS_KEY, value: {{ .Values.storage.accessKey | quote }} }
+- name: STORAGE_SECRET_KEY
+  valueFrom:
+    secretKeyRef: { name: {{ .Values.secrets.existingSecret }}, key: STORAGE_SECRET_KEY }
+{{- end -}}
+
 {{/* Env shared by the API and the migration job. */}}
 {{- define "wd.apiEnv" -}}
 {{ include "wd.dbEnv" . }}
@@ -67,4 +87,5 @@ imagePullSecrets:
   value: {{ .Values.env.COMFYUI_BASE_URL | quote }}
 - name: LOG_LEVEL
   value: {{ .Values.env.LOG_LEVEL | quote }}
+{{- include "wd.storageEnv" . | nindent 0 }}
 {{- end -}}

@@ -22,5 +22,6 @@
 | [0018](0018-default-text-model-gemma4-e4b.md) | Default text model: Gemma 4 E4B | Accepted |
 | [0019](0019-cover-image-model-flux2-klein-4b.md) | Cover image model: FLUX.2 [klein] 4B | Accepted |
 | [0020](0020-multimodal-input.md) | Multimodal input in the capability layer | Accepted |
+| [0021](0021-media-pipeline-redis-streams.md) | Media pipeline on Redis Streams | Accepted |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.

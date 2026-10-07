@@ -10,6 +10,6 @@ if kubectl -n "$NS" get secret "$NAME" >/dev/null 2>&1; then
   echo "secret $NS/$NAME already exists (left unchanged)"; exit 0
 fi
 kubectl -n "$NS" create secret generic "$NAME" \
-  --from-env-file=<(printf 'LITELLM_API_KEY=sk-%s\nPOSTGRES_PASSWORD=%s\n' \
-    "$(openssl rand -hex 24)" "$(openssl rand -hex 24)") >/dev/null
+  --from-env-file=<(printf 'LITELLM_API_KEY=sk-%s\nPOSTGRES_PASSWORD=%s\nSTORAGE_SECRET_KEY=%s\n' \
+    "$(openssl rand -hex 24)" "$(openssl rand -hex 24)" "$(openssl rand -hex 24)") >/dev/null
 echo "created secret $NS/$NAME (values not shown)"

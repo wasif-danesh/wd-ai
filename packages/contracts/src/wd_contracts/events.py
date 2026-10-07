@@ -83,3 +83,11 @@ def format_sse(event: _Envelope) -> str:
     """Serialise an event as one SSE message (id = seq)."""
     name = getattr(event, "event")  # noqa: B009
     return f"id: {event.seq}\nevent: {name}\ndata: {event.model_dump_json(exclude={'event'})}\n\n"
+
+
+def format_sse_dict(event: dict[str, Any]) -> str:
+    """Serialise a stored event (a dict with `event` and `seq`) as one SSE message."""
+    import json
+
+    body = {k: v for k, v in event.items() if k != "event"}
+    return f"id: {event['seq']}\nevent: {event['event']}\ndata: {json.dumps(body)}\n\n"

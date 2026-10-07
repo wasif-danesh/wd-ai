@@ -2,10 +2,10 @@ from uuid import uuid4
 
 from sqlalchemy import text
 from wd_api.rag import DIMENSIONS, RagService, chunk_text
-from wd_api.usage_postgres import PostgresUsageRecorder
 from wd_platform_sdk import (
     CapabilityBinding,
     InMemoryUsageRecorder,
+    PostgresUsageRecorder,
     RunContext,
     UsageEvent,
     set_context,

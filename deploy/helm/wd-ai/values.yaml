@@ -34,6 +34,11 @@ web:
 mediaWorker:
   enabled: true
   replicas: 1
+  # stub: placeholder images/audio, no GPU or ComfyUI. real: drive ComfyUI (set comfyui.enabled or
+  # env.COMFYUI_BASE_URL). One job at a time per GPU id; workers sharing a GPU share `gpuId`.
+  comfyuiMode: stub
+  gpuId: gpu0
+  jobTimeoutSeconds: 900
   resources:
     requests: { cpu: 25m, memory: 64Mi }
     limits: { memory: 256Mi }
@@ -80,6 +85,37 @@ postgres:
   resources:
     requests: { cpu: 100m, memory: 256Mi }
     limits: { memory: 1Gi }
+
+# S3-compatible object storage for generated media (SeaweedFS). Set enabled=false to use an
+# external bucket: then provide endpoint, and STORAGE_ACCESS_KEY / STORAGE_SECRET_KEY in the Secret.
+storage:
+  enabled: true
+  image: docker.io/chrislusf/seaweedfs:latest   # pin to a version before relying on it
+  bucket: wd-ai
+  region: us-east-1
+  accessKey: wd-ai          # an id, not a secret; the secret key is STORAGE_SECRET_KEY in the Secret
+  size: 10Gi
+  storageClass: ""
+  endpoint: ""              # external endpoint when enabled=false
+  publicEndpoint: ""        # URL browsers use for presigned links, if different from the above
+  resources:
+    requests: { cpu: 50m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+# ComfyUI for real media generation. No image is chosen for you: build or pick one that matches
+# your GPU and set `image`. Requires the NVIDIA GPU Operator (see docs/runbooks/homelab-k3s.md).
+comfyui:
+  enabled: false
+  image: ""
+  port: 8188
+  storage: 40Gi             # models and outputs
+  storageClass: ""
+  gpuResources: { nvidia.com/gpu: 1 }
+  resources:
+    requests: { cpu: "1", memory: 8Gi }
+    limits: { memory: 24Gi }
+  nodeSelector: {}
+  tolerations: []
 
 redis:
   enabled: true

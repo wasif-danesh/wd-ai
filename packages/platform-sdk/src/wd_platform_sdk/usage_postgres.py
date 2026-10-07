@@ -5,7 +5,8 @@ from uuid import uuid4
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
-from wd_platform_sdk import UsageEvent
+
+from wd_platform_sdk.usage import UsageEvent
 
 _INSERT = text(
     """

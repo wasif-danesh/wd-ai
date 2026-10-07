@@ -1,84 +1,90 @@
-"""In-memory run manager: executes graphs, numbers events, supports replay by seq.
+"""Run manager: executes graphs and writes their events to the shared event log.
 
-Phase 1 keeps the event log in process. Redis pub/sub fan-out (so any replica can serve
-any stream) arrives with the media pipeline in Phase 4.
+Nothing here is tied to the replica that started a run. State lives in three shared places:
+the LangGraph checkpoint (Postgres), the event log and the run store (Redis in production).
+Any replica can therefore resume a run, and any replica can serve its SSE stream (ADR-0021).
 """
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
+from collections.abc import Coroutine
 from typing import Any
 from uuid import UUID, uuid4
 
 from langgraph.types import Command
-from wd_contracts import (
-    DoneEvent,
-    ErrorEvent,
-    InterruptEvent,
-    NodeEvent,
-    TokenEvent,
-)
-from wd_platform_sdk import RunContext, set_context
+from wd_contracts import DoneEvent, ErrorEvent, InterruptEvent, NodeEvent, TokenEvent
+from wd_platform_sdk import EventLog, JobFailed, RunContext, RunRecord, RunStore, set_context
 
 log = logging.getLogger(__name__)
 
 
-@dataclass
-class Run:
-    run_id: UUID
-    thread_id: UUID
-    product_id: str
-    tenant_id: str
-    user_id: str
-    events: list[Any] = field(default_factory=list)
-    cond: asyncio.Condition = field(default_factory=asyncio.Condition)
-    task: asyncio.Task | None = None
-    awaiting: str | None = None
-
-    async def emit(self, cls, **kw) -> None:
-        async with self.cond:
-            ev = cls(run_id=self.run_id, thread_id=self.thread_id, seq=len(self.events) + 1, **kw)
-            self.events.append(ev)
-            self.cond.notify_all()
-
-
 class RunManager:
-    def __init__(self) -> None:
-        self._runs: dict[UUID, Run] = {}
+    def __init__(self, event_log: EventLog, store: RunStore, graphs: dict[str, Any]):
+        self.log = event_log
+        self.store = store
+        self.graphs = graphs
+        self._tasks: set[asyncio.Task] = set()
 
-    def get(self, run_id: UUID) -> Run | None:
-        return self._runs.get(run_id)
+    def _spawn(self, coro: Coroutine[Any, Any, None]) -> None:
+        task = asyncio.create_task(coro)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
 
-    def start(self, graph: Any, run: Run, graph_input: dict[str, Any]) -> Run:
-        self._runs[run.run_id] = run
-        run.task = asyncio.create_task(self._execute(graph, run, graph_input))
-        return run
+    async def aclose(self) -> None:
+        for t in list(self._tasks):
+            t.cancel()
+        await asyncio.gather(*self._tasks, return_exceptions=True)
 
-    def resume(self, graph: Any, run: Run, value: Any) -> None:
-        run.awaiting = None
-        run.task = asyncio.create_task(self._execute(graph, run, Command(resume=value)))
+    async def start(
+        self,
+        product_id: str,
+        tenant_id: str,
+        user_id: str,
+        thread_id: UUID | None,
+        graph_input: dict[str, Any],
+    ) -> RunRecord:
+        rec = RunRecord(
+            run_id=str(uuid4()),
+            thread_id=str(thread_id or uuid4()),
+            product_id=product_id,
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
+        await self.store.create(rec)
+        self._spawn(self._execute(rec, graph_input))
+        return rec
 
-    def new_run(self, product_id: str, tenant_id: str, user_id: str, thread_id: UUID | None) -> Run:
-        return Run(uuid4(), thread_id or uuid4(), product_id, tenant_id, user_id)
+    def resume(self, rec: RunRecord, value: Any) -> None:
+        """Continue a run that was waiting for a user's answer."""
+        self._spawn(self._execute(rec, Command(resume=value)))
 
-    async def _execute(self, graph: Any, run: Run, graph_input: Any) -> None:
+    def resume_with_job(self, rec: RunRecord, result: dict[str, Any]) -> None:
+        """Continue a run that was waiting for a media job; `result` is a JobResult dump."""
+        self._spawn(self._execute(rec, Command(resume=result)))
+
+    async def _emit(self, rec: RunRecord, cls: type, **kw: Any) -> None:
+        event = cls(run_id=UUID(rec.run_id), thread_id=UUID(rec.thread_id), seq=0, **kw)
+        await self.log.append(rec.tenant_id, rec.run_id, event.model_dump(mode="json"))
+
+    async def _execute(self, rec: RunRecord, graph_input: Any) -> None:
+        graph = self.graphs[rec.product_id]
         config = {
             "configurable": {
-                "thread_id": str(run.thread_id),
-                "tenant_id": run.tenant_id,
-                "product_id": run.product_id,
-                "user_id": run.user_id,
+                "thread_id": rec.thread_id,
+                "tenant_id": rec.tenant_id,
+                "product_id": rec.product_id,
+                "user_id": rec.user_id,
             }
         }
         # Capabilities read tenant/product/user/run from this context (usage events, job
         # payloads, storage keys). It is task-local, so concurrent runs cannot mix.
         set_context(
             RunContext(
-                tenant_id=run.tenant_id,
-                product_id=run.product_id,
-                user_id=run.user_id,
-                run_id=str(run.run_id),
-                thread_id=str(run.thread_id),
+                tenant_id=rec.tenant_id,
+                product_id=rec.product_id,
+                user_id=rec.user_id,
+                run_id=rec.run_id,
+                thread_id=rec.thread_id,
             )
         )
         try:
@@ -86,12 +92,21 @@ class RunManager:
                 graph_input, config, stream_mode=["custom", "updates"]
             ):
                 if mode == "custom":
-                    await self._emit_custom(run, chunk)
+                    await self._emit_custom(rec, chunk)
                 elif "__interrupt__" in chunk:
                     intr = chunk["__interrupt__"][0]
-                    run.awaiting = intr.id
                     value = intr.value if isinstance(intr.value, dict) else {"value": intr.value}
-                    await run.emit(
+                    if value.get("kind") == "job":
+                        # Waiting for the media worker, not for the user: no client event.
+                        await self.store.set_state(
+                            rec.tenant_id, rec.run_id, "waiting_job", waiting_job=value["job_id"]
+                        )
+                        return
+                    await self.store.set_state(
+                        rec.tenant_id, rec.run_id, "waiting_input", awaiting=intr.id
+                    )
+                    await self._emit(
+                        rec,
                         InterruptEvent,
                         interrupt_id=intr.id,
                         kind=value.get("kind", "interrupt"),
@@ -100,17 +115,38 @@ class RunManager:
                     return
                 else:
                     for node in chunk:
-                        await run.emit(NodeEvent, node=node, status="completed", label=node)
+                        await self._emit(rec, NodeEvent, node=node, status="completed", label=node)
             state = await graph.aget_state(config)
-            await run.emit(DoneEvent, outputs=dict(state.values))
+            await self.store.set_state(rec.tenant_id, rec.run_id, "done")
+            await self._emit(rec, DoneEvent, outputs=dict(state.values))
+        except JobFailed as e:
+            err = e.result.error
+            await self.store.set_state(rec.tenant_id, rec.run_id, "error")
+            await self._emit(
+                rec,
+                ErrorEvent,
+                code=err.code if err else "job_failed",
+                message=err.message if err else "The media job failed.",
+                retryable=err.retryable if err else False,
+                job_id=e.result.job_id,
+            )
+        except asyncio.CancelledError:
+            raise
         except Exception:
-            log.exception("run failed", extra={"run_id": str(run.run_id)})
-            await run.emit(ErrorEvent, code="run_failed", message="The run failed.", retryable=True)
+            log.exception("run failed", extra={"run_id": rec.run_id})
+            await self.store.set_state(rec.tenant_id, rec.run_id, "error")
+            await self._emit(
+                rec, ErrorEvent, code="run_failed", message="The run failed.", retryable=True
+            )
 
-    async def _emit_custom(self, run: Run, chunk: dict[str, Any]) -> None:
+    async def _emit_custom(self, rec: RunRecord, chunk: dict[str, Any]) -> None:
         if chunk.get("type") == "token":
-            await run.emit(TokenEvent, node=chunk["node"], text=chunk["text"])
+            await self._emit(rec, TokenEvent, node=chunk["node"], text=chunk["text"])
         elif chunk.get("type") == "node":
-            await run.emit(
-                NodeEvent, node=chunk["node"], status=chunk["status"], label=chunk.get("label", "")
+            await self._emit(
+                rec,
+                NodeEvent,
+                node=chunk["node"],
+                status=chunk["status"],
+                label=chunk.get("label", ""),
             )

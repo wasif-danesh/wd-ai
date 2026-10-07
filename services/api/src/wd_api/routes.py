@@ -1,14 +1,13 @@
-import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from wd_contracts import TERMINAL_EVENTS, ResumeRequest, RunRequest, format_sse
+from wd_contracts import TERMINAL_EVENTS, ResumeRequest, RunRequest, format_sse_dict
+from wd_platform_sdk import RunRecord
 
 from wd_api.identity import Identity, get_identity
-from wd_api.runs import Run
 
 router = APIRouter()
 HEARTBEAT_S = 15
@@ -20,39 +19,44 @@ def _state(request: Request) -> Any:
     return request.app.state
 
 
-async def _stream(run: Run, after: int, heartbeat_s: float) -> AsyncIterator[str]:
+async def _stream(st: Any, rec: RunRecord, after: int) -> AsyncIterator[str]:
+    """Read the run's events from the shared log until the run ends or waits for the user."""
     sent = after
+    block_ms = max(int(st.heartbeat_s * 1000), 1)
     while True:
-        async with run.cond:
-            if len(run.events) <= sent:
-                try:
-                    await asyncio.wait_for(run.cond.wait(), timeout=heartbeat_s)
-                except TimeoutError:
-                    yield ": ping\n\n"
-                    continue
-            batch = run.events[sent:]
-        for ev in batch:
-            yield format_sse(ev)
-            sent = ev.seq
-            if ev.event in TERMINAL_EVENTS:
+        events = await st.runs.log.read(rec.tenant_id, rec.run_id, sent, block_ms)
+        if not events:
+            current = await st.runs.store.get(rec.tenant_id, rec.run_id)
+            last = await st.runs.log.last_seq(rec.tenant_id, rec.run_id)
+            if current and current.status in ("done", "error") and sent >= last:
                 return
-            if ev.event == "interrupt" and run.awaiting and ev.seq == len(run.events):
+            yield ": ping\n\n"
+            continue
+        for ev in events:
+            yield format_sse_dict(ev)
+            sent = ev["seq"]
+            if ev["event"] in TERMINAL_EVENTS:
                 return
+            if ev["event"] == "interrupt":
+                current = await st.runs.store.get(rec.tenant_id, rec.run_id)
+                last = await st.runs.log.last_seq(rec.tenant_id, rec.run_id)
+                if current and current.awaiting and ev["seq"] == last:
+                    return
 
 
-def _sse(run: Run, request: Request, after: int = 0) -> StreamingResponse:
+def _sse(request: Request, rec: RunRecord, after: int = 0) -> StreamingResponse:
     return StreamingResponse(
-        _stream(run, after, _state(request).heartbeat_s),
+        _stream(_state(request), rec, after),
         media_type="text/event-stream",
         headers=SSE_HEADERS,
     )
 
 
-def _owned_run(request: Request, run_id: UUID, identity: Identity) -> Run:
-    run = _state(request).runs.get(run_id)
-    if run is None or (run.tenant_id, run.user_id) != (identity.tenant_id, identity.user_id):
+async def _owned_run(request: Request, run_id: UUID, identity: Identity) -> RunRecord:
+    rec = await _state(request).runs.store.get(identity.tenant_id, str(run_id))
+    if rec is None or rec.user_id != identity.user_id:
         raise HTTPException(404, "run not found")
-    return run
+    return rec
 
 
 @router.post("/products/{product_id}/runs")
@@ -65,16 +69,17 @@ async def start_run(
     st: Any = _state(request)
     if product_id not in st.registry.products():
         raise HTTPException(404, "unknown product")
-    run = st.runs.new_run(product_id, identity.tenant_id, identity.user_id, body.thread_id)
-    st.runs.start(st.graphs[product_id], run, body.input)
-    return _sse(run, request)
+    rec = await st.runs.start(
+        product_id, identity.tenant_id, identity.user_id, body.thread_id, body.input
+    )
+    return _sse(request, rec)
 
 
 @router.get("/runs/{run_id}/events")
 async def run_events(run_id: UUID, request: Request, identity: Identity = Depends(get_identity)):
-    run = _owned_run(request, run_id, identity)
+    rec = await _owned_run(request, run_id, identity)
     last = request.headers.get("last-event-id", "0")
-    return _sse(run, request, int(last) if last.isdigit() else 0)
+    return _sse(request, rec, int(last) if last.isdigit() else 0)
 
 
 @router.post("/runs/{run_id}/resume")
@@ -85,9 +90,10 @@ async def resume_run(
     identity: Identity = Depends(get_identity),
 ):
     st: Any = _state(request)
-    run = _owned_run(request, run_id, identity)
-    if not run.awaiting:
+    rec = await _owned_run(request, run_id, identity)
+    # Atomic: two concurrent resumes cannot both win.
+    if await st.runs.store.take_awaiting(rec.tenant_id, rec.run_id) is None:
         raise HTTPException(409, "run is not waiting for input")
-    after = len(run.events)
-    st.runs.resume(st.graphs[run.product_id], run, body.value)
-    return _sse(run, request, after)
+    after = await st.runs.log.last_seq(rec.tenant_id, rec.run_id)
+    st.runs.resume(rec, body.value)
+    return _sse(request, rec, after)

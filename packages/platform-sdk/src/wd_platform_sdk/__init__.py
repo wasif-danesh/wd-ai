@@ -11,7 +11,19 @@ from wd_platform_sdk.config import (
     load_product_config,
 )
 from wd_platform_sdk.context import RunContext, require_context, reset_context, set_context
-from wd_platform_sdk.jobs import InMemoryJobSink, JobHandle, JobRequest, JobSink
+from wd_platform_sdk.eventlog import EventLog, InMemoryEventLog, RedisEventLog
+from wd_platform_sdk.jobqueue import RedisJobSink
+from wd_platform_sdk.jobs import (
+    InMemoryJobSink,
+    JobError,
+    JobFailed,
+    JobHandle,
+    JobOutput,
+    JobRequest,
+    JobResult,
+    JobSink,
+    await_job,
+)
 from wd_platform_sdk.parts import (
     Audio,
     Image,
@@ -23,10 +35,26 @@ from wd_platform_sdk.parts import (
 )
 from wd_platform_sdk.providers import ProviderDeps, build_capabilities, register_provider
 from wd_platform_sdk.registry import GraphRegistry
+from wd_platform_sdk.runstore import InMemoryRunStore, RedisRunStore, RunRecord, RunStore
 from wd_platform_sdk.storage import ScopedStorage, Storage, memory_storage, object_key, s3_storage
 from wd_platform_sdk.usage import InMemoryUsageRecorder, UsageEvent, UsageRecorder
+from wd_platform_sdk.usage_postgres import PostgresUsageRecorder
 
 __all__ = [
+    "EventLog",
+    "InMemoryEventLog",
+    "RedisEventLog",
+    "RedisJobSink",
+    "JobError",
+    "JobFailed",
+    "JobOutput",
+    "JobResult",
+    "await_job",
+    "InMemoryRunStore",
+    "RedisRunStore",
+    "RunRecord",
+    "RunStore",
+    "PostgresUsageRecorder",
     "Audio",
     "Capabilities",
     "CapabilityBinding",

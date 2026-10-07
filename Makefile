@@ -1,7 +1,7 @@
 CONTAINER_ENGINE ?= podman
 export CONTAINER_ENGINE
 
-.PHONY: test-integration setup setup-k8s preflight dev down logs migrate test lint format contracts helm-lint kind-up kind-test kind-down
+.PHONY: test-comfyui test-integration setup setup-k8s preflight dev down logs migrate test lint format contracts helm-lint kind-up kind-test kind-down
 setup:
 	./scripts/setup.sh
 setup-k8s:
@@ -24,6 +24,9 @@ test-integration:
 	DATABASE_URL=postgresql+asyncpg://wd:wd@localhost:5432/wd \
 	LITELLM_BASE_URL=http://localhost:4000 STORAGE_ENDPOINT=http://localhost:8333 \
 	uv run pytest services/api/tests/integration -v
+# Generates a real image on your local ComfyUI (slow on first use: loads a 12 GB model).
+test-comfyui:
+	COMFYUI_E2E=1 uv run pytest services/api/tests/integration/test_media_e2e.py -v -k real
 lint:
 	uv run ruff check . && uv run ruff format --check . && uv run pyright
 	pnpm lint && pnpm typecheck

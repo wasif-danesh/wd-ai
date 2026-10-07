@@ -6,9 +6,30 @@ from fastapi.testclient import TestClient
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
-from wd_api.graphs import default_registry
+from wd_api.graphs.hello import build_hello
 from wd_api.main import create_app
-from wd_platform_sdk import GraphRegistry, InMemoryUsageRecorder
+from wd_platform_sdk import GraphRegistry, InMemoryEventLog, InMemoryRunStore, InMemoryUsageRecorder
+
+
+def hello_registry() -> GraphRegistry:
+    registry = GraphRegistry()
+    registry.register("hello", build_hello)
+    return registry
+
+
+def mem_app(registry, products, usage, *, storage=None, **kw):
+    """An app wired entirely in memory: no Redis, Postgres or network."""
+    return create_app(
+        registry,
+        products,
+        InMemorySaver(),
+        usage,
+        storage,
+        heartbeat_s=0.05,
+        event_log=InMemoryEventLog(),
+        run_store=InMemoryRunStore(),
+        **kw,
+    )
 
 
 def parse(text: str) -> list[tuple[str, dict]]:
@@ -40,7 +61,7 @@ def usage():
 
 @pytest.fixture
 def client(products, usage):
-    app = create_app(default_registry(), products, InMemorySaver(), usage, heartbeat_s=0.05)
+    app = mem_app(hello_registry(), products, usage)
     with TestClient(app) as c:
         yield c
 
@@ -106,7 +127,7 @@ def test_interrupt_and_resume(tmp_path):
     (tmp_path / "approve" / "product.yaml").write_text("id: approve\n")
     registry = GraphRegistry()
     registry.register("approve", _approve_graph)
-    app = create_app(registry, tmp_path, InMemorySaver(), InMemoryUsageRecorder(), heartbeat_s=0.05)
+    app = mem_app(registry, tmp_path, InMemoryUsageRecorder())
     with TestClient(app) as c:
         first = parse(c.post("/products/approve/runs", json={}).text)
         assert first[-1][0] == "interrupt"
@@ -132,9 +153,7 @@ def media_client(tmp_path, usage):
         "                     inputs: [text, image, audio] }\n"
     )
     raw = memory_storage()
-    app = create_app(
-        default_registry(), tmp_path, InMemorySaver(), usage, ScopedStorage(raw), heartbeat_s=0.05
-    )
+    app = mem_app(hello_registry(), tmp_path, usage, storage=ScopedStorage(raw))
     png = b"\x89PNG\r\n\x1a\n" + b"0" * 16
     key = object_key("dev-tenant", "hello", "dev-user", "uploads", "cat.png")
     import asyncio

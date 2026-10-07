@@ -10,6 +10,11 @@ jobs:
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U wd" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       DATABASE_URL: postgresql+asyncpg://wd:wd@localhost:5432/wd
     steps:
@@ -20,7 +25,8 @@ jobs:
       - run: uv run pyright
       - name: Migrate (also proves 0001-0003 apply on an empty database)
         run: cd services/api && uv run alembic upgrade head
-      # Integration tests for Postgres/pgvector run here; storage and LiteLLM ones skip themselves.
+      # Integration tests for Postgres/pgvector and the Redis media pipeline (with a stub worker)
+      # run here; the storage, LiteLLM and ComfyUI ones skip themselves.
       - run: uv run pytest -v
   web:
     runs-on: ubuntu-latest

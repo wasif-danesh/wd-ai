@@ -57,7 +57,10 @@ services:
   media-worker:
     build: { context: ., dockerfile: services/media-worker/Containerfile }
     env_file: .env
-    depends_on: [redis]
+    # COMFYUI_MODE=stub (the default in .env.example) returns placeholder files, so the whole
+    # media flow works without ComfyUI or a GPU. Set COMFYUI_MODE=real to use ComfyUI at
+    # COMFYUI_BASE_URL (native ComfyUI on the host: http://host.containers.internal:8188).
+    depends_on: [redis, postgres, seaweedfs]
   web:
     build: { context: ., dockerfile: apps/web/Containerfile }
     env_file: .env

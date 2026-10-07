@@ -1,0 +1,21 @@
+# NVIDIA GPU Operator time-slicing: lets the Ollama and ComfyUI pods share one physical GPU.
+# Apply after installing the GPU Operator, then point the operator at it (docs/runbooks/homelab-k3s.md).
+# NOT YET RUN on a GPU node. The media worker serialises generation jobs per GPU, and unloads
+# LLMs before each job, so the two workloads do not need VRAM at the same time.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: time-slicing-config
+  namespace: gpu-operator
+data:
+  any: |-
+    version: v1
+    flags:
+      migStrategy: none
+    sharing:
+      timeSlicing:
+        renameByDefault: false
+        failRequestsGreaterThanOne: false
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 2

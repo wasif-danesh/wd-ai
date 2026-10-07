@@ -7,7 +7,7 @@ streaming, a stateful agent runtime, a model gateway, GPU media workers, storage
 (later) auth, billing and observability. Each **product** is a thin layer on top: a few
 LangGraph graphs, a Next.js UI and a config file.
 
-> **Status: prototype.** Phases 0-3 are largely done: a walking skeleton streams a model reply
+> **Status: prototype.** Phases 0-4 are largely done: a walking skeleton streams a model reply
 > from Ollama to the browser through every layer, runs in containers, and installs on a local
 > Kubernetes cluster from a Helm chart. The home-lab (k3s + Argo CD) rollout, media generation,
 > auth and the first real product (`wd-music-ai`) are still to come. See the
@@ -65,7 +65,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | Image and audio input to the model (`Image`/`Audio` parts, files from storage) | Working; no upload endpoint yet |
 | Object storage interface (S3 API via SeaweedFS), presigned URLs | Working locally; not in the Helm chart yet |
 | RAG helpers on pgvector with embeddings (`nomic-embed-text`) | Working (library; no HTTP endpoints) |
-| Media worker, ComfyUI queue | Placeholder (Phase 4) |
+| Media pipeline: Redis queue, worker, ComfyUI client, live `job_progress`, queue positions | Working; real ComfyUI verified locally, GPU on k3s untested |
 | Auth, per-user quotas | Not started (Phase 5) |
 | Helm chart, local Kubernetes (kind), CI smoke test | Working |
 | k3s home lab with Argo CD | Manifests and runbook written, not yet run (Phase 2) |
@@ -309,7 +309,8 @@ builds ignore it. More detail: [Configuration](docs/configuration.md).
 
 ```bash
 make test        # Python (no GPU or network needed) + TypeScript tests
-make test-integration   # real Postgres/pgvector, SeaweedFS, LiteLLM + Ollama (needs make dev)
+make test-integration   # real Postgres/pgvector, Redis pipeline, SeaweedFS, LiteLLM + Ollama (needs make dev)
+make test-comfyui       # opt-in: generates a real image on your local ComfyUI (slow first time)
 make lint        # ruff, pyright, Biome, tsc
 make format      # ruff format + autofix
 make contracts   # regenerate TS types from the API's OpenAPI schema
@@ -390,7 +391,7 @@ The same container images run in all three. Only infrastructure and configuratio
 | 1 | Walking skeleton on the Mac: SSE contract, hello graph, LiteLLM, web streaming | Done |
 | 2 | Skeleton on Kubernetes: Helm, `kind`, home lab k3s, Argo CD | Chart and kind done; home lab pending |
 | 3 | Platform core: capability layer, storage, usage events, RAG | Done |
-| 4 | Media pipeline: Redis queue, worker, ComfyUI, GPU sharing | Planned |
+| 4 | Media pipeline: Redis queue, worker, ComfyUI, GPU sharing | Done except GPU on k3s (needs the lab) |
 | 5 | `wd-music-ai` MVP: song graph, auth, quota, UI | Planned |
 | 6 | Production on GCP | Planned |
 

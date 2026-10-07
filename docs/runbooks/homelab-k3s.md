@@ -77,6 +77,24 @@ kubectl -n wd-ai get pods
 To use a smaller model, change the `ollama_chat/...` entries under `litellm.models` in values,
 and lower `ollama.resources`.
 
+## 5b. GPU and real media generation (Phase 4)
+
+Status: written, **not yet run on a GPU node**. Without these steps the stack still works: the
+media worker runs in `stub` mode and returns placeholder files.
+
+1. Install the NVIDIA driver on the host, then the GPU Operator (Helm chart `nvidia/gpu-operator`)
+   on k3s. Confirm with `kubectl describe node | grep nvidia.com/gpu`.
+2. Share the card between Ollama and ComfyUI with time-slicing: apply
+   `deploy/k8s/gpu-time-slicing.yaml`, then point the operator's device plugin at it
+   (`kubectl patch clusterpolicies.nvidia.com/cluster-policy --type merge -p '{"spec":{"devicePlugin":{"config":{"name":"time-slicing-config","default":"any"}}}}'`).
+   The worker serialises generation per GPU and unloads LLMs before each job, so the two
+   workloads do not need VRAM together.
+3. Choose a ComfyUI container image for your GPU (none is chosen for you), put the models on its
+   volume, and set in your values: `comfyui.enabled: true`, `comfyui.image: <your image>`,
+   `mediaWorker.comfyuiMode: real`, and `ollama.gpuResources: { nvidia.com/gpu: 1 }`.
+4. Verify with the `media-demo` product (adjust `products/media-demo/workflows/` to models you
+   have): a run should show `job_progress` events with live progress and finish with an image URL.
+
 ## 6. Reach the app
 
 Install Tailscale on the node (`curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`)

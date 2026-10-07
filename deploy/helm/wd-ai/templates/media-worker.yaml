@@ -13,13 +13,27 @@ spec:
       labels: {{- include "wd.selector" (dict "root" . "component" "media-worker") | nindent 8 }}
     spec:
       {{- include "wd.pullSecrets" . | nindent 6 }}
+      {{- if .Values.postgres.enabled }}
+      initContainers:
+        - name: wait-for-db
+          image: {{ .Values.postgres.image }}
+          command: ["sh", "-c", "until pg_isready -h {{ .Release.Name }}-postgres -U {{ .Values.postgres.user }}; do sleep 2; done"]
+      {{- end }}
       containers:
         - name: media-worker
           image: {{ include "wd.image" (dict "root" . "name" "media-worker") }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+            {{- include "wd.dbEnv" . | nindent 12 }}
             - { name: REDIS_URL, value: "redis://{{ .Release.Name }}-redis:6379/0" }
-            - { name: COMFYUI_BASE_URL, value: {{ .Values.env.COMFYUI_BASE_URL | quote }} }
+            - { name: COMFYUI_MODE, value: {{ .Values.mediaWorker.comfyuiMode | quote }} }
+            - { name: COMFYUI_BASE_URL, value: {{ include "wd.comfyuiUrl" . | quote }} }
+            # Lets the worker free the GPU of LLMs before each generation job.
+            - { name: OLLAMA_BASE_URL, value: {{ include "wd.ollamaUrl" . | quote }} }
+            - { name: GPU_ID, value: {{ .Values.mediaWorker.gpuId | quote }} }
+            - { name: JOB_TIMEOUT_S, value: {{ .Values.mediaWorker.jobTimeoutSeconds | quote }} }
+            - { name: LOG_LEVEL, value: {{ .Values.env.LOG_LEVEL | quote }} }
+            {{- include "wd.storageEnv" . | nindent 12 }}
           securityContext: { allowPrivilegeEscalation: false }
           resources: {{- toYaml .Values.mediaWorker.resources | nindent 12 }}
 {{- end }}
