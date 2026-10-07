@@ -1,0 +1,63 @@
+# Secrets
+.env
+.env.local
+.env.*.local
+secrets/
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+.next/
+.turbo/
+dist/
+coverage/
+
+# Models and generated media (never commit weights or outputs)
+*.safetensors
+*.gguf
+*.ckpt
+outputs/
+data/
+
+# Infra
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+*.tsbuildinfo
+next-env.d.ts
+
+# AI / agent tooling (keep out of the public repo)
+AGENTS.md
+GEMINI.md
+.mcp.json
+.cursor/
+.cursorrules
+.windsurf/
+.windsurfrules
+.clinerules
+.roo/
+.aider*
+.continue/
+.codex/
+.gemini/
+.github/copilot-instructions.md

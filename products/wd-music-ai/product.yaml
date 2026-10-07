@@ -1,0 +1,9 @@
+id: wd-music-ai
+capabilities:
+  text.moderate:  { provider: litellm, model: moderator }
+  text.lyrics:    { provider: litellm, model: lyrics-writer }
+  music.generate: { provider: comfyui, workflow: ace-step-1.5-turbo, defaults: { duration_s: 60 } }
+  image.generate: { provider: comfyui, workflow: qwen-image-fp8, defaults: { width: 1024, height: 1024 } }
+quotas:
+  songs_per_user_per_day: 10
+audio_format: mp3

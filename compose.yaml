@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment: { POSTGRES_USER: wd, POSTGRES_PASSWORD: wd, POSTGRES_DB: wd }
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    env_file: .env
+    ports: ["9000:9000", "9001:9001"]
+    volumes: ["miniodata:/data"]
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    env_file: .env
+    volumes: ["./deploy/compose/litellm.yaml:/app/config.yaml:ro"]
+    ports: ["4000:4000"]
+  api:
+    build: { context: ., dockerfile: services/api/Containerfile }
+    env_file: .env
+    depends_on: [postgres, redis, litellm]
+    ports: ["8000:8000"]
+  media-worker:
+    build: { context: ., dockerfile: services/media-worker/Containerfile }
+    env_file: .env
+    depends_on: [redis]
+  web:
+    build: { context: ., dockerfile: apps/web/Containerfile }
+    env_file: .env
+    depends_on: [api]
+    ports: ["3000:3000"]
+volumes: { pgdata: {}, miniodata: {} }

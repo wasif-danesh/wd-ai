@@ -1,0 +1,9 @@
+model_list:
+  - model_name: lyrics-writer
+    litellm_params:
+      model: ollama_chat/gpt-oss:20b
+      api_base: os.environ/OLLAMA_BASE_URL
+  - model_name: moderator
+    litellm_params:
+      model: ollama_chat/gpt-oss:20b
+      api_base: os.environ/OLLAMA_BASE_URL

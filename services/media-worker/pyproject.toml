@@ -1,0 +1,12 @@
+[project]
+name = "wd-media-worker"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = ["redis>=5", "httpx>=0.27", "pydantic-settings>=2.6", "wd-contracts", "wd-platform-sdk"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wd_media_worker"]

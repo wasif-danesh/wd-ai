@@ -1,0 +1,78 @@
+# SSE event contract
+
+Status: **Draft**. Finalise in Phase 1 before building the frontend. Changes after that need
+an ADR. The Pydantic models in `packages/contracts` become the source of truth; this doc
+describes them.
+
+## Transport
+
+- `POST /products/{product_id}/runs` starts a run and returns `text/event-stream`.
+- `GET /runs/{run_id}/events` reconnects to an existing run. Supports `Last-Event-ID`; the
+  server replays events after that sequence number.
+- `POST /runs/{run_id}/resume` answers an `interrupt` (approve, edit) and continues the
+  stream.
+- The Next.js BFF passes the upstream stream through unchanged: return the upstream
+  `ReadableStream`, disable compression and buffering.
+- Heartbeat comment (`: ping`) every 15 s to keep proxies from closing idle streams.
+
+## Envelope
+
+Each SSE message:
+
+```
+id: <seq>
+event: <type>
+data: <json>
+```
+
+Every `data` object includes:
+
+| Field | Type | Notes |
+|---|---|---|
+| `run_id` | string (UUID) | |
+| `thread_id` | string (UUID) | Conversation / song thread |
+| `seq` | int | Monotonic per run; also the SSE `id` |
+| `ts` | string | ISO 8601 UTC |
+
+## Event types
+
+| Event | When | Payload fields (besides envelope) |
+|---|---|---|
+| `node` | A graph node starts or finishes | `node`, `status` (`started` \| `completed`), `label` (human-readable) |
+| `token` | LLM output streams | `node`, `text` (delta) |
+| `interrupt` | Graph pauses for the user | `interrupt_id`, `kind` (e.g. `approve_lyrics`), `payload` (editable data) |
+| `job_progress` | Media job state changes | `job_id`, `capability`, `status` (`queued` \| `running` \| `completed` \| `failed`), `queue_position?`, `progress?` (0–1), `preview_url?` |
+| `error` | Recoverable or fatal error | `code`, `message` (user-safe), `retryable` (bool), `job_id?` |
+| `done` | Run finished | `outputs` (product-specific, e.g. `{title, lyrics, audio_url, cover_url}`) |
+
+Rules:
+
+- `done` and fatal `error` are terminal; the server closes the stream after them.
+- Asset fields are always URLs (pre-signed or served by the API), never bytes.
+- `message` fields never contain stack traces or internal hostnames.
+- New optional fields may be added without an ADR. Renaming or removing fields, or adding
+  event types, needs one.
+
+## Example
+
+```
+id: 1
+event: node
+data: {"run_id":"…","thread_id":"…","seq":1,"ts":"…","node":"write_lyrics","status":"started","label":"Writing lyrics"}
+
+id: 2
+event: token
+data: {"run_id":"…","thread_id":"…","seq":2,"ts":"…","node":"write_lyrics","text":"[verse]\n"}
+
+id: 40
+event: interrupt
+data: {"run_id":"…","thread_id":"…","seq":40,"ts":"…","interrupt_id":"…","kind":"approve_lyrics","payload":{"title":"…","lyrics":"…"}}
+
+id: 41
+event: job_progress
+data: {"run_id":"…","thread_id":"…","seq":41,"ts":"…","job_id":"…","capability":"music.generate","status":"queued","queue_position":2}
+
+id: 57
+event: done
+data: {"run_id":"…","thread_id":"…","seq":57,"ts":"…","outputs":{"title":"…","lyrics":"…","audio_url":"https://…","cover_url":"https://…"}}
+```
