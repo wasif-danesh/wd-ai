@@ -26,5 +26,6 @@
 | [0022](0022-song-graph-and-guardrail.md) | The song graph and its guardrail | Accepted |
 | [0023](0023-product-provided-routes.md) | Product-provided API routes | Accepted |
 | [0024](0024-real-model-validation.md) | Real-model validation of the music and cover workflows | Accepted |
+| [0025](0025-hosted-inference.md) | Hosted inference: no GPU in the cloud or home lab | Proposed |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.

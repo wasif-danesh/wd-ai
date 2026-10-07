@@ -21,13 +21,18 @@ from wd_media_worker.processor import ComfyRunner, JobProcessor, StubRunner
 from wd_media_worker.settings import WorkerSettings
 from wd_media_worker.state import RedisJobState
 
+# redis-py defaults to 5 s; blocking queue reads must not hit that.
+REDIS_SOCKET_TIMEOUT_S = 60
+
 
 async def main() -> None:
     s = WorkerSettings()
     logging.basicConfig(level=s.log_level, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     log = logging.getLogger("wd_media_worker")
 
-    redis = Redis.from_url(s.redis_url, decode_responses=True)
+    redis = Redis.from_url(
+        s.redis_url, decode_responses=True, socket_timeout=REDIS_SOCKET_TIMEOUT_S
+    )
     if s.storage_access_key:
         storage = s3_storage(
             bucket=s.storage_bucket,

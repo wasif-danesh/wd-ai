@@ -39,6 +39,9 @@ from wd_api.rag import DIMENSIONS, RagService
 from wd_api.routes import HEARTBEAT_S, router
 from wd_api.runs import RunManager
 
+# redis-py defaults to 5 s; stream reads block for the heartbeat interval, so allow well over it.
+REDIS_SOCKET_TIMEOUT_S = 60
+
 
 def create_app(
     registry: GraphRegistry | None = None,
@@ -70,7 +73,11 @@ def create_app(
         injected = event_log is not None or run_store is not None
         owns_conn = redis is None and not injected
         conn: Redis | None = redis or (
-            Redis.from_url(settings.redis_url, decode_responses=True) if owns_conn else None
+            Redis.from_url(
+                settings.redis_url, decode_responses=True, socket_timeout=REDIS_SOCKET_TIMEOUT_S
+            )
+            if owns_conn
+            else None
         )
         log_ = event_log or RedisEventLog(conn)  # type: ignore[arg-type]
         store_ = run_store or RedisRunStore(conn)  # type: ignore[arg-type]
