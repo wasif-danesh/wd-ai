@@ -3,13 +3,25 @@ on: [push, pull_request]
 jobs:
   python:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env: { POSTGRES_USER: wd, POSTGRES_PASSWORD: wd, POSTGRES_DB: wd }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wd" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://wd:wd@localhost:5432/wd
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --all-packages
       - run: uv run ruff check . && uv run ruff format --check .
       - run: uv run pyright
-      - run: uv run pytest
+      - name: Migrate (also proves 0001-0003 apply on an empty database)
+        run: cd services/api && uv run alembic upgrade head
+      # Integration tests for Postgres/pgvector run here; storage and LiteLLM ones skip themselves.
+      - run: uv run pytest -v
   web:
     runs-on: ubuntu-latest
     steps:

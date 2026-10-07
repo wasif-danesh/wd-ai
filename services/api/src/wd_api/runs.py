@@ -18,6 +18,7 @@ from wd_contracts import (
     NodeEvent,
     TokenEvent,
 )
+from wd_platform_sdk import RunContext, set_context
 
 log = logging.getLogger(__name__)
 
@@ -69,6 +70,17 @@ class RunManager:
                 "user_id": run.user_id,
             }
         }
+        # Capabilities read tenant/product/user/run from this context (usage events, job
+        # payloads, storage keys). It is task-local, so concurrent runs cannot mix.
+        set_context(
+            RunContext(
+                tenant_id=run.tenant_id,
+                product_id=run.product_id,
+                user_id=run.user_id,
+                run_id=str(run.run_id),
+                thread_id=str(run.thread_id),
+            )
+        )
         try:
             async for mode, chunk in graph.astream(
                 graph_input, config, stream_mode=["custom", "updates"]

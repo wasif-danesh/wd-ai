@@ -8,7 +8,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 from wd_api.graphs import default_registry
 from wd_api.main import create_app
-from wd_platform_sdk import Capabilities, FakeTextProvider, GraphRegistry
+from wd_platform_sdk import GraphRegistry, InMemoryUsageRecorder
 
 
 def parse(text: str) -> list[tuple[str, dict]]:
@@ -23,9 +23,24 @@ def parse(text: str) -> list[tuple[str, dict]]:
 
 
 @pytest.fixture
-def client():
-    caps = Capabilities(text=FakeTextProvider("Hello there friend"))
-    app = create_app(default_registry(), caps, InMemorySaver(), heartbeat_s=0.05)
+def products(tmp_path):
+    d = tmp_path / "hello"
+    d.mkdir()
+    (d / "product.yaml").write_text(
+        "id: hello\ncapabilities:\n"
+        '  text.chat: { provider: fake, defaults: { reply: "Hello there friend" } }\n'
+    )
+    return tmp_path
+
+
+@pytest.fixture
+def usage():
+    return InMemoryUsageRecorder()
+
+
+@pytest.fixture
+def client(products, usage):
+    app = create_app(default_registry(), products, InMemorySaver(), usage, heartbeat_s=0.05)
     with TestClient(app) as c:
         yield c
 
@@ -41,6 +56,14 @@ def test_hello_run_streams_tokens_and_done(client):
     seqs = [d["seq"] for _, d in events]
     assert seqs == list(range(1, len(seqs) + 1))
     assert events[-1][1]["outputs"]["reply"] == "Hello there friend"
+
+
+def test_run_records_usage_with_tenancy(client, usage):
+    client.post("/products/hello/runs", json={"input": {"message": "hi"}})
+    assert {e.kind for e in usage.events} == {"llm.input_tokens", "llm.output_tokens"}
+    e = usage.events[0]
+    assert (e.tenant_id, e.product_id, e.user_id) == ("dev-tenant", "hello", "dev-user")
+    assert e.run_id
 
 
 def test_unknown_product_404(client):
@@ -66,7 +89,7 @@ class ApproveState(TypedDict, total=False):
     approved: str
 
 
-def _approve_graph(caps: Capabilities, checkpointer: Any):
+def _approve_graph(caps: Any, checkpointer: Any):
     def ask(state: ApproveState) -> ApproveState:
         answer = interrupt({"kind": "approve_draft", "draft": "v1"})
         return {"approved": answer}
@@ -78,10 +101,12 @@ def _approve_graph(caps: Capabilities, checkpointer: Any):
     return g.compile(checkpointer=checkpointer)
 
 
-def test_interrupt_and_resume():
+def test_interrupt_and_resume(tmp_path):
+    (tmp_path / "approve").mkdir()
+    (tmp_path / "approve" / "product.yaml").write_text("id: approve\n")
     registry = GraphRegistry()
     registry.register("approve", _approve_graph)
-    app = create_app(registry, Capabilities(FakeTextProvider()), InMemorySaver(), 0.05)
+    app = create_app(registry, tmp_path, InMemorySaver(), InMemoryUsageRecorder(), heartbeat_s=0.05)
     with TestClient(app) as c:
         first = parse(c.post("/products/approve/runs", json={}).text)
         assert first[-1][0] == "interrupt"

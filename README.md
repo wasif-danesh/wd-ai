@@ -7,7 +7,7 @@ streaming, a stateful agent runtime, a model gateway, GPU media workers, storage
 (later) auth, billing and observability. Each **product** is a thin layer on top: a few
 LangGraph graphs, a Next.js UI and a config file.
 
-> **Status: prototype.** Phases 0-2 are largely done: a walking skeleton streams a model reply
+> **Status: prototype.** Phases 0-3 are largely done: a walking skeleton streams a model reply
 > from Ollama to the browser through every layer, runs in containers, and installs on a local
 > Kubernetes cluster from a Helm chart. The home-lab (k3s + Argo CD) rollout, media generation,
 > auth and the first real product (`wd-music-ai`) are still to come. See the
@@ -34,7 +34,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
                                         │
                                         ├─► Postgres (pgvector, checkpoints, jobs)
                                         ├─► Redis (job queue, pub/sub) ─► Media worker ─► ComfyUI
-                                        └─► Object storage (MinIO / S3 / GCS / Azure Blob)
+                                        └─► Object storage (SeaweedFS / S3 / GCS / Azure Blob)
 ```
 
 1. The browser talks only to the **Next.js** app. Its route handlers (the BFF) proxy to the API
@@ -60,8 +60,12 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | Typed contracts: Pydantic models and generated TypeScript types | Working |
 | Database migrations (tenants, users, threads, jobs, usage events) | Working |
 | Container images and local compose stack | Working |
-| Media worker, ComfyUI, object storage | Placeholder (Phase 3-4) |
-| Auth, quotas, usage events written | Not started (Phase 3, 5) |
+| Capability layer (`litellm`, `comfyui`, `fake`), validated product config | Working |
+| Usage events: token counts written per LLM call | Working |
+| Object storage interface (S3 API via SeaweedFS), presigned URLs | Working locally; not in the Helm chart yet |
+| RAG helpers on pgvector with embeddings (`nomic-embed-text`) | Working (library; no HTTP endpoints) |
+| Media worker, ComfyUI queue | Placeholder (Phase 4) |
+| Auth, per-user quotas | Not started (Phase 5) |
 | Helm chart, local Kubernetes (kind), CI smoke test | Working |
 | k3s home lab with Argo CD | Manifests and runbook written, not yet run (Phase 2) |
 
@@ -183,6 +187,7 @@ missing and points back to `make setup`.
 | Web (Next.js) | http://localhost:3000 |
 | API (FastAPI) | http://localhost:8000 (`/health`, `/docs`) |
 | LiteLLM | http://localhost:4000 |
+| Object storage (S3 API) | http://localhost:8333 |
 | Postgres / Redis | `localhost:5432` / `localhost:6379` |
 
 `make logs` follows container logs, and `make down` stops everything.
@@ -257,8 +262,10 @@ wd-ai/
 ├─ packages/
 │  ├─ contracts/             # Pydantic models: SSE events and request bodies (source of truth)
 │  ├─ contracts-ts/          # TypeScript types generated from the OpenAPI schema
-│  └─ platform-sdk/          # Capability interfaces, graph registry
-├─ products/wd-music-ai/     # product.yaml, graphs/, prompts/, workflows/
+│  └─ platform-sdk/          # Capabilities, providers, product config, storage, usage, graph registry
+├─ products/
+│  ├─ hello/                 # sample product: config only (graph lives in the API)
+│  └─ wd-music-ai/           # product.yaml, graphs/, prompts/, workflows/
 ├─ deploy/
 │  ├─ compose/               # LiteLLM config for the local stack
 │  ├─ helm/wd-ai/            # Helm chart + values overlays (local, staging, prod, cloud/*)
@@ -290,6 +297,7 @@ builds ignore it. More detail: [Configuration](docs/configuration.md).
 
 ```bash
 make test        # Python (no GPU or network needed) + TypeScript tests
+make test-integration   # real Postgres/pgvector, SeaweedFS, LiteLLM + Ollama (needs make dev)
 make lint        # ruff, pyright, Biome, tsc
 make format      # ruff format + autofix
 make contracts   # regenerate TS types from the API's OpenAPI schema
@@ -368,7 +376,7 @@ The same container images run in all three. Only infrastructure and configuratio
 | 0 | Foundations: monorepo, tooling, migrations, containers, CI | Done |
 | 1 | Walking skeleton on the Mac: SSE contract, hello graph, LiteLLM, web streaming | Done |
 | 2 | Skeleton on Kubernetes: Helm, `kind`, home lab k3s, Argo CD | Chart and kind done; home lab pending |
-| 3 | Platform core: capability layer, storage, usage events | Planned |
+| 3 | Platform core: capability layer, storage, usage events, RAG | Done |
 | 4 | Media pipeline: Redis queue, worker, ComfyUI, GPU sharing | Planned |
 | 5 | `wd-music-ai` MVP: song graph, auth, quota, UI | Planned |
 | 6 | Production on GCP | Planned |

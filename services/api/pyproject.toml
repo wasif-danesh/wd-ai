@@ -3,9 +3,20 @@ name = "wd-api"
 version = "0.0.0"
 requires-python = ">=3.12"
 dependencies = [
-  "fastapi>=0.115", "uvicorn[standard]>=0.32", "pydantic>=2.9", "pydantic-settings>=2.6",
-  "sqlalchemy[asyncio]>=2.0", "asyncpg>=0.30", "alembic>=1.14",   "python-json-logger>=2.0", "langgraph>=0.6", "langgraph-checkpoint-postgres>=2.0",
-  "psycopg[binary,pool]>=3.2", "openai>=1.50", "wd-contracts", "wd-platform-sdk",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "sqlalchemy[asyncio]>=2.0",
+  "asyncpg>=0.30",
+  "alembic>=1.14",
+  "python-json-logger>=2.0",
+  "langgraph>=0.6",
+  "langgraph-checkpoint-postgres>=2.0",
+  "psycopg[binary,pool]>=3.2",
+  "openai>=1.50",
+  "wd-contracts",
+  "wd-platform-sdk",
 ]
 
 [build-system]

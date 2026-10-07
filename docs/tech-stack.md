@@ -50,9 +50,9 @@ Items marked *(open)* are undecided between the listed options.
 | PostgreSQL | App data, checkpoints, jobs, usage events |
 | pgvector | Vector search for RAG inside Postgres |
 | Redis | Job queue and pub/sub |
-| MinIO | S3-compatible object storage in dev and staging |
+| SeaweedFS | S3-compatible object storage in dev and staging (MinIO's community image was withdrawn; ADR-0017) |
 | S3 / GCS / Azure Blob | Prod object storage, one per cloud |
-| fsspec or obstore *(open)* | One storage interface across S3, GCS and Azure Blob |
+| obstore | One storage interface across S3, GCS and Azure Blob (ADR-0015) |
 
 ## Containers and local development
 

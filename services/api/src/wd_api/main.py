@@ -1,60 +1,103 @@
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.openapi.utils import get_openapi
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from pydantic import TypeAdapter
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from wd_contracts import SseEvent
-from wd_platform_sdk import Capabilities, GraphRegistry
+from wd_platform_sdk import (
+    GraphRegistry,
+    InMemoryJobSink,
+    ProviderDeps,
+    ScopedStorage,
+    UsageRecorder,
+    build_capabilities,
+    load_product_config,
+    s3_storage,
+)
 
 from wd_api.config import get_settings
 from wd_api.graphs import default_registry
-from wd_api.litellm_provider import LiteLLMTextProvider
 from wd_api.logging import configure_logging, request_id
+from wd_api.rag import DIMENSIONS, RagService
 from wd_api.routes import HEARTBEAT_S, router
 from wd_api.runs import RunManager
-
-# Capability name -> LiteLLM alias. Real bindings move to product.yaml in Phase 3.
-TEXT_ALIASES = {"chat": "default-chat"}
+from wd_api.usage_postgres import PostgresUsageRecorder
 
 
 def create_app(
     registry: GraphRegistry | None = None,
-    caps: Capabilities | None = None,
+    products_dir: Path | None = None,
     checkpointer: Any = None,
+    usage: UsageRecorder | None = None,
+    storage: ScopedStorage | None = None,
+    engine: AsyncEngine | None = None,
     heartbeat_s: float = HEARTBEAT_S,
 ) -> FastAPI:
-    """App factory. Tests inject a fake registry/capabilities/checkpointer."""
+    """App factory. Tests inject a registry, products dir (with `provider: fake` bindings),
+    checkpointer and usage recorder, so no GPU, network or database is needed."""
     settings = get_settings()
     configure_logging(settings.log_level)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        app.state.registry = registry or default_registry()
+        reg = registry or default_registry()
+        pdir = products_dir or Path(settings.products_dir)
+        db = engine or create_async_engine(settings.database_url)
+        recorder = usage or PostgresUsageRecorder(db)
+        store = storage
+        if store is None and settings.storage_access_key:
+            store = ScopedStorage(
+                s3_storage(
+                    bucket=settings.storage_bucket,
+                    endpoint=settings.storage_endpoint,
+                    access_key=settings.storage_access_key,
+                    secret_key=settings.storage_secret_key,
+                    region=settings.storage_region,
+                    public_endpoint=settings.storage_public_endpoint,
+                )
+            )
+        deps = ProviderDeps(
+            products_dir=pdir,
+            usage=recorder,
+            job_sink=InMemoryJobSink(),  # Redis-backed sink arrives with the media worker (Phase 4)
+            litellm_base_url=settings.litellm_base_url,
+            litellm_api_key=settings.litellm_api_key,
+            storage=store,
+            embedding_dims=DIMENSIONS,
+        )
+
+        def build_graphs(saver: Any) -> dict[str, Any]:
+            graphs = {}
+            for product_id in reg.products():
+                # Fails at startup, with every problem listed, if the product config is bad.
+                config = load_product_config(pdir, product_id, env=settings.product_env)
+                caps = build_capabilities(config, deps)
+                if "text.embed" in config.capabilities:
+                    caps.rag = RagService(db, lambda texts, c=caps: c.text.embed("embed", texts))
+                graphs[product_id] = reg.build(product_id, caps, saver)
+            return graphs
+
+        app.state.registry = reg
         app.state.runs = RunManager()
         app.state.heartbeat_s = heartbeat_s
-        provider = caps or Capabilities(
-            text=LiteLLMTextProvider(
-                settings.litellm_base_url, settings.litellm_api_key, TEXT_ALIASES
-            )
-        )
-        if checkpointer is not None:
-            app.state.graphs = {
-                p: app.state.registry.build(p, provider, checkpointer)
-                for p in app.state.registry.products()
-            }
-            yield
-            return
-        async with AsyncPostgresSaver.from_conn_string(settings.checkpoint_url) as saver:
-            await saver.setup()
-            app.state.graphs = {
-                p: app.state.registry.build(p, provider, saver)
-                for p in app.state.registry.products()
-            }
-            yield
+        try:
+            if checkpointer is not None:
+                app.state.graphs = build_graphs(checkpointer)
+                yield
+            else:
+                async with AsyncPostgresSaver.from_conn_string(settings.checkpoint_url) as saver:
+                    await saver.setup()
+                    app.state.graphs = build_graphs(saver)
+                    yield
+        finally:
+            if engine is None:
+                await db.dispose()
 
     app = FastAPI(title="wd-ai API", lifespan=lifespan)
 

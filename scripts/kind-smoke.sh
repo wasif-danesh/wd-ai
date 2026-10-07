@@ -11,6 +11,7 @@ step "Smoke test"
 check "migration job completed" "kubectl -n $NS wait --for=condition=complete job/wd-ai-migrate --timeout=180s"
 check "all deployments available" "kubectl -n $NS wait --for=condition=available deploy --all --timeout=180s"
 check "usage_events table exists" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select to_regclass('public.usage_events')\" | grep -q usage_events"
+check "rag_chunks table + pgvector extension exist" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select to_regclass('public.rag_chunks'), (select count(*) from pg_extension where extname='vector')\" | grep -q 'rag_chunks|1'"
 check "web serves / (HTTP 200)" "curl -fsS -m 10 -o /dev/null http://localhost:3000/"
 
 out="$(curl -sN -m 300 -X POST http://localhost:3000/api/products/hello/runs \
@@ -20,6 +21,10 @@ if [ "${SMOKE_EXPECT_DONE:-0}" = "1" ]; then
   [ "$last" = "done" ] && ok "streamed run finished with done" || { bad "run ended with '${last:-nothing}', expected done"; fail=1; }
 else
   [ "$last" = "done" ] || [ "$last" = "error" ] && ok "streamed run terminated cleanly ($last)" || { bad "no terminal event (got '${last:-nothing}')"; fail=1; }
+fi
+
+if [ "${SMOKE_EXPECT_DONE:-0}" = "1" ]; then
+  check "token usage recorded for the run" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select count(*) from usage_events where kind='llm.output_tokens'\" | grep -qv '^0\$'"
 fi
 
 [ "$fail" -eq 0 ] && printf '\n%sSmoke test passed.%s\n' "$GREEN" "$RESET" || { printf '\n%sSmoke test FAILED.%s\n' "$RED" "$RESET"; exit 1; }

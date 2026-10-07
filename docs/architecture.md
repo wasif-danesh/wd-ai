@@ -55,7 +55,7 @@ flowchart TB
 | ComfyUI | Image, music and video generation from versioned JSON workflows | GPU |
 | Postgres + pgvector | App data, LangGraph checkpoints, job records, usage events, RAG vectors | Managed in prod |
 | Redis | Job queue; pub/sub fan-out of progress events to any API replica | Managed in prod |
-| Object storage | Generated media and uploads. MinIO in dev/staging; S3, GCS or Azure Blob in prod | Managed |
+| Object storage | Generated media and uploads. SeaweedFS (S3 API) in dev/staging; S3, GCS or Azure Blob in prod | Managed |
 
 ## Request flow (generic)
 

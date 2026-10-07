@@ -27,11 +27,11 @@ imagePullSecrets:
 {{- if .Values.ollama.externalUrl -}}{{ .Values.ollama.externalUrl }}{{- else -}}http://{{ .Release.Name }}-ollama:11434{{- end -}}
 {{- end -}}
 
-{{/* Models the Ollama pod must pull: every `ollama_chat/<model>` in litellm.models. */}}
+{{/* Models the Ollama pod must pull: every `ollama_chat/<model>` or `ollama/<model>` in litellm.models. */}}
 {{- define "wd.ollamaModels" -}}
 {{- $models := list -}}
 {{- range .Values.litellm.models -}}
-{{- if hasPrefix "ollama_chat/" .model -}}{{- $models = append $models (trimPrefix "ollama_chat/" .model) -}}{{- end -}}
+{{- if hasPrefix "ollama_chat/" .model -}}{{- $models = append $models (trimPrefix "ollama_chat/" .model) -}}{{- else if hasPrefix "ollama/" .model -}}{{- $models = append $models (trimPrefix "ollama/" .model) -}}{{- end -}}
 {{- end -}}
 {{- join " " (uniq $models) -}}
 {{- end -}}

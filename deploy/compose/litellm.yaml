@@ -11,3 +11,12 @@ model_list:
     litellm_params:
       model: ollama_chat/gpt-oss:20b
       api_base: os.environ/OLLAMA_BASE_URL
+  - model_name: embedder
+    litellm_params:
+      model: ollama/nomic-embed-text
+      api_base: os.environ/OLLAMA_BASE_URL
+
+litellm_settings:
+  # Backends differ in what they accept (e.g. Ollama rejects `encoding_format`); the gateway drops
+  # parameters a backend does not support so callers can use one OpenAI-compatible API.
+  drop_params: true

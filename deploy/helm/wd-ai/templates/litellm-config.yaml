@@ -12,3 +12,5 @@ data:
           model: {{ .model }}
           api_base: os.environ/OLLAMA_BASE_URL
     {{- end }}
+    litellm_settings:
+      drop_params: true

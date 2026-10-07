@@ -9,6 +9,7 @@ dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8", "pyright>=1.1.380", "ht
 
 [tool.uv.workspace]
 members = ["services/*", "packages/contracts", "packages/platform-sdk", "products/*"]
+exclude = ["products/hello"]   # config-only sample product, no Python package
 
 [tool.uv.sources]
 wd-api = { workspace = true }

@@ -37,11 +37,13 @@ prove them while the code is small.
 
 ## Phase 3: Platform core
 
-- [ ] Capability layer: `litellm`, `comfyui` (stubbed), `fake` providers; product config
-      loading and validation
-- [ ] Storage interface with MinIO adapter
-- [ ] pgvector + RAG helpers (not needed by `wd-music-ai`, but part of the core)
-- [ ] Usage events written for LLM calls
+- [x] Capability layer: `litellm`, `comfyui` (stubbed), `fake` providers; product config
+      loading and validation (ADR-0017)
+- [x] Storage interface (obstore) with an S3-compatible adapter; SeaweedFS replaces MinIO, whose
+      community image was withdrawn
+- [x] pgvector + RAG helpers (not needed by `wd-music-ai`, but part of the core)
+- [x] Usage events written for LLM calls
+- [ ] Follow-up (Phase 4): deploy object storage in the Helm chart when the media worker needs it
 
 ## Phase 4: Media pipeline (when the GPU arrives)
 

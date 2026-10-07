@@ -7,13 +7,39 @@ services:
   redis:
     image: redis:7
     ports: ["6379:6379"]
-  minio:
-    profiles: [storage]   # Phase 3; image source to be re-checked (Docker Hub image removed)
-    image: quay.io/minio/minio
-    command: server /data --console-address ":9001"
-    env_file: .env
-    ports: ["9000:9000", "9001:9001"]
-    volumes: ["miniodata:/data"]
+  # S3-compatible object storage (SeaweedFS; MinIO's community image was withdrawn, ADR-0017).
+  seaweedfs:
+    image: docker.io/chrislusf/seaweedfs:latest
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat > /tmp/s3.json <<EOF
+        {"identities":[{"name":"wd","credentials":[{"accessKey":"$$STORAGE_ACCESS_KEY","secretKey":"$$STORAGE_SECRET_KEY"}],"actions":["Admin","Read","Write","List","Tagging"]}]}
+        EOF
+        exec weed server -dir=/data -s3 -s3.port=8333 -s3.config=/tmp/s3.json -volume.max=20 -master.volumeSizeLimitMB=256 -ip.bind=0.0.0.0
+    environment:
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:?run make setup}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:?run make setup}
+    ports: ["8333:8333"]
+    volumes: ["seaweeddata:/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8333/ || exit 1"]
+      interval: 5s
+      retries: 30
+  seaweedfs-init:
+    image: docker.io/chrislusf/seaweedfs:latest
+    depends_on: [seaweedfs]
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for i in $$(seq 1 60); do
+          echo "s3.bucket.create -name $${STORAGE_BUCKET}" | weed shell -master=seaweedfs:9333 2>&1 | grep -qiE "created|exist" && exit 0
+          sleep 2
+        done
+        exit 1
+    environment:
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-wd-ai}
   litellm:
     image: ghcr.io/berriai/litellm:main-stable
     command: ["--config", "/app/config.yaml", "--port", "4000"]
@@ -25,7 +51,7 @@ services:
   api:
     build: { context: ., dockerfile: services/api/Containerfile }
     env_file: .env
-    depends_on: [postgres, redis, litellm]
+    depends_on: [postgres, redis, litellm, seaweedfs]
     ports: ["8000:8000"]
   media-worker:
     build: { context: ., dockerfile: services/media-worker/Containerfile }
@@ -36,4 +62,4 @@ services:
     env_file: .env
     depends_on: [api]
     ports: ["3000:3000"]
-volumes: { pgdata: {}, miniodata: {} }
+volumes: { pgdata: {}, seaweeddata: {} }

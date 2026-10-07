@@ -6,4 +6,5 @@ capabilities:
   image.generate: { provider: comfyui, workflow: qwen-image-fp8, defaults: { width: 1024, height: 1024 } }
 quotas:
   songs_per_user_per_day: 10
-audio_format: mp3
+settings:
+  audio_format: mp3

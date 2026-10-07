@@ -1,7 +1,7 @@
 CONTAINER_ENGINE ?= podman
 export CONTAINER_ENGINE
 
-.PHONY: setup setup-k8s preflight dev down logs migrate test lint format contracts helm-lint kind-up kind-test kind-down
+.PHONY: test-integration setup setup-k8s preflight dev down logs migrate test lint format contracts helm-lint kind-up kind-test kind-down
 setup:
 	./scripts/setup.sh
 setup-k8s:
@@ -19,6 +19,11 @@ migrate:
 test:
 	uv run pytest
 	pnpm test
+# Needs the stack running (make dev): real Postgres + pgvector, SeaweedFS, LiteLLM + Ollama.
+test-integration:
+	DATABASE_URL=postgresql+asyncpg://wd:wd@localhost:5432/wd \
+	LITELLM_BASE_URL=http://localhost:4000 STORAGE_ENDPOINT=http://localhost:8333 \
+	uv run pytest services/api/tests/integration -v
 lint:
 	uv run ruff check . && uv run ruff format --check . && uv run pyright
 	pnpm lint && pnpm typecheck

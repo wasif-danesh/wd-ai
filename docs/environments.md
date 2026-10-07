@@ -13,7 +13,7 @@ environment. Differences live in env vars and Helm values overlays.
 | Media | ComfyUI native, or home lab ComfyUI via Tailscale, or stub worker | ComfyUI pod, GPU time-sliced | ComfyUI GPU pool, KEDA scale-to-zero |
 | Postgres | Container | CloudNativePG | Managed (RDS, Cloud SQL, Azure Flexible Server) |
 | Redis | Container | In-cluster | Managed |
-| Object storage | MinIO | MinIO | S3, GCS or Azure Blob |
+| Object storage | SeaweedFS | SeaweedFS | S3, GCS or Azure Blob |
 | Secrets | `.env` (gitignored) | SOPS / External Secrets | External Secrets from cloud secret manager |
 | Deploys | Manual | Auto-sync from `main` | Promotion only (tag or PR) |
 
@@ -21,7 +21,7 @@ environment. Differences live in env vars and Helm values overlays.
 
 - **Engine:** Podman + Podman Desktop. Scripts use `${CONTAINER_ENGINE:-podman}` so Colima or
   Docker also work.
-- **Containers:** API, Next.js, LiteLLM, media worker, Postgres, Redis, MinIO.
+- **Containers:** API, Next.js, LiteLLM, media worker, Postgres, Redis, SeaweedFS.
 - **Native on the host:** Ollama and ComfyUI. Containers on macOS cannot use the Metal GPU.
   Containers reach them at `host.containers.internal`, configured through
   `OLLAMA_BASE_URL` / `COMFYUI_BASE_URL`.

@@ -32,12 +32,14 @@ if [ -n "$mem" ] && [ "$mem" -lt 4096 ]; then
 fi
 
 if [ -f "$ROOT/.env" ]; then
-  key="$(env_value LITELLM_API_KEY)"
-  if [ -z "$key" ] || [ "$key" = "sk-dev-change-me" ]; then
-    need ".env has no real LITELLM_API_KEY (LiteLLM refuses to start without one)"
-  else
-    ok ".env present with LITELLM_API_KEY set"
-  fi
+  for k in LITELLM_API_KEY STORAGE_SECRET_KEY; do
+    v="$(env_value $k)"
+    if [ -z "$v" ] || [ "$v" = "sk-dev-change-me" ] || [ "$v" = "change-me" ]; then
+      need ".env has no real $k (run make setup)"
+    else
+      ok ".env has $k set"
+    fi
+  done
 else
   need ".env is missing"
 fi

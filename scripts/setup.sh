@@ -196,6 +196,12 @@ fi
 # ---- 4. .env -----------------------------------------------------------------------------
 step "Environment file"
 [ -f "$ROOT/.env" ] || { cp "$ROOT/.env.example" "$ROOT/.env"; ok "created .env from .env.example"; }
+# Upgrades: add keys introduced since .env was created (values come from .env.example).
+while IFS= read -r line; do
+  key="${line%%=*}"
+  case "$line" in ""|\#*) continue ;; esac
+  grep -qE "^$key=" "$ROOT/.env" || { echo "$line" >> "$ROOT/.env"; ok "added new setting $key to .env"; }
+done < "$ROOT/.env.example"
 set_secret() { # set_secret KEY PLACEHOLDER PREFIX: replace a placeholder with a random value
   cur="$(env_value "$1")"
   if [ -z "$cur" ] || [ "$cur" = "$2" ]; then
@@ -206,7 +212,7 @@ set_secret() { # set_secret KEY PLACEHOLDER PREFIX: replace a placeholder with a
 }
 set_secret LITELLM_API_KEY sk-dev-change-me sk-
 set_secret AUTH_SECRET change-me ""
-set_secret MINIO_ROOT_PASSWORD change-me ""
+set_secret STORAGE_SECRET_KEY change-me ""
 
 # ---- 5. Dependencies ---------------------------------------------------------------------
 step "Dependencies"

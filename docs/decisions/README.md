@@ -18,5 +18,6 @@
 | [0014](0014-shared-nextjs-app.md) | One shared Next.js app with route groups | Accepted |
 | [0015](0015-phase-0-tooling-choices.md) | Phase 0 tooling choices | Accepted |
 | [0016](0016-helm-chart-structure.md) | One umbrella Helm chart, plain Ingress, in-cluster state for non-prod | Accepted |
+| [0017](0017-platform-core-design.md) | Platform core: capability layer, usage events, storage and RAG | Accepted |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.

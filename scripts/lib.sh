@@ -18,13 +18,14 @@ have() { command -v "$1" >/dev/null 2>&1; }
 
 # Models the stack needs, derived from the single source of truth (LiteLLM config).
 required_models() {
-  grep -o 'ollama_chat/[^[:space:]]*' "$ROOT/deploy/compose/litellm.yaml" | sed 's|ollama_chat/||' | sort -u
+  grep -oE 'ollama(_chat)?/[^[:space:]]+' "$ROOT/deploy/compose/litellm.yaml" | sed -E 's|^ollama(_chat)?/||' | sort -u
 }
 
 ollama_up() { curl -fsS -m 3 "$OLLAMA_URL/api/tags" >/dev/null 2>&1; }
 
 ollama_has_model() {
-  curl -fsS -m 5 "$OLLAMA_URL/api/tags" 2>/dev/null | grep -q "\"name\":\"$1\""
+  # Untagged names in config (e.g. nomic-embed-text) are listed by Ollama as <name>:latest.
+  curl -fsS -m 5 "$OLLAMA_URL/api/tags" 2>/dev/null | grep -qE "\"name\":\"$1(:latest)?\""
 }
 
 env_value() { # env_value KEY -> value from .env (never printed by callers)

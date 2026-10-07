@@ -16,6 +16,17 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://host.containers.internal:11434"
     log_level: str = "INFO"
 
+    products_dir: str = "products"
+    product_env: str = ""  # selects products/<id>/product.<env>.yaml overlays
+
+    # S3-compatible object storage (SeaweedFS in dev and staging; S3/GCS in the clouds).
+    storage_endpoint: str = "http://localhost:8333"
+    storage_public_endpoint: str = ""  # browser-facing URL if it differs from storage_endpoint
+    storage_bucket: str = "wd-ai"
+    storage_region: str = "us-east-1"
+    storage_access_key: str = ""
+    storage_secret_key: str = ""
+
     @property
     def checkpoint_url(self) -> str:
         """psycopg-style DSN for the LangGraph Postgres checkpointer."""
