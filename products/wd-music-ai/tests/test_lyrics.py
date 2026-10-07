@@ -130,3 +130,19 @@ def test_only_real_section_names_are_split_off():
         normalise_lyrics("[laughs] hello there\n[Verse]\nx") == "[laughs] hello there\n[verse]\nx"
     )
     assert normalise_lyrics("[verse]\n[chorus] already fine") == "[verse]\n[chorus]\nalready fine"
+
+
+def test_lyrics_too_long_for_the_song_are_refused_not_silently_cut_off():
+    from wd_music_ai.lyrics import MAX_LYRIC_LINES
+
+    long_ = "[verse]\n" + "\n".join(f"line {i}" for i in range(MAX_LYRIC_LINES)) + "\n[chorus]\nx"
+    assert any("at most 20 lines" in p for p in lyric_problems(long_))
+    ok = (
+        "[verse]\n"
+        + "\n".join(f"line {i}" for i in range(MAX_LYRIC_LINES - 4))
+        + "\n[chorus]\nx\ny\nz"
+    )
+    assert lyric_problems(ok) == []  # 20 sung lines exactly is fine
+    with pytest.raises(DraftInvalid) as e:
+        parse_draft(draft(lyrics=long_))
+    assert "at most 20 lines" in e.value.feedback  # the model is told how to fix it

@@ -1,10 +1,10 @@
 workflow: flux2-klein-4b.json
 licence: "Apache-2.0 per the FLUX.2 [klein] 4B model card (ADR-0019). The 9B variant is licensed differently and is not used"
 notes: >
-  Structure validated against ComfyUI 0.39 (/prompt reports only the missing UNET and VAE files).
-  NOT executed: klein is not installed on the dev machine. The text encoder (qwen_3_4b) is the
-  file already used by other workflows. Confirm model filenames, the guider/CFG and step settings
-  for the distilled model against a workflow exported from ComfyUI.
+  Executed against ComfyUI 0.39: a 1024x1024 cover takes about 25 s and the output is a valid PNG.
+  It matches the official ComfyUI template (4 steps, cfg 1). The VAE comes from the
+  Comfy-Org/flux2-klein repo (Apache-2.0); the template points at the flux2-dev VAE, which carries a
+  non-commercial label, so do not swap it in. Run `make test-comfyui` to re-check.
 models:
   - diffusion_models/flux-2-klein-4b.safetensors
   - text_encoders/qwen_3_4b.safetensors

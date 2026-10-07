@@ -23,6 +23,9 @@ _SECTIONS = {
 # Models write this often. Only real section names are split, so "[laughs] hello" is left alone.
 _INLINE_TAG = re.compile(r"^\s*\[\s*([A-Za-z][A-Za-z -]*?)\s*(?:\d+)?\s*\]\s*(\S.*)$")
 MIN_LYRIC_LINES = 6
+# Measured with the real model: a line takes about 4 seconds to sing, and 16 lines fill a
+# 60-second song. Much beyond that is cut off, so it is refused rather than silently lost.
+MAX_LYRIC_LINES = 20
 
 
 class DraftInvalid(ValueError):
@@ -64,6 +67,10 @@ def lyric_problems(lyrics: str) -> list[str]:
     sung = [ln for ln in lyrics.split("\n") if ln.strip() and not _TAG_LINE.match(ln)]
     if len(sung) < MIN_LYRIC_LINES:
         problems.append(f"have at least {MIN_LYRIC_LINES} lines of lyrics")
+    if len(sung) > MAX_LYRIC_LINES:
+        problems.append(
+            f"have at most {MAX_LYRIC_LINES} lines of lyrics (a 60-second song fits about 16)"
+        )
     return problems
 
 

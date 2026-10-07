@@ -25,5 +25,6 @@
 | [0021](0021-media-pipeline-redis-streams.md) | Media pipeline on Redis Streams | Accepted |
 | [0022](0022-song-graph-and-guardrail.md) | The song graph and its guardrail | Accepted |
 | [0023](0023-product-provided-routes.md) | Product-provided API routes | Accepted |
+| [0024](0024-real-model-validation.md) | Real-model validation of the music and cover workflows | Accepted |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.

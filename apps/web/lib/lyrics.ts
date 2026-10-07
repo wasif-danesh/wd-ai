@@ -40,6 +40,9 @@ export function lyricProblems(text: string): string[] {
   if (!HAS_TAG("chorus").test(text)) problems.push("Add a [chorus] section tag on its own line.");
   const sung = text.split("\n").filter((l) => l.trim() && !/^\s*\[[^\]]+\]\s*$/.test(l));
   if (sung.length < 6) problems.push("Write at least 6 lines of lyrics.");
+  // About 16 lines fit in a 60-second song; much more would be cut off.
+  if (sung.length > 20)
+    problems.push("Keep it to 20 lines or fewer: a 60-second song fits about 16.");
   if (text.length > 3000) problems.push("Keep the lyrics under 3000 characters.");
   return problems;
 }

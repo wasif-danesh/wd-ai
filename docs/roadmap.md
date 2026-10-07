@@ -67,11 +67,8 @@ See [product spec](../products/wd-music-ai/README.md).
       daily quota, validated and streamed lyrics, `songs` table (migration 0004); tested with a
       scripted fake model and end to end with the real model, Postgres, Redis and a stub worker
 - [x] Guardrail evaluation on `gemma4:e4b` (results in ADR-0022)
-- [x] ACE-Step 1.5 and FLUX.2 klein 4B workflows + map files, structure-validated against ComfyUI
-      0.39. **Not executed**: the models are not installed, so filenames and sampler settings are
-      unverified (licences: verify ACE-Step's before launch)
-- [ ] Run both workflows for real: download the models (ask first), export working workflows from
-      ComfyUI, update the map files, then listen to and look at the output
+- [x] ACE-Step 1.5 and FLUX.2 klein 4B workflows + map files, run for real on ComfyUI 0.39 and
+      through the UI (results and licences in ADR-0024)
 - [ ] Auth.js with Google, GitHub, Microsoft; FastAPI validates the token (replaces the stub user)
 - [x] UI: idea form, live lyric streaming, review and edit, progress with queue position, player,
       cover, downloads, "My songs", song page (see `apps/web/README.md`); verified in a browser against

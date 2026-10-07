@@ -45,3 +45,13 @@ describe("lyricProblems (mirrors the server's checks)", () => {
     );
   });
 });
+
+describe("lyric length", () => {
+  const lines = (n: number) => Array.from({ length: n }, (_, i) => `line ${i}`).join("\n");
+  it("allows up to 20 lines and says why more is refused", () => {
+    expect(lyricProblems(`[verse]\n${lines(18)}\n[chorus]\nx\ny`)).toEqual([]);
+    expect(lyricProblems(`[verse]\n${lines(19)}\n[chorus]\nx\ny`)).toEqual([
+      "Keep it to 20 lines or fewer: a 60-second song fits about 16.",
+    ]);
+  });
+});

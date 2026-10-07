@@ -24,9 +24,10 @@ test-integration:
 	DATABASE_URL=postgresql+asyncpg://wd:wd@localhost:5432/wd \
 	LITELLM_BASE_URL=http://localhost:4000 STORAGE_ENDPOINT=http://localhost:8333 \
 	uv run pytest services/api/tests/integration -v
-# Generates a real image on your local ComfyUI (slow on first use: loads a 12 GB model).
+# Real generation on your local ComfyUI: an image, then (if installed) the product's own music and
+# cover workflows (ACE-Step 1.5 and FLUX.2 klein). Slow on first use: models load into memory.
 test-comfyui:
-	COMFYUI_E2E=1 uv run pytest services/api/tests/integration/test_media_e2e.py -v -k real
+	COMFYUI_E2E=1 uv run pytest services/api/tests/integration/test_media_e2e.py services/api/tests/integration/test_real_models.py -v
 lint:
 	uv run ruff check . && uv run ruff format --check . && uv run pyright
 	pnpm lint && pnpm typecheck

@@ -138,8 +138,8 @@ products/wd-music-ai/
 | Capability | Model | Licence note |
 |---|---|---|
 | Lyrics, moderation | Gemma 4 E4B via LiteLLM (ADR-0018) | Apache 2.0 |
-| Music | ACE-Step 1.5 (Turbo for speed) | Permissive, commercial use of outputs stated on model card. Sources disagree on MIT vs Apache 2.0: **verify before launch** |
-| Cover | FLUX.2 [klein] 4B (ADR-0019) | Apache 2.0 per the model card. The 9B variant is licensed differently and is not used |
+| Music | ACE-Step 1.5 (Turbo for speed) | MIT per the model card. Run for real: a 60 s song takes about 77 s; keep lyrics to 12-16 lines (ADR-0024) |
+| Cover | FLUX.2 [klein] 4B (ADR-0019) | Apache 2.0 per the model card, VAE from Comfy-Org/flux2-klein. The 9B variant is licensed differently and is not used. About 25 s per cover |
 | Not used | YuE2-3B | CC-BY-NC-4.0, non-commercial. Reconsider only if relicensed (ADR-0012) |
 
 ## Data
