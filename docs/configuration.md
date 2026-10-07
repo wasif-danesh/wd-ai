@@ -45,7 +45,7 @@ capabilities:
     defaults: { duration_s: 60 }
   image.generate:
     provider: comfyui
-    workflow: qwen-image-fp8
+    workflow: flux2-klein-4b
     defaults: { width: 1024, height: 1024 }
 quotas:
   songs_per_user_per_day: 10

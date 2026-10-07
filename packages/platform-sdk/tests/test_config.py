@@ -82,6 +82,6 @@ def test_committed_product_configs_are_valid(product):
 
 
 def test_music_workflows_are_still_missing_until_phase_5():
-    """Documents the known gap: the ACE-Step / Qwen-Image workflow exports arrive in Phase 5."""
+    """Documents the known gap: the ACE-Step / FLUX.2 klein workflow exports arrive in Phase 5."""
     with pytest.raises(ConfigError, match="workflow map not found"):
         load_product_config(REPO_PRODUCTS, "wd-music-ai", environ={}, check_files=True)

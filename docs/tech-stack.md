@@ -38,10 +38,10 @@ Items marked *(open)* are undecided between the listed options.
 | Ollama | LLM serving in dev (native) and staging (pod) |
 | vLLM | High-throughput LLM serving on dedicated GPUs in prod |
 | ComfyUI | Image, music and video generation via versioned JSON workflows |
-| Qwen / Llama | Open-weight LLMs for lyrics, prompts and reasoning |
+| Gemma 4 E4B | Default text model (multimodal input); Qwen or Llama remain possible behind LiteLLM (ADR-0018) |
 | ACE-Step 1.5 | Music generation for `wd-music-ai` (commercial use permitted; see ADR-0012) |
-| Qwen-Image | Cover art generation for `wd-music-ai` (fp8 or GGUF to fit 24 GB) |
-| SDXL / Flux | Other image models available through the same capability |
+| FLUX.2 [klein] 4B | Cover art generation for `wd-music-ai` (Apache 2.0, ~13 GB VRAM; see ADR-0019) |
+| SD 1.5 / SDXL / other Flux | Other image models available through the same capability |
 
 ## Data and storage
 

@@ -14,7 +14,7 @@ with vocals, and creates cover art.
 - Lyrics generation with a review step: the user can edit or regenerate before audio is
   generated
 - 60-second music track (ACE-Step 1.5 via ComfyUI)
-- Cover image (Qwen-Image via ComfyUI)
+- Cover image (FLUX.2 [klein] 4B via ComfyUI)
 - Live progress, including queue position
 - Song page: title, lyrics, audio player, cover, download
 - "My songs" history
@@ -88,7 +88,7 @@ capabilities:
   text.moderate:  { provider: litellm, model: moderator }
   text.lyrics:    { provider: litellm, model: lyrics-writer }
   music.generate: { provider: comfyui, workflow: ace-step-1.5-turbo, defaults: { duration_s: 60 } }
-  image.generate: { provider: comfyui, workflow: qwen-image-fp8, defaults: { width: 1024, height: 1024 } }
+  image.generate: { provider: comfyui, workflow: flux2-klein-4b, defaults: { width: 1024, height: 1024 } }
 quotas:
   songs_per_user_per_day: 10
 ```
@@ -106,17 +106,17 @@ products/wd-music-ai/
 └─ workflows/
    ├─ ace-step-1.5-turbo.json
    ├─ ace-step-1.5-turbo.map.yaml
-   ├─ qwen-image-fp8.json
-   └─ qwen-image-fp8.map.yaml
+   ├─ flux2-klein-4b.json
+   └─ flux2-klein-4b.map.yaml
 ```
 
 ## Models and licences
 
 | Capability | Model | Licence note |
 |---|---|---|
-| Lyrics, moderation | Qwen or Llama via LiteLLM | Check the specific model's licence (Llama has its own community licence) |
+| Lyrics, moderation | Gemma 4 E4B via LiteLLM (ADR-0018) | Apache 2.0 |
 | Music | ACE-Step 1.5 (Turbo for speed) | Permissive, commercial use of outputs stated on model card. Sources disagree on MIT vs Apache 2.0: **verify before launch** |
-| Cover | Qwen-Image (fp8 / GGUF for 24 GB) | Believed Apache 2.0: **verify before launch** |
+| Cover | FLUX.2 [klein] 4B (ADR-0019) | Apache 2.0 per the model card. The 9B variant is licensed differently and is not used |
 | Not used | YuE2-3B | CC-BY-NC-4.0, non-commercial. Reconsider only if relicensed (ADR-0012) |
 
 ## Data
@@ -133,7 +133,7 @@ products/wd-music-ai/
 - **Cost / capacity:** GPU time. Mitigated by quotas, queueing, review-before-generate.
 - **Quality:** 60-second structure from ACE-Step. Tune lyric length and tags; consider
   best-of-N later.
-- **Dev on Mac:** ACE-Step / Qwen-Image may be slow on Apple Silicon. Use the home lab
+- **Dev on Mac:** ACE-Step / FLUX.2 klein may be slow on Apple Silicon. Use the home lab
   ComfyUI over Tailscale, or the stub worker.
 
 ## Decisions (prototype)

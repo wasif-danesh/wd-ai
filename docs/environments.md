@@ -25,7 +25,7 @@ environment. Differences live in env vars and Helm values overlays.
 - **Native on the host:** Ollama and ComfyUI. Containers on macOS cannot use the Metal GPU.
   Containers reach them at `host.containers.internal`, configured through
   `OLLAMA_BASE_URL` / `COMFYUI_BASE_URL`.
-- **Heavy models:** ACE-Step and Qwen-Image may be slow or incomplete on Apple Silicon. Set
+- **Heavy models:** ACE-Step and FLUX.2 klein may be slow or incomplete on Apple Silicon. Set
   `COMFYUI_BASE_URL` to the home lab ComfyUI over Tailscale, or run the worker in stub mode
   (returns sample files) for UI work.
 - **Kubernetes testing:** `kind` with Podman (`KIND_EXPERIMENTAL_PROVIDER=podman`). Prefer

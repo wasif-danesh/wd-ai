@@ -58,7 +58,7 @@ prove them while the code is small.
 See [product spec](../products/wd-music-ai/README.md).
 
 - [ ] Song graph: guardrails → lyrics → approve → music job → cover job → done
-- [ ] ACE-Step 1.5 and Qwen-Image workflows + map files (licences verified)
+- [ ] ACE-Step 1.5 and FLUX.2 klein 4B workflows + map files (licences verified)
 - [ ] Auth.js with Google, GitHub, Microsoft; FastAPI validates the token
 - [ ] Per-user daily quota
 - [ ] UI: idea form, lyrics editor, queue position, player, cover, history
