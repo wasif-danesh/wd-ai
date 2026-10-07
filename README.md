@@ -66,6 +66,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | Object storage interface (S3 API via SeaweedFS), presigned URLs | Working locally; not in the Helm chart yet |
 | RAG helpers on pgvector with embeddings (`nomic-embed-text`) | Working (library; no HTTP endpoints) |
 | Media pipeline: Redis queue, worker, ComfyUI client, live `job_progress`, queue positions | Working; real ComfyUI verified locally, GPU on k3s untested |
+| `wd-music-ai` web app: create, review lyrics, progress, player, My songs | Working locally; sign-in still a stub user |
 | Auth, per-user quotas | Not started (Phase 5) |
 | Helm chart, local Kubernetes (kind), CI smoke test | Working |
 | k3s home lab with Argo CD | Manifests and runbook written, not yet run (Phase 2) |
@@ -91,7 +92,13 @@ make setup      # installs missing tools, starts Podman + Ollama, pulls the mode
 make dev        # starts the stack, waits for Postgres, runs migrations, follows logs
 ```
 
-Then open http://localhost:3000 and press **Run**. A reply from the model streams into the page.
+Then open http://localhost:3000, describe a song, and watch it get written. You approve the lyrics, then
+the music and cover are made (placeholders unless a real ComfyUI is connected; see
+[Hardware notes](#hardware-notes)).
+
+| Create | Review the lyrics | Your song |
+|---|---|---|
+| ![Create a song](docs/images/create.jpg) | ![Review and edit the lyrics](docs/images/review.jpg) | ![A finished song](docs/images/song.jpg) |
 
 If `make` is not installed yet (common on a fresh Linux box), run the script directly. It
 installs `make` for you: `./scripts/setup.sh`, then `make dev`.
@@ -267,7 +274,7 @@ http://localhost:8000/docs.
 
 ```
 wd-ai/
-├─ apps/web/                 # Next.js app: UI + BFF route handlers
+├─ apps/web/                 # Next.js app: song UI, BFF route handlers (see its README)
 ├─ services/
 │  ├─ api/                   # FastAPI + LangGraph runtime (graphs, runs, identity, migrations)
 │  └─ media-worker/          # Redis consumer that will drive ComfyUI (placeholder)

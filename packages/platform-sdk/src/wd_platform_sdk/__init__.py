@@ -13,6 +13,7 @@ from wd_platform_sdk.config import (
 from wd_platform_sdk.context import RunContext, require_context, reset_context, set_context
 from wd_platform_sdk.errors import RunError
 from wd_platform_sdk.eventlog import EventLog, InMemoryEventLog, RedisEventLog
+from wd_platform_sdk.identity import Identity
 from wd_platform_sdk.jobqueue import RedisJobSink
 from wd_platform_sdk.jobs import (
     InMemoryJobSink,
@@ -36,6 +37,7 @@ from wd_platform_sdk.parts import (
 )
 from wd_platform_sdk.providers import ProviderDeps, build_capabilities, register_provider
 from wd_platform_sdk.registry import GraphRegistry
+from wd_platform_sdk.routes import RouteDeps, RouteFactory
 from wd_platform_sdk.runstore import InMemoryRunStore, RedisRunStore, RunRecord, RunStore
 from wd_platform_sdk.storage import ScopedStorage, Storage, memory_storage, object_key, s3_storage
 from wd_platform_sdk.usage import InMemoryUsageRecorder, UsageEvent, UsageRecorder
@@ -43,6 +45,9 @@ from wd_platform_sdk.usage_postgres import PostgresUsageRecorder
 from wd_platform_sdk.usage_queries import start_of_day_utc, sum_usage
 
 __all__ = [
+    "Identity",
+    "RouteDeps",
+    "RouteFactory",
     "RunError",
     "start_of_day_utc",
     "sum_usage",

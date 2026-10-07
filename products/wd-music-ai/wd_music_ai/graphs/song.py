@@ -304,6 +304,15 @@ def build_song_graph(caps: Capabilities, checkpointer: Any, songs: SongStore, qu
     # ---- cover --------------------------------------------------------------------------
 
     async def screen_cover(state: SongState) -> SongState:
+        write = get_stream_writer()
+        write(
+            {
+                "type": "node",
+                "node": "screen_cover",
+                "status": "started",
+                "label": "Preparing the cover art",
+            }
+        )
         verdict = await guardrail.judge(caps, "cover art description", state["cover_prompt"])
         if verdict.allowed:
             return {}

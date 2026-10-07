@@ -47,3 +47,35 @@ def test_committed_hello_config_boots(tmp_path):
     )
     with TestClient(app) as c:
         assert c.get("/health").json() == {"status": "ok"}
+
+
+def test_every_product_route_requires_an_identity():
+    """Rule 8: no endpoint skips identity. With identity resolution rejecting everyone, every
+    route a product adds must answer 401 (checked black-box, from the OpenAPI document)."""
+    from pathlib import Path
+
+    from fastapi import HTTPException
+    from wd_api.identity import get_identity
+
+    products = Path(__file__).resolve().parents[3] / "products"
+    app = create_app(
+        default_registry(),
+        products,
+        InMemorySaver(),
+        InMemoryUsageRecorder(),
+        event_log=InMemoryEventLog(),
+        run_store=InMemoryRunStore(),
+    )
+
+    def nobody():
+        raise HTTPException(401, "no identity")
+
+    app.dependency_overrides[get_identity] = nobody
+    paths = app.openapi()["paths"]
+    mine = {p: ops for p, ops in paths.items() if p.startswith("/products/wd-music-ai/")}
+    assert "/products/wd-music-ai/songs" in mine and "/products/wd-music-ai/songs/{song_id}" in mine
+    with TestClient(app, raise_server_exceptions=False) as client:
+        for path, ops in mine.items():
+            for method in ops:
+                resp = client.request(method.upper(), path.replace("{song_id}", "x"))
+                assert resp.status_code == 401, (method, path, resp.status_code)

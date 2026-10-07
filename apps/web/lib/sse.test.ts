@@ -23,3 +23,23 @@ describe("parseSse", () => {
     expect(out[0].id).toBe("1");
   });
 });
+
+describe("parseSse robustness", () => {
+  it("handles several events in one chunk and an event with multi-line data", async () => {
+    const enc = new TextEncoder();
+    const text =
+      'id: 1\nevent: token\ndata: {"seq":1}\n\nid: 2\nevent: done\ndata: {"a":\ndata: 1}\n\n';
+    const body = new ReadableStream<Uint8Array>({
+      start(c) {
+        c.enqueue(enc.encode(text));
+        c.close();
+      },
+    });
+    const out = [];
+    for await (const e of parseSse(body)) out.push([e.event, e.id]);
+    expect(out).toEqual([
+      ["token", "1"],
+      ["done", "2"],
+    ]);
+  });
+});

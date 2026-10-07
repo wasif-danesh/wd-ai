@@ -357,6 +357,132 @@
         "title": "RunRequest",
         "type": "object"
       },
+      "SongDetail": {
+        "properties": {
+          "audio_url": {
+            "title": "Audio Url",
+            "type": "string"
+          },
+          "cover_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Url"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lyrics": {
+            "title": "Lyrics",
+            "type": "string"
+          },
+          "style": {
+            "title": "Style",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "style",
+          "created_at",
+          "audio_url",
+          "cover_url",
+          "lyrics"
+        ],
+        "title": "SongDetail",
+        "type": "object"
+      },
+      "SongPage": {
+        "properties": {
+          "next_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          },
+          "songs": {
+            "items": {
+              "$ref": "#/components/schemas/SongSummary"
+            },
+            "title": "Songs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "songs",
+          "next_before"
+        ],
+        "title": "SongPage",
+        "type": "object"
+      },
+      "SongSummary": {
+        "properties": {
+          "audio_url": {
+            "title": "Audio Url",
+            "type": "string"
+          },
+          "cover_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Url"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "style": {
+            "title": "Style",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "style",
+          "created_at",
+          "audio_url",
+          "cover_url"
+        ],
+        "title": "SongSummary",
+        "type": "object"
+      },
       "SseEvent": {
         "discriminator": {
           "mapping": {
@@ -503,6 +629,110 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/products/wd-music-ai/songs": {
+      "get": {
+        "operationId": "list_songs_products_wd_music_ai_songs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SongPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Songs",
+        "tags": [
+          "wd-music-ai"
+        ]
+      }
+    },
+    "/products/wd-music-ai/songs/{song_id}": {
+      "get": {
+        "operationId": "get_song_products_wd_music_ai_songs__song_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "song_id",
+            "required": true,
+            "schema": {
+              "title": "Song Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SongDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Song",
+        "tags": [
+          "wd-music-ai"
+        ]
       }
     },
     "/products/{product_id}/runs": {

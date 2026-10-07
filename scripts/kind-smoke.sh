@@ -13,6 +13,9 @@ check "all deployments available" "kubectl -n $NS wait --for=condition=available
 check "usage_events table exists" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select to_regclass('public.usage_events')\" | grep -q usage_events"
 check "rag_chunks table + pgvector extension exist" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select to_regclass('public.rag_chunks'), (select count(*) from pg_extension where extname='vector')\" | grep -q 'rag_chunks|1'"
 check "web serves / (HTTP 200)" "curl -fsS -m 10 -o /dev/null http://localhost:3000/"
+check "My songs page renders (server-side read of the API)" "curl -fsS -m 20 http://localhost:3000/songs | grep -q 'My songs'"
+check "songs API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-music-ai/songs | grep -q '\"songs\"'"
+check "an unknown song is a real 404" "test \"\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/songs/00000000-0000-0000-0000-000000000000)\" = 404"
 
 # Media pipeline: queue -> worker (stub mode) -> object storage -> completion -> graph resumes.
 # Needs no LLM or GPU, so it also runs in CI.
@@ -26,7 +29,8 @@ check "worker usage recorded (job.completed)" "kubectl -n $NS exec statefulset/w
 if [ "${SMOKE_EXPECT_DONE:-0}" = "1" ]; then
   song="$(curl -sN -m 300 -X POST http://localhost:3000/api/products/wd-music-ai/runs \
     -H 'content-type: application/json' -d '{"input":{"idea":"a rainy night in Tokyo","genre":"indie pop"}}' 2>&1)"
-  check "song: guardrail passed, lyrics written, waiting for approval" "printf '%s' \"\$song\" | tail -3 | grep -q 'event: interrupt' && printf '%s' \"\$song\" | grep -q 'approve_lyrics'"
+  check "song: guardrail passed, lyrics written, waiting for approval" "printf '%s' \"\$song\" | tail -3 | grep -q 'event: interrupt' && printf '%s' \"\$song\" | grep -q 'approve_lyrics'" \
+    || { echo "    what the stream ended with:"; printf '%s' "$song" | tail -c 700 | sed 's/^/    /'; }
 fi
 
 out="$(curl -sN -m 300 -X POST http://localhost:3000/api/products/hello/runs \

@@ -105,9 +105,10 @@ A product is a folder under `products/` containing:
 - `prompts/`: versioned prompt templates
 - `workflows/`: ComfyUI API-format workflow JSON plus `*.map.yaml` input/output maps
 
-Adding a product adds no API endpoints. The API's graph registry exposes registered graphs
-through generic `/products/{product_id}/runs` routes (ADR-0003). Product UIs live in
-`apps/web` (one Next.js app per product, or route groups in a shared app; decide in Phase 0).
+Adding a product adds no endpoints for running it: the API's graph registry exposes registered
+graphs through generic `/products/{product_id}/runs` routes (ADR-0003). A product may add
+authenticated read routes for its own data under `/products/{product_id}/` (ADR-0023). Product UIs
+live in one shared Next.js app, `apps/web` (ADR-0014).
 
 ## Capabilities
 

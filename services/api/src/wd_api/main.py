@@ -21,6 +21,7 @@ from wd_platform_sdk import (
     RedisEventLog,
     RedisJobSink,
     RedisRunStore,
+    RouteDeps,
     RunStore,
     ScopedStorage,
     UsageRecorder,
@@ -31,6 +32,7 @@ from wd_platform_sdk import (
 
 from wd_api.config import get_settings
 from wd_api.graphs import default_registry
+from wd_api.identity import get_identity
 from wd_api.jobs_consumer import JobCompletionConsumer
 from wd_api.logging import configure_logging, request_id
 from wd_api.rag import DIMENSIONS, RagService
@@ -57,10 +59,11 @@ def create_app(
     also starts the completion consumer that resumes graphs paused on media jobs."""
     settings = get_settings()
     configure_logging(settings.log_level)
+    products_registry = registry or default_registry()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        reg = registry or default_registry()
+        reg = products_registry
         pdir = products_dir or Path(settings.products_dir)
         db = engine or create_async_engine(settings.database_url)
         recorder = usage or PostgresUsageRecorder(db)
@@ -107,6 +110,8 @@ def create_app(
             return graphs
 
         app.state.registry = reg
+        app.state.engine = db
+        app.state.storage = store
         app.state.heartbeat_s = heartbeat_s
         consumer: JobCompletionConsumer | None = None
         try:
@@ -148,6 +153,13 @@ def create_app(
         return {"status": "ok"}
 
     app.include_router(router)
+
+    # Product-provided routes (ADR-0023): mounted now so the OpenAPI schema (and the TypeScript
+    # types generated from it) include them; the database and storage they use are read from
+    # app.state at request time.
+    route_deps = RouteDeps(app.state, get_identity)
+    for product_id, factory in products_registry.route_factories().items():
+        app.include_router(factory(route_deps), prefix=f"/products/{product_id}")
 
     def custom_openapi() -> dict[str, Any]:
         if app.openapi_schema:

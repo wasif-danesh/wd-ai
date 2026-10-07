@@ -1,9 +1,9 @@
 # wd-music-ai
 
-Status: **MVP in progress.** The backend is built and tested: guardrail, quota, lyrics with
-user approval, queued music and cover jobs, song storage. Still to do: the UI, Auth.js sign-in, and
-running ACE-Step and FLUX.2 klein for real (their workflows are validated against ComfyUI's node
-interface but have never been executed; the models are not installed yet).
+Status: **MVP in progress.** Built and tested: the guardrail, quota, lyrics with user approval, queued
+music and cover jobs, song storage, the read API, and the web UI (`apps/web`). Still to do: Auth.js
+sign-in, and running ACE-Step and FLUX.2 klein for real (their workflows are validated against
+ComfyUI's node interface but have never been executed; the models are not installed yet).
 
 A signed-in user types a song idea. The product writes lyrics, generates a 60-second song
 with vocals, and creates cover art.
@@ -152,6 +152,10 @@ products/wd-music-ai/
 
 ## Risks
 
+- **Lyric format (measured):** with the real model, 80% of first attempts passed validation, and every
+  failure was the same: the tag and the first line written together (`[verse]First line`). Tags on the
+  same line are now split onto their own line, and the same 30 ideas passed 30 of 30. Validation and
+  the retry stay as the safety net.
 - **Legal:** imitation of real artists or lyrics. Mitigated by `check_request` and model
   choice; add terms of use before public launch.
 - **Cost / capacity:** GPU time. Mitigated by quotas, queueing, review-before-generate.

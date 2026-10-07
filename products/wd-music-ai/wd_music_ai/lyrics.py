@@ -15,6 +15,13 @@ _ALIASES = {
     "prechorus": "pre-chorus",
     "pre chorus": "pre-chorus",
 }
+_SECTIONS = {
+    "verse", "chorus", "bridge", "intro", "outro",
+    "pre-chorus", "pre chorus", "prechorus", "hook", "refrain",
+}  # fmt: skip
+# A section tag followed by the first line on the same line: "[verse]The big moon hangs low".
+# Models write this often. Only real section names are split, so "[laughs] hello" is left alone.
+_INLINE_TAG = re.compile(r"^\s*\[\s*([A-Za-z][A-Za-z -]*?)\s*(?:\d+)?\s*\]\s*(\S.*)$")
 MIN_LYRIC_LINES = 6
 
 
@@ -26,15 +33,23 @@ class DraftInvalid(ValueError):
         self.feedback = feedback
 
 
+def _canonical(name: str) -> str:
+    name = name.strip().lower()
+    return _ALIASES.get(name, name)
+
+
 def normalise_lyrics(text: str) -> str:
-    """Canonical section tags (`[Verse 1]` becomes `[verse]`), no code fences, tidy blank lines."""
+    """Canonical section tags (`[Verse 1]` becomes `[verse]`), tags on their own line, no code
+    fences, tidy blank lines."""
     text = re.sub(r"^```[a-z]*\s*|\s*```$", "", text.strip())
     out: list[str] = []
     for raw in text.replace("\r\n", "\n").split("\n"):
+        if (inline := _INLINE_TAG.match(raw)) and inline.group(1).strip().lower() in _SECTIONS:
+            out.append(f"[{_canonical(inline.group(1))}]")
+            raw = inline.group(2)
         line = raw.rstrip()
         if m := _TAG_LINE.match(line):
-            name = m.group(1).strip().lower()
-            line = f"[{_ALIASES.get(name, name)}]"
+            line = f"[{_canonical(m.group(1))}]"
         out.append(line.strip() if line.startswith("[") else line)
     return re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip()
 

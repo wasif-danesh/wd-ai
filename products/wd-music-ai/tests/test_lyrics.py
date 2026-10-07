@@ -111,3 +111,22 @@ def test_merge_tags_drops_repeats_but_keeps_order_and_spelling():
         == "Indie Pop, mellow, female vocal, 100 bpm"
     )
     assert merge_tags("", None, " a ,, b ") == "a, b" and merge_tags() == ""
+
+
+def test_a_tag_written_on_the_same_line_as_its_first_lyric_is_split():
+    """The real model often writes "[verse]First line" (measured: 6 of 30 first attempts)."""
+    raw = (
+        "[verse]The big moon hangs so low\nLittle horns begin to glow\n\n"
+        "[Chorus 1] Hush now, little dino dear\n[hook]Sleep tight"
+    )
+    assert normalise_lyrics(raw).split("\n") == [
+        "[verse]", "The big moon hangs so low", "Little horns begin to glow", "",
+        "[chorus]", "Hush now, little dino dear", "[chorus]", "Sleep tight",
+    ]  # fmt: skip
+
+
+def test_only_real_section_names_are_split_off():
+    assert (
+        normalise_lyrics("[laughs] hello there\n[Verse]\nx") == "[laughs] hello there\n[verse]\nx"
+    )
+    assert normalise_lyrics("[verse]\n[chorus] already fine") == "[verse]\n[chorus]\nalready fine"

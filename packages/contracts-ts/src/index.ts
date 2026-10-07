@@ -10,3 +10,8 @@ export type ErrorEvent = components["schemas"]["ErrorEvent"];
 export type DoneEvent = components["schemas"]["DoneEvent"];
 export type RunRequest = components["schemas"]["RunRequest"];
 export type ResumeRequest = components["schemas"]["ResumeRequest"];
+
+// wd-music-ai's read API (product-provided routes)
+export type SongSummary = components["schemas"]["SongSummary"];
+export type SongDetail = components["schemas"]["SongDetail"];
+export type SongPage = components["schemas"]["SongPage"];

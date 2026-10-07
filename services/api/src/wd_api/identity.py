@@ -1,16 +1,11 @@
 """Every request resolves an identity (ADR-0011). Stub user until Auth.js lands (Phase 5)."""
 
-from dataclasses import dataclass
-
 from fastapi import Depends
+from wd_platform_sdk import Identity
 
 from wd_api.config import Settings, get_settings
 
-
-@dataclass(frozen=True)
-class Identity:
-    tenant_id: str
-    user_id: str
+__all__ = ["Identity", "get_identity"]
 
 
 def get_identity(settings: Settings = Depends(get_settings)) -> Identity:

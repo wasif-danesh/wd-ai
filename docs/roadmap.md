@@ -73,8 +73,10 @@ See [product spec](../products/wd-music-ai/README.md).
 - [ ] Run both workflows for real: download the models (ask first), export working workflows from
       ComfyUI, update the map files, then listen to and look at the output
 - [ ] Auth.js with Google, GitHub, Microsoft; FastAPI validates the token (replaces the stub user)
-- [ ] UI: idea form, lyrics editor, live progress with queue position, player, cover, "My songs"
-      (needs a read endpoint for a user's songs; design and ADR first)
+- [x] UI: idea form, live lyric streaming, review and edit, progress with queue position, player,
+      cover, downloads, "My songs", song page (see `apps/web/README.md`); verified in a browser against
+      the real model; reload and reconnect recovery
+- [x] Read API for "My songs" as product-provided routes (ADR-0023)
 - [ ] Secured upload endpoint for user files (images, audio): identity required, size and type
       limits (images 10 MB, audio 25 MB), writes to `ScopedStorage` and returns the storage key
       that runs take as `image_key` / `audio_key`. A public API addition, so it needs an ADR first
