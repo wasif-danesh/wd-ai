@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy.ext.asyncio import AsyncEngine
+
 from wd_platform_sdk.capabilities import Capabilities, MediaCapabilities, TextCapabilities
 from wd_platform_sdk.config import CapabilityBinding, ProductConfig
 from wd_platform_sdk.jobs import InMemoryJobSink, JobSink
@@ -23,6 +25,7 @@ class ProviderDeps:
     litellm_base_url: str = "http://localhost:4000"
     litellm_api_key: str = ""
     storage: ScopedStorage | None = None
+    db: AsyncEngine | None = None
     embedding_dims: int = 768
 
 
@@ -73,4 +76,7 @@ def build_capabilities(config: ProductConfig, deps: ProviderDeps) -> Capabilitie
         music=MediaCapabilities("music", grouped["music"], config.id),
         video=MediaCapabilities("video", grouped["video"], config.id),
         storage=deps.storage,
+        config=config,
+        db=deps.db,
+        usage=deps.usage,
     )

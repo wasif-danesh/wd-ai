@@ -13,7 +13,15 @@ from uuid import UUID, uuid4
 
 from langgraph.types import Command
 from wd_contracts import DoneEvent, ErrorEvent, InterruptEvent, NodeEvent, TokenEvent
-from wd_platform_sdk import EventLog, JobFailed, RunContext, RunRecord, RunStore, set_context
+from wd_platform_sdk import (
+    EventLog,
+    JobFailed,
+    RunContext,
+    RunError,
+    RunRecord,
+    RunStore,
+    set_context,
+)
 
 log = logging.getLogger(__name__)
 
@@ -130,6 +138,9 @@ class RunManager:
                 retryable=err.retryable if err else False,
                 job_id=e.result.job_id,
             )
+        except RunError as e:
+            await self.store.set_state(rec.tenant_id, rec.run_id, "error")
+            await self._emit(rec, ErrorEvent, code=e.code, message=e.message, retryable=e.retryable)
         except asyncio.CancelledError:
             raise
         except Exception:

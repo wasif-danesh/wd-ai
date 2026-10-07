@@ -91,6 +91,7 @@ def create_app(
             litellm_base_url=settings.litellm_base_url,
             litellm_api_key=settings.litellm_api_key,
             storage=store,
+            db=db,
             embedding_dims=DIMENSIONS,
         )
 

@@ -22,6 +22,13 @@ check "media job: queued, ran, completed" "printf '%s' \"\$media\" | grep -q 'ev
 check "media run finished with done and an image URL" "printf '%s' \"\$media\" | tail -4 | grep -q 'event: done' && printf '%s' \"\$media\" | grep -q 'image_url'"
 check "worker usage recorded (job.completed)" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select count(*) from usage_events where kind='job.completed'\" | grep -qv '^0\$'"
 
+# The music product through the real guardrail and lyrics models: must reach the approval step.
+if [ "${SMOKE_EXPECT_DONE:-0}" = "1" ]; then
+  song="$(curl -sN -m 300 -X POST http://localhost:3000/api/products/wd-music-ai/runs \
+    -H 'content-type: application/json' -d '{"input":{"idea":"a rainy night in Tokyo","genre":"indie pop"}}' 2>&1)"
+  check "song: guardrail passed, lyrics written, waiting for approval" "printf '%s' \"\$song\" | tail -3 | grep -q 'event: interrupt' && printf '%s' \"\$song\" | grep -q 'approve_lyrics'"
+fi
+
 out="$(curl -sN -m 300 -X POST http://localhost:3000/api/products/hello/runs \
   -H 'content-type: application/json' -d '{"input":{"message":"Say hi"}}' 2>&1)"
 last="$(printf '%s' "$out" | grep '^event:' | tail -1 | awk '{print $2}')"

@@ -1,6 +1,9 @@
 # wd-music-ai
 
-Status: **Planned (MVP)**. First product on the wd-ai platform.
+Status: **MVP in progress.** The backend is built and tested: guardrail, quota, lyrics with
+user approval, queued music and cover jobs, song storage. Still to do: the UI, Auth.js sign-in, and
+running ACE-Step and FLUX.2 klein for real (their workflows are validated against ComfyUI's node
+interface but have never been executed; the models are not installed yet).
 
 A signed-in user types a song idea. The product writes lyrics, generates a 60-second song
 with vocals, and creates cover art.
@@ -50,39 +53,56 @@ flowchart LR
 
 | Node | What it does | Capability |
 |---|---|---|
-| `check_request` | Quota check; refuses requests to reproduce existing lyrics, imitate a named artist's voice, or produce disallowed content | `text.moderate` (LiteLLM) |
-| `write_lyrics` | One structured-output call returning `title`, `lyrics` (with `[verse]` / `[chorus]` / `[bridge]` tags), `style` (music tags), `cover_prompt` | `text.lyrics` (LiteLLM) |
-| `approve_lyrics` | Interrupt. User edits / approves / regenerates | none |
-| `generate_music` | Enqueues music job; graph pauses until the worker's callback | `music.generate` (ComfyUI) |
-| `generate_cover` | Screens the cover prompt, enqueues image job | `image.generate` (ComfyUI) |
-| `finalise` | Stores song record, writes usage events, emits `done` | none |
+| `check_request` | Validates the idea, checks the daily quota (before any model runs), then the guardrail. Refuses artist-voice imitation, reproduced lyrics and disallowed content with fixed messages. Fails closed if the classifier gives no valid answer | `text.moderate` |
+| `write_lyrics` | One structured-output call returning `title`, `lyrics`, `style` (music tags), `cover_prompt`. Only the lyrics are streamed to the client as they are written. Output is validated (section tags, enough lines); up to 3 attempts with feedback to the model | `text.lyrics` |
+| `approve_lyrics` | Interrupt. The user approves (optionally editing title, lyrics, style) or asks for a new draft (up to 5). Invalid edits ask again with the reason. The lyrics that will be sung are screened once more, whether generated or edited | `text.moderate` |
+| `start_music` / `await_music` | Re-checks the quota right before the GPU, queues the music job, then pauses until the worker reports | `music.generate` |
+| `screen_cover` | Screens the cover prompt. If refused, a neutral cover is used instead of losing the song | `text.moderate` |
+| `start_cover` / `await_cover` | Queues the cover job, then pauses. If the cover job fails the song is still delivered without a cover | `image.generate` |
+| `finalise` | Moves the files to `{song_id}/audio.*` and `{song_id}/cover.*`, stores the `songs` row, records `song.created`, returns presigned URLs | none |
 
 Music and cover run **sequentially** on the single staging GPU. The worker unloads the LLM
 before each job. In prod they could run in parallel on separate GPUs; the graph should not
 assume either.
 
-### State (sketch)
+## Run contract (what the UI builds against)
 
-```python
-class SongState(TypedDict):
-    tenant_id: str
-    user_id: str
-    idea: str
-    title: str | None
-    lyrics: str | None
-    style: str | None
-    cover_prompt: str | None
-    music_job_id: str | None
-    cover_job_id: str | None
-    audio_url: str | None
-    cover_url: str | None
-    status: Literal["drafting", "awaiting_approval", "generating", "done", "refused", "failed"]
-```
+**Input** (`POST /products/wd-music-ai/runs`): `{"input": {"idea": "...", "genre"?: "...", "mood"?: "..."}}`.
+The idea is at most 500 characters, genre and mood at most 40.
+
+**Events**
+
+| Event | Meaning |
+|---|---|
+| `node` `check_request` / `write_lyrics` `started` | Show the label. A second `started` for `write_lyrics` means the draft is being rewritten: **clear the lyrics streamed so far** |
+| `token` (node `write_lyrics`) | The next characters of the lyrics, nothing else |
+| `interrupt` kind `approve_lyrics` | Show the draft. `payload`: `title`, `lyrics`, `style`, `regenerations_left`, `error` (non-empty when the previous answer was rejected) |
+| `node` `generate_music` / `generate_cover` `started` | Show the label; `job_progress` events carry queue position and progress |
+| `done` | `outputs.status` is `done` or `refused` (below) |
+| `error` | `code`, `message`, `retryable`. Codes: `lyrics_failed`, `moderation_unavailable`, `quota_exceeded`, or the media job's own code |
+
+**Answering the interrupt** (`POST /runs/{run_id}/resume`):
+`{"value": {"action": "approve"}}`, optionally with `title`, `lyrics` and `style` edits, or
+`{"value": {"action": "regenerate"}}`.
+
+**Done, finished**: `outputs.status = "done"`, `song_id`, `title`, `lyrics`, `style`, `audio_url`,
+`cover_url` (empty if the cover failed), plus `audio_key` and `cover_key` for later re-linking.
+
+**Done, refused**: `outputs.status = "refused"` and `outputs.refusal = {code, message}`; show the
+message. Codes: `invalid_request`, `quota_exceeded`, `artist_voice`, `existing_lyrics`,
+`disallowed_content`. Messages are fixed text; the classifier's own wording is never shown.
+
+## State
+
+`SongState` (see `wd_music_ai/graphs/song.py`) holds the request (`idea`, `genre`, `mood`), the draft
+(`title`, `lyrics`, `style`, `cover_prompt`), the approval bookkeeping, the two job ids, the storage
+keys, and `status` (`drafting`, `awaiting_approval`, `generating`, `done`, `refused`). Graph state
+holds keys, never file bytes.
 
 ## Configuration
 
 ```yaml
-# product.yaml (planned)
+# product.yaml
 id: wd-music-ai
 capabilities:
   text.moderate:  { provider: litellm, model: moderator }
@@ -93,21 +113,24 @@ quotas:
   songs_per_user_per_day: 10
 ```
 
-Planned folder layout:
+Folder layout:
 
 ```
 products/wd-music-ai/
 ├─ product.yaml
-├─ product.dev.yaml          # optional overrides (e.g. stub or lighter workflows)
-├─ graphs/song.py
-├─ prompts/
-│  ├─ lyrics.md
-│  └─ moderation.md
-└─ workflows/
-   ├─ ace-step-1.5-turbo.json
-   ├─ ace-step-1.5-turbo.map.yaml
-   ├─ flux2-klein-4b.json
-   └─ flux2-klein-4b.map.yaml
+├─ pyproject.toml            # entry point `wd_ai.products`: the API discovers the product
+├─ wd_music_ai/
+│  ├─ __init__.py            # register(registry)
+│  ├─ graphs/song.py         # the graph
+│  ├─ guardrail.py           # classifier calls, fixed refusal messages, fail-closed
+│  ├─ lyrics.py              # tag normalisation, validation, streaming of the lyrics field
+│  ├─ schemas.py             # structured-output schemas, the approval answer
+│  ├─ songs.py               # songs table access and the daily quota
+│  └─ prompts.py             # loads prompts/
+├─ prompts/                  # lyrics.md, lyrics_request.md, moderation.md, moderation_request.md
+├─ workflows/                # ace-step-1.5-turbo and flux2-klein-4b: .json + .map.yaml
+├─ evals/                    # guardrail cases and the script that measures them
+└─ tests/
 ```
 
 ## Models and licences
@@ -121,10 +144,11 @@ products/wd-music-ai/
 
 ## Data
 
-- `songs`: id, tenant_id, product_id, user_id, thread_id, title, lyrics, style, audio_key,
-  cover_key, status, created_at
-- Object keys: `{tenant_id}/wd-music-ai/{user_id}/{song_id}/audio.{ext}` and `cover.png`
-- Usage events: LLM tokens per call, GPU seconds per job, one `song.created` event
+- `songs` (migration 0004): id, tenant_id, product_id, user_id, thread_id, run_id, title, lyrics,
+  style, audio_key, cover_key (null if the cover failed), status, created_at
+- Object keys: `{tenant_id}/wd-music-ai/{user_id}/{song_id}/audio.{ext}` and `cover.{ext}`
+- Usage events: LLM tokens per call, `gpu.seconds` and `job.completed` per job, and one
+  `song.created` per finished song. The daily quota counts `song.created` since 00:00 UTC.
 
 ## Risks
 

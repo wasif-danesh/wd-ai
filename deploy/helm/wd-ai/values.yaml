@@ -52,7 +52,9 @@ litellm:
     # (ADR-0018). The moderator keeps thinking until a refusal evaluation says otherwise.
     - { alias: default-chat, model: "ollama_chat/gemma4:e4b", params: { think: false } }
     - { alias: lyrics-writer, model: "ollama_chat/gemma4:e4b", params: { think: false } }
-    - { alias: moderator, model: "ollama_chat/gemma4:e4b" }
+    # The moderator keeps thinking on; its accuracy was measured in products/wd-music-ai/evals.
+    # A classifier must answer the same way every time, so no sampling randomness (ADR-0022).
+    - { alias: moderator, model: "ollama_chat/gemma4:e4b", params: { temperature: 0 } }
     # Image and audio input: same model via Ollama's OpenAI-compatible API (ADR-0020).
     # `backend: ollama-openai` makes the chart point it at Ollama's /v1 and pull the model.
     - { alias: multimodal, model: "openai/gemma4:e4b", backend: ollama-openai, params: { reasoning_effort: none } }

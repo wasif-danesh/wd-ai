@@ -1852,11 +1852,19 @@ name = "wd-music-ai"
 version = "0.0.0"
 source = { editable = "products/wd-music-ai" }
 dependencies = [
+    { name = "langgraph" },
+    { name = "pydantic" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "wd-platform-sdk" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "wd-platform-sdk", editable = "packages/platform-sdk" }]
+requires-dist = [
+    { name = "langgraph", specifier = ">=0.6" },
+    { name = "pydantic", specifier = ">=2.9" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
+    { name = "wd-platform-sdk", editable = "packages/platform-sdk" },
+]
 
 [[package]]
 name = "wd-platform-sdk"

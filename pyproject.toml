@@ -31,6 +31,9 @@ extend-immutable-calls = ["fastapi.Depends"]
 [tool.pyright]
 include = ["services", "packages", "products"]
 typeCheckingMode = "standard"
+# Test helper modules (conftest, fake_comfyui) are imported by name; pytest puts their folders on
+# sys.path, so tell pyright too.
+extraPaths = ["products/wd-music-ai/tests", "services/media-worker/tests"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

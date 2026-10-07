@@ -9,10 +9,14 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from wd_platform_sdk.config import CapabilityBinding
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+from wd_platform_sdk.config import CapabilityBinding, ProductConfig
+from wd_platform_sdk.context import require_context
 from wd_platform_sdk.jobs import JobHandle
 from wd_platform_sdk.parts import Prompt, UnsupportedInput, modalities
 from wd_platform_sdk.storage import ScopedStorage
+from wd_platform_sdk.usage import UsageEvent, UsageRecorder, record_safely
 
 
 class CapabilityNotConfigured(LookupError):
@@ -21,7 +25,12 @@ class CapabilityNotConfigured(LookupError):
 
 class TextProvider(Protocol):
     def stream(
-        self, capability: str, binding: CapabilityBinding, system: str, prompt: Prompt
+        self,
+        capability: str,
+        binding: CapabilityBinding,
+        system: str,
+        prompt: Prompt,
+        schema: dict[str, Any] | None = None,
     ) -> AsyncIterator[str]: ...
 
     async def embed(
@@ -56,8 +65,11 @@ class TextCapabilities:
                 f"capability 'text.{name}' is not configured for product {self._product!r}"
             ) from None
 
-    def stream(self, name: str, system: str, prompt: Prompt) -> AsyncIterator[str]:
-        """`prompt` is a string or a list of strings, `Image` and `Audio` parts."""
+    def stream(
+        self, name: str, system: str, prompt: Prompt, schema: dict[str, Any] | None = None
+    ) -> AsyncIterator[str]:
+        """`prompt` is a string or a list of strings, `Image` and `Audio` parts. With `schema`
+        (a JSON Schema) the model is constrained to reply with matching JSON."""
         binding, provider = self._get(name)
         extra = modalities(prompt) - set(binding.inputs)
         if extra:
@@ -65,10 +77,12 @@ class TextCapabilities:
                 f"capability 'text.{name}' accepts {sorted(binding.inputs)} but the prompt "
                 f"contains {sorted(extra)}; bind a model that supports it (inputs: in product.yaml)"
             )
-        return provider.stream(f"text.{name}", binding, system, prompt)
+        return provider.stream(f"text.{name}", binding, system, prompt, schema)
 
-    async def complete(self, name: str, system: str, prompt: Prompt) -> str:
-        return "".join([d async for d in self.stream(name, system, prompt)])
+    async def complete(
+        self, name: str, system: str, prompt: Prompt, schema: dict[str, Any] | None = None
+    ) -> str:
+        return "".join([d async for d in self.stream(name, system, prompt, schema)])
 
     async def embed(self, name: str, texts: list[str]) -> list[list[float]]:
         binding, provider = self._get(name)
@@ -107,4 +121,14 @@ class Capabilities:
     video: MediaCapabilities
     storage: ScopedStorage | None = None
     rag: RagStore | None = None
+    config: ProductConfig | None = None  # this product's validated config (quotas, settings)
+    db: AsyncEngine | None = None  # the shared database, for product tables and usage queries
+    usage: UsageRecorder | None = None
     extras: dict[str, Any] = field(default_factory=dict)
+
+    async def record_usage(self, kind: str, quantity: float, unit: str, **meta: Any) -> None:
+        """Write a usage event for the current run (tenant, product, user, run from context)."""
+        if self.usage is not None:
+            await record_safely(
+                self.usage, UsageEvent.for_context(require_context(), kind, quantity, unit, **meta)
+            )

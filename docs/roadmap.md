@@ -63,14 +63,21 @@ prove them while the code is small.
 
 See [product spec](../products/wd-music-ai/README.md).
 
-- [ ] Song graph: guardrails → lyrics → approve → music job → cover job → done
-- [ ] ACE-Step 1.5 and FLUX.2 klein 4B workflows + map files (licences verified)
-- [ ] Auth.js with Google, GitHub, Microsoft; FastAPI validates the token
+- [x] Song graph: guardrail → lyrics → approve → music job → cover job → done, with per-user
+      daily quota, validated and streamed lyrics, `songs` table (migration 0004); tested with a
+      scripted fake model and end to end with the real model, Postgres, Redis and a stub worker
+- [x] Guardrail evaluation on `gemma4:e4b` (results in ADR-0022)
+- [x] ACE-Step 1.5 and FLUX.2 klein 4B workflows + map files, structure-validated against ComfyUI
+      0.39. **Not executed**: the models are not installed, so filenames and sampler settings are
+      unverified (licences: verify ACE-Step's before launch)
+- [ ] Run both workflows for real: download the models (ask first), export working workflows from
+      ComfyUI, update the map files, then listen to and look at the output
+- [ ] Auth.js with Google, GitHub, Microsoft; FastAPI validates the token (replaces the stub user)
+- [ ] UI: idea form, lyrics editor, live progress with queue position, player, cover, "My songs"
+      (needs a read endpoint for a user's songs; design and ADR first)
 - [ ] Secured upload endpoint for user files (images, audio): identity required, size and type
       limits (images 10 MB, audio 25 MB), writes to `ScopedStorage` and returns the storage key
       that runs take as `image_key` / `audio_key`. A public API addition, so it needs an ADR first
-- [ ] Per-user daily quota
-- [ ] UI: idea form, lyrics editor, queue position, player, cover, history
 
 ## Phase 6: Production
 
@@ -83,8 +90,6 @@ See [product spec](../products/wd-music-ai/README.md).
 
 - [ ] Upload endpoint ADR and design (see Phase 5): the multimodal inputs from ADR-0020 only
       work for files already in storage until this exists
-- [ ] Evaluate the `check_request` guardrail and lyric quality on `gemma4:e4b`; move the
-      moderator to `gemma4:12b` if they fall short (ADR-0018)
 - [ ] Evaluate audio input on real recordings, not only synthetic speech (ADR-0020)
 - [ ] Pin the SeaweedFS image to a version instead of `:latest`
 - [ ] Roll out new staging images automatically (pinned tags or Image Updater)

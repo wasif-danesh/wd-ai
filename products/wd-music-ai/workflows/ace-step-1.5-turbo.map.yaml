@@ -1,0 +1,23 @@
+workflow: ace-step-1.5-turbo.json
+licence: "ACE-Step 1.5: commercial use of outputs per the model card; MIT vs Apache 2.0 is stated inconsistently. Verify before launch (ADR-0012)"
+notes: >
+  Structure validated against ComfyUI 0.39 (/prompt reports only the missing model file). NOT
+  executed: ACE-Step 1.5 is not installed on the dev machine. Before relying on it, confirm the
+  checkpoint filename, the loader layout (this uses the all-in-one checkpoint) and the sampler
+  settings for the Turbo variant against a workflow exported from ComfyUI.
+models:
+  - checkpoints/ace_step_1.5_turbo_aio.safetensors
+inputs:
+  lyrics: { node: "3", field: lyrics }
+  style: { node: "3", field: tags }          # music tags such as "pop, upbeat, female vocals"
+  seed:
+    - { node: "3", field: seed }
+    - { node: "6", field: seed }
+  duration_s:                                # read by the text encoder and by the empty latent
+    - { node: "3", field: duration }
+    - { node: "5", field: seconds }
+  bpm: { node: "3", field: bpm }
+  language: { node: "3", field: language }
+  keyscale: { node: "3", field: keyscale }
+outputs:
+  audio: { node: "8", type: audio }

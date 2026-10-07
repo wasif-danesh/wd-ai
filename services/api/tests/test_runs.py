@@ -191,3 +191,30 @@ def test_bad_media_keys_end_in_a_clean_error_event(media_client, key):
     )
     assert events[-1][0] == "error"
     assert "Traceback" not in json.dumps(events[-1][1])
+
+
+def test_run_error_ends_the_run_with_its_own_clean_message(tmp_path):
+    from wd_platform_sdk import RunError
+
+    def boom_graph(caps, checkpointer):
+        def node(state):
+            raise RunError(
+                "lyrics_failed", "We could not write usable lyrics. Try rephrasing.", True
+            )
+
+        g = StateGraph(ApproveState)
+        g.add_node("n", node)
+        g.add_edge(START, "n")
+        g.add_edge("n", END)
+        return g.compile(checkpointer=checkpointer)
+
+    (tmp_path / "boom").mkdir()
+    (tmp_path / "boom" / "product.yaml").write_text("id: boom\n")
+    registry = GraphRegistry()
+    registry.register("boom", boom_graph)
+    with TestClient(mem_app(registry, tmp_path, InMemoryUsageRecorder())) as c:
+        events = parse(c.post("/products/boom/runs", json={}).text)
+    code = events[-1][1]
+    assert events[-1][0] == "error"
+    assert (code["code"], code["retryable"]) == ("lyrics_failed", True)
+    assert code["message"] == "We could not write usable lyrics. Try rephrasing."

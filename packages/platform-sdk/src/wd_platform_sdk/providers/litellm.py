@@ -24,7 +24,12 @@ class LiteLLMTextProvider:
         self._usage = usage
 
     async def stream(
-        self, capability: str, binding: CapabilityBinding, system: str, prompt: Prompt
+        self,
+        capability: str,
+        binding: CapabilityBinding,
+        system: str,
+        prompt: Prompt,
+        schema: dict[str, Any] | None = None,
     ) -> AsyncIterator[str]:
         ctx = require_context()
         in_tokens = out_tokens = 0
@@ -35,11 +40,18 @@ class LiteLLMTextProvider:
                 {"role": "system", "content": system},
                 {"role": "user", "content": to_openai_content(prompt)},
             ]
+            extra: dict[str, Any] = {}
+            if schema is not None:
+                extra["response_format"] = {
+                    "type": "json_schema",
+                    "json_schema": {"name": "reply", "schema": schema, "strict": True},
+                }
             stream = await self._client.chat.completions.create(
                 model=binding.model or "",
                 stream=True,
                 stream_options={"include_usage": True},
                 messages=messages,
+                **extra,
             )
             async for chunk in stream:
                 if chunk.usage:

@@ -28,13 +28,19 @@ class FakeTextProvider:
         self._usage = usage
         self._dims = dims
         self.prompts: list[Prompt] = []  # what callers sent, for assertions
+        self._calls: dict[str, int] = {}
 
     async def stream(
-        self, capability: str, binding: CapabilityBinding, system: str, prompt: Prompt
+        self,
+        capability: str,
+        binding: CapabilityBinding,
+        system: str,
+        prompt: Prompt,
+        schema: dict[str, Any] | None = None,
     ) -> AsyncIterator[str]:
         ctx = require_context()
         self.prompts.append(prompt)
-        reply = str(binding.defaults.get("reply", DEFAULT_REPLY))
+        reply = self._next_reply(capability, binding)
         words = reply.split(" ")
         for w in words:
             yield w + " "
@@ -55,6 +61,16 @@ class FakeTextProvider:
             self._usage,
             UsageEvent.for_context(ctx, LLM_OUTPUT_TOKENS, len(words), "tokens", **meta),
         )
+
+    def _next_reply(self, capability: str, binding: CapabilityBinding) -> str:
+        """`defaults.replies` is a script: one reply per call, then the last one repeats.
+        `defaults.reply` is a single fixed reply."""
+        replies = binding.defaults.get("replies")
+        if not replies:
+            return str(binding.defaults.get("reply", DEFAULT_REPLY))
+        i = self._calls.get(capability, 0)
+        self._calls[capability] = i + 1
+        return str(replies[min(i, len(replies) - 1)])
 
     async def embed(
         self, capability: str, binding: CapabilityBinding, texts: list[str]

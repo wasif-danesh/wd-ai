@@ -11,6 +11,7 @@ from wd_platform_sdk.config import (
     load_product_config,
 )
 from wd_platform_sdk.context import RunContext, require_context, reset_context, set_context
+from wd_platform_sdk.errors import RunError
 from wd_platform_sdk.eventlog import EventLog, InMemoryEventLog, RedisEventLog
 from wd_platform_sdk.jobqueue import RedisJobSink
 from wd_platform_sdk.jobs import (
@@ -39,8 +40,12 @@ from wd_platform_sdk.runstore import InMemoryRunStore, RedisRunStore, RunRecord,
 from wd_platform_sdk.storage import ScopedStorage, Storage, memory_storage, object_key, s3_storage
 from wd_platform_sdk.usage import InMemoryUsageRecorder, UsageEvent, UsageRecorder
 from wd_platform_sdk.usage_postgres import PostgresUsageRecorder
+from wd_platform_sdk.usage_queries import start_of_day_utc, sum_usage
 
 __all__ = [
+    "RunError",
+    "start_of_day_utc",
+    "sum_usage",
     "EventLog",
     "InMemoryEventLog",
     "RedisEventLog",

@@ -10,7 +10,7 @@ LangGraph graphs, a Next.js UI and a config file.
 > **Status: prototype.** Phases 0-4 are largely done: a walking skeleton streams a model reply
 > from Ollama to the browser through every layer, runs in containers, and installs on a local
 > Kubernetes cluster from a Helm chart. The home-lab (k3s + Argo CD) rollout, media generation,
-> auth and the first real product (`wd-music-ai`) are still to come. See the
+> auth and the UI of the first real product (`wd-music-ai`, whose backend is built) are still to come. See the
 > [roadmap](docs/roadmap.md).
 
 ## Contents
@@ -74,7 +74,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 
 | Product | Status | Description |
 |---|---|---|
-| [`wd-music-ai`](products/wd-music-ai/README.md) | Planned (MVP) | Turns a song idea into lyrics, a 60-second track and cover art |
+| [`wd-music-ai`](products/wd-music-ai/README.md) | MVP in progress: backend built, UI and auth to do | Turns a song idea into lyrics, a 60-second track and cover art |
 
 A product is a folder under `products/` with its `product.yaml`, graphs, prompts and ComfyUI
 workflows. Adding a product adds no API endpoints: the graph registry exposes registered
@@ -277,7 +277,7 @@ wd-ai/
 │  └─ platform-sdk/          # Capabilities, providers, product config, storage, usage, graph registry
 ├─ products/
 │  ├─ hello/                 # sample product: config only (graph lives in the API)
-│  └─ wd-music-ai/           # product.yaml, graphs/, prompts/, workflows/
+│  └─ wd-music-ai/           # product package: graph, guardrail, prompts, workflows, evals, tests
 ├─ deploy/
 │  ├─ compose/               # LiteLLM config for the local stack
 │  ├─ helm/wd-ai/            # Helm chart + values overlays (local, staging, prod, cloud/*)
@@ -392,7 +392,7 @@ The same container images run in all three. Only infrastructure and configuratio
 | 2 | Skeleton on Kubernetes: Helm, `kind`, home lab k3s, Argo CD | Chart and kind done; home lab pending |
 | 3 | Platform core: capability layer, storage, usage events, RAG | Done |
 | 4 | Media pipeline: Redis queue, worker, ComfyUI, GPU sharing | Done except GPU on k3s (needs the lab) |
-| 5 | `wd-music-ai` MVP: song graph, auth, quota, UI | Planned |
+| 5 | `wd-music-ai` MVP: song graph, auth, quota, UI | Song graph and quota done; UI, auth, real models to do |
 | 6 | Production on GCP | Planned |
 
 Details and checklists: [docs/roadmap.md](docs/roadmap.md).

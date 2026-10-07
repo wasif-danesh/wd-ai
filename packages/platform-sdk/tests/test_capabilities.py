@@ -65,3 +65,21 @@ async def test_capabilities_require_a_run_context(products):
     caps, _, _ = build(products)
     with pytest.raises(RuntimeError, match="RunContext"):
         await caps.text.complete("chat", "", "x")
+
+
+async def test_one_input_can_drive_several_nodes(products, ctx):
+    (products / "demo" / "workflows" / "tiny.map.yaml").write_text(
+        """
+workflow: tiny.json
+inputs:
+  duration_s:
+    - { node: "14", field: seconds }
+    - { node: "3", field: seed }
+outputs:
+  audio: { node: "14", type: audio }
+"""
+    )
+    caps, _, sink = build(products)
+    await caps.music.generate(duration_s=45)
+    job = sink.submitted[0]
+    assert job.prompt["14"]["inputs"]["seconds"] == 45 and job.prompt["3"]["inputs"]["seed"] == 45

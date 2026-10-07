@@ -76,12 +76,8 @@ def test_unknown_keys_are_rejected(products):
         load_product_config(products, "demo", environ={})
 
 
-@pytest.mark.parametrize("product", ["hello", "wd-music-ai"])
+@pytest.mark.parametrize("product", ["hello", "media-demo", "wd-music-ai"])
 def test_committed_product_configs_are_valid(product):
-    load_product_config(REPO_PRODUCTS, product, environ={}, check_files=False)
-
-
-def test_music_workflows_are_still_missing_until_phase_5():
-    """Documents the known gap: the ACE-Step / FLUX.2 klein workflow exports arrive in Phase 5."""
-    with pytest.raises(ConfigError, match="workflow map not found"):
-        load_product_config(REPO_PRODUCTS, "wd-music-ai", environ={}, check_files=True)
+    """Every shipped product loads, its workflows and map files exist, and every mapped node ID
+    is present in the workflow JSON."""
+    load_product_config(REPO_PRODUCTS, product, environ={}, check_files=True)

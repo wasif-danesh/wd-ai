@@ -89,4 +89,7 @@ data: {"run_id":"…","thread_id":"…","seq":57,"ts":"…","outputs":{"title":"
   decreasing), then `completed` or `failed`. A job wait is not a user prompt: no `interrupt`
   event is sent and the stream stays open until the run finishes. A failed job ends the run with
   an `error` event carrying the job's user-safe `code`, `message`, `retryable` and `job_id`.
+- A product may repeat a `node` `started` event for a node that is retrying (for example
+  `write_lyrics` rewriting a rejected draft). Clients should discard what that node had streamed so
+  far and start again. This is a convention, not a new event type.
 - Runs are scoped to the resolving identity (stub user in dev); other users get 404.

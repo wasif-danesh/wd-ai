@@ -33,3 +33,14 @@ async def test_scoped_storage_blocks_traversal_and_other_tenants(ctx):
 async def test_scoped_storage_needs_context():
     with pytest.raises(RuntimeError):
         await ScopedStorage(memory_storage()).put("a", b"1")
+
+
+async def test_move_rekeys_a_file_within_the_users_prefix(ctx):
+    raw = memory_storage()
+    s = ScopedStorage(raw)
+    await s.put("jobs/j1/audio.mp3", b"abc", "audio/mpeg")
+    assert await s.move("jobs/j1/audio.mp3", "songs/s1/audio.mp3") == "songs/s1/audio.mp3"
+    assert await s.get("songs/s1/audio.mp3") == b"abc"
+    assert not await s.exists("jobs/j1/audio.mp3")
+    with pytest.raises(ValueError):
+        await s.move("songs/s1/audio.mp3", "../other-user/audio.mp3")

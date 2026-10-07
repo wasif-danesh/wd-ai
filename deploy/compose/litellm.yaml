@@ -11,10 +11,20 @@ model_list:
       model: ollama_chat/gemma4:e4b
       api_base: os.environ/OLLAMA_BASE_URL
       think: false
+  # A classifier must give the same answer every time: no sampling randomness. It keeps thinking
+  # on; see products/wd-music-ai/evals for the measurements behind both settings (ADR-0022).
   - model_name: moderator
     litellm_params:
       model: ollama_chat/gemma4:e4b
       api_base: os.environ/OLLAMA_BASE_URL
+      temperature: 0
+  # Evaluation only: the same classifier without thinking, to compare speed and accuracy.
+  - model_name: moderator-nothink
+    litellm_params:
+      model: ollama_chat/gemma4:e4b
+      api_base: os.environ/OLLAMA_BASE_URL
+      temperature: 0
+      think: false
   # Same model through Ollama's OpenAI-compatible API (`openai/` here means Ollama's /v1, not
   # OpenAI). Unlike `ollama_chat/` it accepts audio input parts, so use this alias for
   # capabilities that take image or audio input (ADR-0020).

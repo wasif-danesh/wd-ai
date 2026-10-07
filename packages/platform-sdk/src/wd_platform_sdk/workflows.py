@@ -24,9 +24,16 @@ class WorkflowOutput(BaseModel):
 class WorkflowMap(BaseModel):
     workflow: str
     licence: str | None = None
+    notes: str | None = None
     models: list[str] = Field(default_factory=list)
-    inputs: dict[str, WorkflowInput]
+    # One input may drive several nodes (e.g. a duration read by both the encoder and the latent):
+    # give a list of {node, field} targets.
+    inputs: dict[str, WorkflowInput | list[WorkflowInput]]
     outputs: dict[str, WorkflowOutput] = Field(default_factory=dict)
+
+    def targets(self, name: str) -> list[WorkflowInput]:
+        v = self.inputs[name]
+        return v if isinstance(v, list) else [v]
 
 
 class Workflow:
@@ -45,9 +52,10 @@ class Workflow:
     def problems(self) -> list[str]:
         """Every mapped node ID must exist in the workflow JSON."""
         out = []
-        for name, i in self.map.inputs.items():
-            if i.node not in self.graph:
-                out.append(f"{self.name}: input {name!r} maps to missing node {i.node!r}")
+        for name in self.map.inputs:
+            for i in self.map.targets(name):
+                if i.node not in self.graph:
+                    out.append(f"{self.name}: input {name!r} maps to missing node {i.node!r}")
         for name, o in self.map.outputs.items():
             if o.node not in self.graph:
                 out.append(f"{self.name}: output {name!r} maps to missing node {o.node!r}")
@@ -62,8 +70,8 @@ class Workflow:
             )
         graph = copy.deepcopy(self.graph)
         for name, value in values.items():
-            m = self.map.inputs[name]
-            graph[m.node].setdefault("inputs", {})[m.field] = value
+            for m in self.map.targets(name):
+                graph[m.node].setdefault("inputs", {})[m.field] = value
         return graph
 
 

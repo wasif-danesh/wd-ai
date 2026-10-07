@@ -1,6 +1,7 @@
 """Graph registry: products register graph builders; the API exposes them generically."""
 
 from collections.abc import Callable
+from importlib.metadata import entry_points
 from typing import Any
 
 from wd_platform_sdk.capabilities import Capabilities
@@ -23,6 +24,19 @@ class GraphRegistry:
             return self._builders[product_id](caps, checkpointer)
         except KeyError:
             raise KeyError(f"unknown product {product_id!r}") from None
+
+    def load_entry_points(self, group: str = "wd_ai.products") -> list[str]:
+        """Let installed product packages register their graphs. A product declares
+
+            [project.entry-points."wd_ai.products"]
+            wd-music-ai = "wd_music_ai:register"
+
+        where `register(registry)` calls `registry.register(...)`. Returns the names loaded."""
+        loaded = []
+        for ep in entry_points(group=group):
+            ep.load()(self)
+            loaded.append(ep.name)
+        return loaded
 
     def products(self) -> list[str]:
         return sorted(self._builders)

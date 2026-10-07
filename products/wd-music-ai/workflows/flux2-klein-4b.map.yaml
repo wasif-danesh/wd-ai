@@ -1,0 +1,23 @@
+workflow: flux2-klein-4b.json
+licence: "Apache-2.0 per the FLUX.2 [klein] 4B model card (ADR-0019). The 9B variant is licensed differently and is not used"
+notes: >
+  Structure validated against ComfyUI 0.39 (/prompt reports only the missing UNET and VAE files).
+  NOT executed: klein is not installed on the dev machine. The text encoder (qwen_3_4b) is the
+  file already used by other workflows. Confirm model filenames, the guider/CFG and step settings
+  for the distilled model against a workflow exported from ComfyUI.
+models:
+  - diffusion_models/flux-2-klein-4b.safetensors
+  - text_encoders/qwen_3_4b.safetensors
+  - vae/flux2-vae.safetensors
+inputs:
+  prompt: { node: "4", field: text }
+  seed: { node: "9", field: noise_seed }
+  steps: { node: "7", field: steps }
+  width:
+    - { node: "6", field: width }
+    - { node: "7", field: width }
+  height:
+    - { node: "6", field: height }
+    - { node: "7", field: height }
+outputs:
+  image: { node: "13", type: image }

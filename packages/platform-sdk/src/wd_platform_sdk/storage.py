@@ -57,6 +57,9 @@ class Storage:
     async def delete(self, key: str) -> None:
         await obstore.delete_async(self._store, key)
 
+    async def copy(self, src: str, dst: str) -> None:
+        await obstore.copy_async(self._store, src, dst)
+
     async def list(self, prefix: str) -> list[str]:
         out: list[str] = []
         async for batch in obstore.list(self._store, prefix=prefix):
@@ -93,6 +96,13 @@ class ScopedStorage:
 
     async def delete(self, rel: str) -> None:
         await self._storage.delete(self._key(rel))
+
+    async def move(self, src_rel: str, dst_rel: str) -> str:
+        """Re-key a file within the user's own prefix (copy, then delete the original)."""
+        src, dst = self._key(src_rel), self._key(dst_rel)
+        await self._storage.copy(src, dst)
+        await self._storage.delete(src)
+        return dst_rel
 
     async def url(self, rel: str, expires: timedelta = timedelta(hours=1)) -> str:
         return await self._storage.url(self._key(rel), expires)
