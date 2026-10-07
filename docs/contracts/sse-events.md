@@ -1,8 +1,8 @@
 # SSE event contract
 
-Status: **Draft**. Finalise in Phase 1 before building the frontend. Changes after that need
-an ADR. The Pydantic models in `packages/contracts` become the source of truth; this doc
-describes them.
+Status: **Finalised (Phase 1)**. Changes need an ADR. The Pydantic models in `packages/contracts` (`wd_contracts/events.py`) are the source of truth;
+this doc describes them. TypeScript types are generated into `packages/contracts-ts` with
+`make contracts`.
 
 ## Transport
 
@@ -76,3 +76,11 @@ id: 57
 event: done
 data: {"run_id":"…","thread_id":"…","seq":57,"ts":"…","outputs":{"title":"…","lyrics":"…","audio_url":"https://…","cover_url":"https://…"}}
 ```
+
+## Phase 1 implementation notes
+
+- The event log per run is held **in the API process**, so reconnect (`Last-Event-ID`) only
+  works against the same replica. Redis pub/sub fan-out replaces this in Phase 4.
+- A stream closes after `done`, `error`, or an `interrupt` that is the latest event;
+  `POST /runs/{run_id}/resume` continues the same run with the next `seq`.
+- Runs are scoped to the resolving identity (stub user in dev); other users get 404.

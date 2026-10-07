@@ -8,7 +8,8 @@ services:
     image: redis:7
     ports: ["6379:6379"]
   minio:
-    image: minio/minio
+    profiles: [storage]   # Phase 3; image source to be re-checked (Docker Hub image removed)
+    image: quay.io/minio/minio
     command: server /data --console-address ":9001"
     env_file: .env
     ports: ["9000:9000", "9001:9001"]
@@ -16,7 +17,9 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-stable
     command: ["--config", "/app/config.yaml", "--port", "4000"]
-    env_file: .env
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_API_KEY:?set LITELLM_API_KEY in .env}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.containers.internal:11434}
     volumes: ["./deploy/compose/litellm.yaml:/app/config.yaml:ro"]
     ports: ["4000:4000"]
   api:

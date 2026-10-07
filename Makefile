@@ -1,10 +1,12 @@
 CONTAINER_ENGINE ?= podman
 
-.PHONY: dev down test lint format contracts kind-up
+.PHONY: dev down migrate test lint format contracts kind-up
 dev:
 	$(CONTAINER_ENGINE) compose up --build
 down:
 	$(CONTAINER_ENGINE) compose down
+migrate:
+	cd services/api && uv run alembic upgrade head   # needs postgres on localhost:5432
 test:
 	uv run pytest
 	pnpm test
@@ -14,6 +16,7 @@ lint:
 format:
 	uv run ruff format . && uv run ruff check --fix .
 contracts:
-	@echo "Phase 1: export OpenAPI and run openapi-typescript" && exit 1
+	uv run python scripts/export_openapi.py
+	pnpm --filter @wd/contracts generate
 kind-up:
 	@echo "Phase 2" && exit 1

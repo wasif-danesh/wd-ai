@@ -19,11 +19,11 @@ prove them while the code is small.
 
 ## Phase 1: Walking skeleton on the Mac
 
-- [ ] Finalise the [SSE contract](contracts/sse-events.md) as Pydantic models; generate TS types
-- [ ] FastAPI `/products/{id}/runs` with SSE; stub identity; Postgres checkpointer
-- [ ] Graph registry; a one-node `hello` graph
-- [ ] LiteLLM container with an alias pointing at native Ollama
-- [ ] Next.js page + BFF route handler streaming tokens end to end
+- [x] Finalise the [SSE contract](contracts/sse-events.md) as Pydantic models; generate TS types
+- [x] FastAPI `/products/{id}/runs` with SSE; stub identity; Postgres checkpointer
+- [x] Graph registry; a one-node `hello` graph
+- [x] LiteLLM container with an alias pointing at native Ollama
+- [x] Next.js page + BFF route handler streaming tokens end to end
 
 ## Phase 2: Skeleton on Kubernetes
 

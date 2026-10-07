@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     comfyui_base_url: str = "http://host.containers.internal:8188"
     ollama_base_url: str = "http://host.containers.internal:11434"
     log_level: str = "INFO"
+
+    @property
+    def checkpoint_url(self) -> str:
+        """psycopg-style DSN for the LangGraph Postgres checkpointer."""
+        return self.database_url.replace("+asyncpg", "")
+
     default_tenant_id: str = "dev-tenant"
     dev_user_id: str = "dev-user"
 
