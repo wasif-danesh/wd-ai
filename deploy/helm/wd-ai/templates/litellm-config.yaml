@@ -10,7 +10,12 @@ data:
       - model_name: {{ .alias }}
         litellm_params:
           model: {{ .model }}
+          {{- if eq (default "" .backend) "ollama-openai" }}
+          api_base: os.environ/OLLAMA_OPENAI_BASE_URL
+          api_key: none
+          {{- else }}
           api_base: os.environ/OLLAMA_BASE_URL
+          {{- end }}
           {{- with .params }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

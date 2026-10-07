@@ -65,6 +65,21 @@ url = await caps.storage.url("songs/42/audio.mp3")  # presigned, goes in SSE
 hits = await caps.rag.search("docs", "how do I ...", k=5)  # if text.embed is bound
 ```
 
+Image and audio go in as prompt parts, loaded from storage by key (never kept in graph state):
+
+```python
+from wd_platform_sdk import part_from_file
+
+image = part_from_file(key, await caps.storage.get(key))  # type chosen from the extension
+text = await caps.text.complete("multimodal", system, ["What is in this picture?", image])
+```
+
+The binding must declare what its model accepts, or the call fails before it is made:
+
+```yaml
+text.multimodal: { provider: litellm, model: multimodal, inputs: [text, image, audio] }
+```
+
 Tenant, product, user and run come from the run context, not from arguments. Every LLM call
 records token usage in `usage_events`.
 

@@ -18,7 +18,7 @@ have() { command -v "$1" >/dev/null 2>&1; }
 
 # Models the stack needs, derived from the single source of truth (LiteLLM config).
 required_models() {
-  grep -oE 'ollama(_chat)?/[^[:space:]]+' "$ROOT/deploy/compose/litellm.yaml" | sed -E 's|^ollama(_chat)?/||' | sort -u
+  grep -vE '^[[:space:]]*#' "$ROOT/deploy/compose/litellm.yaml" | grep -oE '(ollama(_chat)?|openai)/[^[:space:]]+' | sed -E 's#^(ollama(_chat)?|openai)/##' | sort -u
 }
 
 ollama_up() { curl -fsS -m 3 "$OLLAMA_URL/api/tags" >/dev/null 2>&1; }

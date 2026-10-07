@@ -23,6 +23,7 @@ spec:
               valueFrom:
                 secretKeyRef: { name: {{ .Values.secrets.existingSecret }}, key: LITELLM_API_KEY }
             - { name: OLLAMA_BASE_URL, value: {{ include "wd.ollamaUrl" . | quote }} }
+            - { name: OLLAMA_OPENAI_BASE_URL, value: "{{ include "wd.ollamaUrl" . }}/v1" }
           readinessProbe:
             httpGet: { path: /health/readiness, port: http }
             initialDelaySeconds: 15

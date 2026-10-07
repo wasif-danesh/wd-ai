@@ -48,6 +48,9 @@ litellm:
     - { alias: default-chat, model: "ollama_chat/gemma4:e4b", params: { think: false } }
     - { alias: lyrics-writer, model: "ollama_chat/gemma4:e4b", params: { think: false } }
     - { alias: moderator, model: "ollama_chat/gemma4:e4b" }
+    # Image and audio input: same model via Ollama's OpenAI-compatible API (ADR-0020).
+    # `backend: ollama-openai` makes the chart point it at Ollama's /v1 and pull the model.
+    - { alias: multimodal, model: "openai/gemma4:e4b", backend: ollama-openai, params: { reasoning_effort: none } }
     - { alias: embedder, model: "ollama/nomic-embed-text" }   # 768 dims; see ADR-0017
   resources:
     requests: { cpu: 100m, memory: 512Mi }

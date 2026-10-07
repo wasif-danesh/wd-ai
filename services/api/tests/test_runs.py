@@ -117,3 +117,58 @@ def test_interrupt_and_resume(tmp_path):
         assert second[-1][1]["outputs"]["approved"] == "yes"
         assert second[0][1]["seq"] == first[-1][1]["seq"] + 1
         assert c.post(f"/runs/{run_id}/resume", json={"value": "x"}).status_code == 409
+
+
+@pytest.fixture
+def media_client(tmp_path, usage):
+    from wd_platform_sdk import ScopedStorage, memory_storage, object_key
+
+    d = tmp_path / "hello"
+    d.mkdir()
+    (d / "product.yaml").write_text(
+        "id: hello\ncapabilities:\n"
+        '  text.chat: { provider: fake, defaults: { reply: "text only" } }\n'
+        '  text.multimodal: { provider: fake, defaults: { reply: "saw it" },\n'
+        "                     inputs: [text, image, audio] }\n"
+    )
+    raw = memory_storage()
+    app = create_app(
+        default_registry(), tmp_path, InMemorySaver(), usage, ScopedStorage(raw), heartbeat_s=0.05
+    )
+    png = b"\x89PNG\r\n\x1a\n" + b"0" * 16
+    key = object_key("dev-tenant", "hello", "dev-user", "uploads", "cat.png")
+    import asyncio
+
+    asyncio.run(raw.put(key, png, "image/png"))
+    with TestClient(app) as c:
+        yield c
+
+
+def test_run_with_stored_image_uses_the_multimodal_capability(media_client, usage):
+    r = media_client.post(
+        "/products/hello/runs",
+        json={"input": {"message": "what is this?", "image_key": "uploads/cat.png"}},
+    )
+    events = parse(r.text)
+    assert events[-1][0] == "done" and events[-1][1]["outputs"]["reply"] == "saw it"
+    assert usage.events[0].meta["capability"] == "text.multimodal"
+    assert usage.events[0].meta["inputs"] == {"images": 1}
+
+
+def test_run_without_media_still_uses_plain_chat(media_client, usage):
+    r = media_client.post("/products/hello/runs", json={"input": {"message": "hi"}})
+    assert parse(r.text)[-1][1]["outputs"]["reply"] == "text only"
+    assert usage.events[0].meta["capability"] == "text.chat"
+
+
+@pytest.mark.parametrize(
+    "key", ["uploads/missing.png", "../other-user/cat.png", "uploads/notes.txt"]
+)
+def test_bad_media_keys_end_in_a_clean_error_event(media_client, key):
+    events = parse(
+        media_client.post(
+            "/products/hello/runs", json={"input": {"message": "x", "image_key": key}}
+        ).text
+    )
+    assert events[-1][0] == "error"
+    assert "Traceback" not in json.dumps(events[-1][1])

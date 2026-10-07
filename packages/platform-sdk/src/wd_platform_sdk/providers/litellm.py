@@ -1,11 +1,13 @@
 """Text capability over LiteLLM's OpenAI-compatible API (ADR-0005). Records token usage."""
 
 from collections.abc import AsyncIterator
+from typing import Any
 
 from openai import AsyncOpenAI
 
 from wd_platform_sdk.config import CapabilityBinding
 from wd_platform_sdk.context import require_context
+from wd_platform_sdk.parts import Prompt, counts, to_openai_content
 from wd_platform_sdk.usage import (
     EMBEDDING_TOKENS,
     LLM_INPUT_TOKENS,
@@ -22,19 +24,22 @@ class LiteLLMTextProvider:
         self._usage = usage
 
     async def stream(
-        self, capability: str, binding: CapabilityBinding, system: str, prompt: str
+        self, capability: str, binding: CapabilityBinding, system: str, prompt: Prompt
     ) -> AsyncIterator[str]:
         ctx = require_context()
         in_tokens = out_tokens = 0
         try:
+            # Content parts are OpenAI-compatible dicts; the SDK's strict typing cannot express
+            # the audio part, so the message list is typed loosely here.
+            messages: Any = [
+                {"role": "system", "content": system},
+                {"role": "user", "content": to_openai_content(prompt)},
+            ]
             stream = await self._client.chat.completions.create(
                 model=binding.model or "",
                 stream=True,
                 stream_options={"include_usage": True},
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": prompt},
-                ],
+                messages=messages,
             )
             async for chunk in stream:
                 if chunk.usage:
@@ -42,7 +47,9 @@ class LiteLLMTextProvider:
                 if chunk.choices and (text := chunk.choices[0].delta.content):
                     yield text
         finally:
-            meta = {"capability": capability, "alias": binding.model}
+            meta: dict[str, Any] = {"capability": capability, "alias": binding.model}
+            if media := {k: v for k, v in counts(prompt).items() if v}:
+                meta["inputs"] = media  # image/audio parts; their cost is inside the token counts
             if in_tokens:
                 await record_safely(
                     self._usage,

@@ -3,3 +3,5 @@
 id: hello
 capabilities:
   text.chat: { provider: litellm, model: default-chat }
+  # Accepts image and audio parts; the graph uses it when the run input names a stored file.
+  text.multimodal: { provider: litellm, model: multimodal, inputs: [text, image, audio] }

@@ -11,6 +11,7 @@ from typing import Any, Protocol
 
 from wd_platform_sdk.config import CapabilityBinding
 from wd_platform_sdk.jobs import JobHandle
+from wd_platform_sdk.parts import Prompt, UnsupportedInput, modalities
 from wd_platform_sdk.storage import ScopedStorage
 
 
@@ -20,7 +21,7 @@ class CapabilityNotConfigured(LookupError):
 
 class TextProvider(Protocol):
     def stream(
-        self, capability: str, binding: CapabilityBinding, system: str, prompt: str
+        self, capability: str, binding: CapabilityBinding, system: str, prompt: Prompt
     ) -> AsyncIterator[str]: ...
 
     async def embed(
@@ -55,11 +56,18 @@ class TextCapabilities:
                 f"capability 'text.{name}' is not configured for product {self._product!r}"
             ) from None
 
-    def stream(self, name: str, system: str, prompt: str) -> AsyncIterator[str]:
+    def stream(self, name: str, system: str, prompt: Prompt) -> AsyncIterator[str]:
+        """`prompt` is a string or a list of strings, `Image` and `Audio` parts."""
         binding, provider = self._get(name)
+        extra = modalities(prompt) - set(binding.inputs)
+        if extra:
+            raise UnsupportedInput(
+                f"capability 'text.{name}' accepts {sorted(binding.inputs)} but the prompt "
+                f"contains {sorted(extra)}; bind a model that supports it (inputs: in product.yaml)"
+            )
         return provider.stream(f"text.{name}", binding, system, prompt)
 
-    async def complete(self, name: str, system: str, prompt: str) -> str:
+    async def complete(self, name: str, system: str, prompt: Prompt) -> str:
         return "".join([d async for d in self.stream(name, system, prompt)])
 
     async def embed(self, name: str, texts: list[str]) -> list[list[float]]:

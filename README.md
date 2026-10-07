@@ -62,6 +62,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | Container images and local compose stack | Working |
 | Capability layer (`litellm`, `comfyui`, `fake`), validated product config | Working |
 | Usage events: token counts written per LLM call | Working |
+| Image and audio input to the model (`Image`/`Audio` parts, files from storage) | Working; no upload endpoint yet |
 | Object storage interface (S3 API via SeaweedFS), presigned URLs | Working locally; not in the Helm chart yet |
 | RAG helpers on pgvector with embeddings (`nomic-embed-text`) | Working (library; no HTTP endpoints) |
 | Media worker, ComfyUI queue | Placeholder (Phase 4) |
@@ -246,6 +247,17 @@ id: 2
 event: token
 data: {"run_id":"…","thread_id":"…","seq":2,"ts":"…","node":"hello","text":"Hello"}
 ```
+
+The `hello` run also accepts `image_key` and/or `audio_key`: relative paths of files already in
+your object storage (for example `uploads/cat.png`), which are sent to the multimodal model:
+
+```bash
+curl -N -X POST localhost:3000/api/products/hello/runs -H 'content-type: application/json' \
+  -d '{"input":{"message":"What colour is this?","image_key":"uploads/green.png"}}'
+```
+
+There is no upload endpoint yet, so place the file with the storage interface for now
+(see [ADR-0020](docs/decisions/0020-multimodal-input.md)).
 
 Event types are `node`, `token`, `interrupt`, `job_progress`, `error` and `done`. Full protocol:
 [SSE event contract](docs/contracts/sse-events.md). Interactive docs are at

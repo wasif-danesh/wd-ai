@@ -39,6 +39,8 @@ class CapabilityBinding(BaseModel):
     model: str | None = None  # litellm: a LiteLLM alias, never a raw model name
     workflow: str | None = None  # comfyui: workflow name under products/<id>/workflows/
     defaults: dict[str, Any] = Field(default_factory=dict)
+    # Input modalities the bound model accepts. Graphs that pass anything else fail early.
+    inputs: list[Literal["text", "image", "audio"]] = Field(default_factory=lambda: ["text"])
 
     @model_validator(mode="after")
     def _provider_fields(self) -> "CapabilityBinding":

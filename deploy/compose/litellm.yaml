@@ -15,6 +15,15 @@ model_list:
     litellm_params:
       model: ollama_chat/gemma4:e4b
       api_base: os.environ/OLLAMA_BASE_URL
+  # Same model through Ollama's OpenAI-compatible API (`openai/` here means Ollama's /v1, not
+  # OpenAI). Unlike `ollama_chat/` it accepts audio input parts, so use this alias for
+  # capabilities that take image or audio input (ADR-0020).
+  - model_name: multimodal
+    litellm_params:
+      model: openai/gemma4:e4b
+      api_base: os.environ/OLLAMA_OPENAI_BASE_URL
+      api_key: none
+      reasoning_effort: none  # this route ignores `think`; reasoning_effort is honoured
   - model_name: embedder
     litellm_params:
       model: ollama/nomic-embed-text

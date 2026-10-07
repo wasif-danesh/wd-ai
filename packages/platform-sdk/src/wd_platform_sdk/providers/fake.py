@@ -8,6 +8,7 @@ from uuid import uuid4
 from wd_platform_sdk.config import CapabilityBinding
 from wd_platform_sdk.context import require_context
 from wd_platform_sdk.jobs import JobHandle, JobRequest, JobSink
+from wd_platform_sdk.parts import Prompt, as_parts, counts
 from wd_platform_sdk.usage import (
     EMBEDDING_TOKENS,
     LLM_INPUT_TOKENS,
@@ -26,20 +27,28 @@ class FakeTextProvider:
     def __init__(self, usage: UsageRecorder, dims: int = 768):
         self._usage = usage
         self._dims = dims
+        self.prompts: list[Prompt] = []  # what callers sent, for assertions
 
     async def stream(
-        self, capability: str, binding: CapabilityBinding, system: str, prompt: str
+        self, capability: str, binding: CapabilityBinding, system: str, prompt: Prompt
     ) -> AsyncIterator[str]:
         ctx = require_context()
+        self.prompts.append(prompt)
         reply = str(binding.defaults.get("reply", DEFAULT_REPLY))
         words = reply.split(" ")
         for w in words:
             yield w + " "
-        meta = {"capability": capability, "alias": binding.model, "estimated": True}
+        meta: dict[str, Any] = {"capability": capability, "alias": binding.model, "estimated": True}
+        if media := {k: v for k, v in counts(prompt).items() if v}:
+            meta["inputs"] = media
         await record_safely(
             self._usage,
             UsageEvent.for_context(
-                ctx, LLM_INPUT_TOKENS, len((system + prompt).split()), "tokens", **meta
+                ctx,
+                LLM_INPUT_TOKENS,
+                len((system + " ".join(p for p in as_parts(prompt) if isinstance(p, str))).split()),
+                "tokens",
+                **meta,
             ),
         )
         await record_safely(

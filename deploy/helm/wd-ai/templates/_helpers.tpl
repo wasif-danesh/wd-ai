@@ -31,7 +31,7 @@ imagePullSecrets:
 {{- define "wd.ollamaModels" -}}
 {{- $models := list -}}
 {{- range .Values.litellm.models -}}
-{{- if hasPrefix "ollama_chat/" .model -}}{{- $models = append $models (trimPrefix "ollama_chat/" .model) -}}{{- else if hasPrefix "ollama/" .model -}}{{- $models = append $models (trimPrefix "ollama/" .model) -}}{{- end -}}
+{{- if hasPrefix "ollama_chat/" .model -}}{{- $models = append $models (trimPrefix "ollama_chat/" .model) -}}{{- else if hasPrefix "ollama/" .model -}}{{- $models = append $models (trimPrefix "ollama/" .model) -}}{{- else if and (eq (default "" .backend) "ollama-openai") (hasPrefix "openai/" .model) -}}{{- $models = append $models (trimPrefix "openai/" .model) -}}{{- end -}}
 {{- end -}}
 {{- join " " (uniq $models) -}}
 {{- end -}}

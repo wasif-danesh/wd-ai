@@ -46,6 +46,7 @@ services:
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_API_KEY:?set LITELLM_API_KEY in .env}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.containers.internal:11434}
+      OLLAMA_OPENAI_BASE_URL: ${OLLAMA_BASE_URL:-http://host.containers.internal:11434}/v1
     volumes: ["./deploy/compose/litellm.yaml:/app/config.yaml:ro"]
     ports: ["4000:4000"]
   api:
