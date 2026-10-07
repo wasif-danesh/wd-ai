@@ -1,0 +1,25 @@
+{{- if .Values.mediaWorker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-media-worker
+  labels: {{- include "wd.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.mediaWorker.replicas }}
+  selector:
+    matchLabels: {{- include "wd.selector" (dict "root" . "component" "media-worker") | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "wd.selector" (dict "root" . "component" "media-worker") | nindent 8 }}
+    spec:
+      {{- include "wd.pullSecrets" . | nindent 6 }}
+      containers:
+        - name: media-worker
+          image: {{ include "wd.image" (dict "root" . "name" "media-worker") }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - { name: REDIS_URL, value: "redis://{{ .Release.Name }}-redis:6379/0" }
+            - { name: COMFYUI_BASE_URL, value: {{ .Values.env.COMFYUI_BASE_URL | quote }} }
+          securityContext: { allowPrivilegeEscalation: false }
+          resources: {{- toYaml .Values.mediaWorker.resources | nindent 12 }}
+{{- end }}

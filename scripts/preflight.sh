@@ -26,6 +26,11 @@ if have "$CONTAINER_ENGINE"; then
   fi
 fi
 
+mem="$(podman_vm_mem_mb)"
+if [ -n "$mem" ] && [ "$mem" -lt 4096 ]; then
+  warn "Podman VM has ${mem} MB RAM; the stack needs about 4 GB (make setup offers to resize it)"
+fi
+
 if [ -f "$ROOT/.env" ]; then
   key="$(env_value LITELLM_API_KEY)"
   if [ -z "$key" ] || [ "$key" = "sk-dev-change-me" ]; then

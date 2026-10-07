@@ -1,9 +1,11 @@
 CONTAINER_ENGINE ?= podman
 export CONTAINER_ENGINE
 
-.PHONY: setup preflight dev down logs migrate test lint format contracts kind-up
+.PHONY: setup setup-k8s preflight dev down logs migrate test lint format contracts helm-lint kind-up kind-test kind-down
 setup:
 	./scripts/setup.sh
+setup-k8s:
+	./scripts/setup.sh --k8s
 preflight:
 	./scripts/preflight.sh
 dev:
@@ -25,5 +27,12 @@ format:
 contracts:
 	uv run python scripts/export_openapi.py
 	pnpm --filter @wd/contracts generate
+helm-lint:
+	@for f in "" "-f deploy/helm/wd-ai/values/local.yaml" "-f deploy/helm/wd-ai/values/staging.yaml -f deploy/helm/wd-ai/values/cloud/homelab.yaml" "-f deploy/helm/wd-ai/values/prod.yaml"; do \
+		helm lint deploy/helm/wd-ai $$f >/dev/null && helm template t deploy/helm/wd-ai $$f >/dev/null && echo "ok: helm $$f" || exit 1; done
 kind-up:
-	@echo "Phase 2" && exit 1
+	./scripts/kind-up.sh
+kind-test:
+	./scripts/kind-smoke.sh
+kind-down:
+	./scripts/kind-down.sh

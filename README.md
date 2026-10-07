@@ -60,7 +60,8 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | Container images and local compose stack | Working |
 | Media worker, ComfyUI, object storage | Placeholder (Phase 3-4) |
 | Auth, quotas, usage events written | Not started (Phase 3, 5) |
-| Helm, Kubernetes, GitOps | Not started (Phase 2) |
+| Helm chart, local Kubernetes (kind), CI smoke test | Working |
+| k3s home lab with Argo CD | Manifests and runbook written, not yet run (Phase 2) |
 
 ## Products
 
@@ -84,22 +85,36 @@ make dev        # starts the stack, waits for Postgres, runs migrations, follows
 
 Then open http://localhost:3000 and press **Run**. A reply from the model streams into the page.
 
+### Supported platforms
+
+| Platform | Status |
+|---|---|
+| macOS (Apple Silicon and Intel) | Supported; Homebrew required |
+| Linux: Debian, Ubuntu, Kali (apt), Fedora (dnf), Arch (pacman) | Supported; setup tested in Ubuntu and Fedora containers and in CI |
+| Windows 10/11 | Supported **through WSL2** (Ubuntu); see [docs/windows.md](docs/windows.md). Untested on real Windows so far |
+
 ### What `make setup` does
 
 It is idempotent (safe to re-run) and asks before every install or large download. Add `-y`
-(`./scripts/setup.sh -y`) to accept everything without prompts.
+(`./scripts/setup.sh -y`) to accept everything without prompts. `make setup-k8s` does the same
+and also installs `kind`, `helm` and `kubectl`.
 
-1. Checks for `podman`, `uv`, `pnpm`, Node 22+, `ollama`, `curl`, `git` and a Compose provider,
-   and installs what is missing (macOS: Homebrew; Debian/Ubuntu/Kali: `apt`, plus the official
-   `uv` and Ollama install scripts).
-2. Creates and starts the Podman VM on macOS.
+1. Checks for `podman`, `uv`, `pnpm`, Node 22+, `ollama`, `curl`, `git`, `make`, `openssl` and a
+   Compose provider, and installs what is missing:
+   - **macOS:** Homebrew.
+   - **Linux and WSL:** the distro package manager for system tools (`podman`, `git`, ...), plus
+     official installers for the rest: `uv` and Ollama use their vendors' install scripts, and
+     Node 22, `kind`, `helm` and `kubectl` are downloaded as binaries and **checksum-verified**
+     into `~/.local/bin`. pnpm comes from Corepack. No Homebrew or sudo is needed for those.
+2. Creates and starts the Podman VM on macOS, and checks it has enough memory (offers to resize).
 3. Starts Ollama and pulls every model named in `deploy/compose/litellm.yaml`
-   (`gpt-oss:20b`, about 13 GB).
+   (`gpt-oss:20b`, about 13 GB). On Linux it also checks that containers can reach Ollama and
+   offers a fix if not.
 4. Creates `.env` from `.env.example` and generates random secrets. Nothing is printed.
 5. Runs `uv sync --all-packages` and `pnpm install`.
 
-The only thing it cannot do for you is install [Homebrew](https://brew.sh) on a Mac that
-lacks it; it stops and tells you.
+The only thing it cannot do for you is install [Homebrew](https://brew.sh) on a Mac that lacks
+it; it stops and tells you.
 
 `make dev` runs `make preflight` first: a fast, read-only check that lists exactly what is
 missing and points back to `make setup`.
@@ -111,8 +126,9 @@ missing and points back to `make setup`.
   `deploy/compose/litellm.yaml`; setup and preflight read the model names from there.
 - Ollama runs natively on the host so it can use the GPU. On Apple Silicon it uses Metal. On
   Intel Macs and machines without a supported GPU it runs on CPU, so replies are slow.
-- Linux: Ollama listens on `127.0.0.1` by default. If containers cannot reach it, set
-  `OLLAMA_HOST=0.0.0.0` for the Ollama service.
+- Linux and WSL: Ollama listens on `127.0.0.1` by default, which containers may not reach.
+  `make setup` tests this and, with your consent, makes Ollama listen on `0.0.0.0`. Ollama has no
+  authentication, so restrict port 11434 with a host firewall.
 
 ### Services
 
@@ -124,6 +140,22 @@ missing and points back to `make setup`.
 | Postgres / Redis | `localhost:5432` / `localhost:6379` |
 
 `make logs` follows container logs, and `make down` stops everything.
+
+### Run on Kubernetes (kind)
+
+Runs the same Helm chart used for staging, on a local cluster. `make setup-k8s` installs
+`kind`, `helm` and `kubectl`; on macOS the Podman VM needs about 6 GB RAM (setup offers to
+resize it). On Linux with rootless Podman see [runbooks/linux-kind.md](docs/runbooks/linux-kind.md).
+
+```bash
+make kind-up      # builds images, creates the cluster, installs the chart
+make kind-test    # smoke test: migrations, web, and a streamed run
+make kind-down    # delete the cluster
+```
+
+Open http://localhost:3000. Locally, pods use the Ollama already running on your machine;
+in staging the chart runs Ollama in the cluster. Home lab setup with k3s and Argo CD:
+[runbook](docs/runbooks/homelab-k3s.md).
 
 ### Develop with live reload
 
@@ -181,7 +213,11 @@ wd-ai/
 │  ├─ contracts-ts/          # TypeScript types generated from the OpenAPI schema
 │  └─ platform-sdk/          # Capability interfaces, graph registry
 ├─ products/wd-music-ai/     # product.yaml, graphs/, prompts/, workflows/
-├─ deploy/compose/           # LiteLLM config for the local stack (Helm and Argo CD later)
+├─ deploy/
+│  ├─ compose/               # LiteLLM config for the local stack
+│  ├─ helm/wd-ai/            # Helm chart + values overlays (local, staging, prod, cloud/*)
+│  ├─ kind/                  # local cluster config
+│  └─ argocd/                # Argo CD Application for staging
 ├─ scripts/                  # export_openapi.py (feeds TS type generation)
 ├─ docs/                     # architecture, ADRs, contracts, roadmap
 ├─ compose.yaml              # local dev stack
@@ -211,10 +247,12 @@ make test        # Python (no GPU or network needed) + TypeScript tests
 make lint        # ruff, pyright, Biome, tsc
 make format      # ruff format + autofix
 make contracts   # regenerate TS types from the API's OpenAPI schema
-make setup       # one-time machine setup (see Quick start)
+make setup       # one-time machine setup (see Quick start); setup-k8s adds kind/helm/kubectl
 make preflight   # read-only readiness check
 make dev / down  # start (with migrations) / stop the container stack
 make migrate     # alembic upgrade head only (Postgres on localhost)
+make helm-lint   # lint and render the chart with every overlay
+make kind-up / kind-test / kind-down   # local Kubernetes (see above)
 ```
 
 - **Tooling:** Python 3.12 with `uv`, `ruff`, `pyright`, `pytest`, Alembic. TypeScript with
@@ -259,6 +297,9 @@ The same container images run in all three. Only infrastructure and configuratio
 | [Environments](docs/environments.md) | Dev, staging and prod setup; GPU strategy; delivery pipeline |
 | [Configuration](docs/configuration.md) | Secrets, environment wiring, product config, swappable models |
 | [SSE event contract](docs/contracts/sse-events.md) | The streaming protocol between API and frontend |
+| [Windows (WSL2)](docs/windows.md) | Running the project on Windows |
+| [Home lab runbook](docs/runbooks/homelab-k3s.md) | k3s, Argo CD and Tailscale setup for staging |
+| [kind on Linux](docs/runbooks/linux-kind.md) | Rootless Podman prerequisites for the local cluster |
 | [Roadmap](docs/roadmap.md) | Build phases and checklists |
 | [Decisions](docs/decisions/README.md) | Architecture decision records (ADRs) |
 | [`wd-music-ai`](products/wd-music-ai/README.md) | The first product's spec |
@@ -277,7 +318,7 @@ The same container images run in all three. Only infrastructure and configuratio
 |---|---|---|
 | 0 | Foundations: monorepo, tooling, migrations, containers, CI | Done |
 | 1 | Walking skeleton on the Mac: SSE contract, hello graph, LiteLLM, web streaming | Done |
-| 2 | Skeleton on Kubernetes: Helm, `kind`, home lab k3s, Argo CD | Next |
+| 2 | Skeleton on Kubernetes: Helm, `kind`, home lab k3s, Argo CD | Chart and kind done; home lab pending |
 | 3 | Platform core: capability layer, storage, usage events | Planned |
 | 4 | Media pipeline: Redis queue, worker, ComfyUI, GPU sharing | Planned |
 | 5 | `wd-music-ai` MVP: song graph, auth, quota, UI | Planned |

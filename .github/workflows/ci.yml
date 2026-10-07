@@ -19,9 +19,45 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install
       - run: pnpm lint && pnpm typecheck && pnpm test
+  setup:
+    # Proves `make setup` installs tools on a clean machine. Ollama is stubbed: its installer is
+    # the vendor's own and several GB, and the engine/model steps need a full machine.
+    strategy:
+      fail-fast: false
+      matrix: { os: [ubuntu-latest, macos-latest] }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo install -m 755 /dev/stdin /usr/local/bin/ollama <<< $'#!/bin/sh\nexit 0'
+          SETUP_TOOLS_ONLY=1 ./scripts/setup.sh -y --k8s
+      - run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          for t in uv pnpm node kind helm kubectl podman make; do command -v $t; done
+          node -v && uv --version && kind version && helm version --short
+  helm-kind:
+    runs-on: ubuntu-latest
+    env:
+      CONTAINER_ENGINE: docker
+      # No Ollama in CI: the smoke test accepts a clean `error` event, which still proves
+      # web -> BFF -> API -> LiteLLM wiring, migrations and readiness.
+      OLLAMA_EXTERNAL_URL: http://127.0.0.1:11434
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: make helm-lint
+      - uses: helm/kind-action@v1
+        with: { install_only: true }
+      - run: ./scripts/kind-up.sh
+      - run: ./scripts/kind-smoke.sh
+      - if: failure()
+        run: |
+          kubectl -n wd-ai get pods -o wide
+          kubectl -n wd-ai describe pods | tail -80
+          for d in api litellm web; do echo "--- $d"; kubectl -n wd-ai logs deploy/wd-ai-$d --tail=40 || true; done
   images:
     if: github.ref == 'refs/heads/main'
-    needs: [python, web]
+    needs: [python, web, helm-kind]
     runs-on: ubuntu-latest
     permissions: { contents: read, packages: write }
     steps:
@@ -35,4 +71,5 @@ jobs:
             n=$(basename $s)
             buildah build --platform linux/arm64,linux/amd64 --manifest ghcr.io/${{ github.repository }}/$n:${{ github.sha }} -f $s/Containerfile .
             buildah manifest push --all ghcr.io/${{ github.repository }}/$n:${{ github.sha }} docker://ghcr.io/${{ github.repository }}/$n:${{ github.sha }}
+            buildah manifest push --all ghcr.io/${{ github.repository }}/$n:${{ github.sha }} docker://ghcr.io/${{ github.repository }}/$n:latest
           done

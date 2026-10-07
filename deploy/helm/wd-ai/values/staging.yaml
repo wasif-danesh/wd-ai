@@ -1,0 +1,9 @@
+# Staging environment (all clouds / the home lab). Argo CD auto-syncs from main.
+image:
+  tag: latest
+  pullPolicy: Always
+
+api:
+  replicas: 1
+web:
+  replicas: 1

@@ -31,3 +31,25 @@ env_value() { # env_value KEY -> value from .env (never printed by callers)
   [ -f "$ROOT/.env" ] || return 0
   grep -E "^$1=" "$ROOT/.env" | head -1 | cut -d= -f2-
 }
+
+# ---- platform detection ------------------------------------------------------------------
+OS="$(uname -s)"
+case "$(uname -m)" in
+  x86_64|amd64) _a=(x86_64 amd64 x64) ;;
+  arm64|aarch64) _a=(arm64 arm64 arm64) ;;
+  *) _a=("$(uname -m)" "$(uname -m)" "$(uname -m)") ;;
+esac
+ARCH="${ARCH:-${_a[0]}}"; GOARCH="${GOARCH:-${_a[1]}}"; NODEARCH="${NODEARCH:-${_a[2]}}"
+# darwin | linux. Env overrides exist so installers can be tested for another target.
+PLATFORM="${PLATFORM:-$(printf '%s' "$OS" | tr '[:upper:]' '[:lower:]')}"
+is_wsl() { [ "$PLATFORM" = "linux" ] && grep -qi microsoft /proc/version 2>/dev/null; }
+has_systemd() { [ -d /run/systemd/system ]; }
+
+LOCAL_BIN="${LOCAL_BIN:-$HOME/.local/bin}"
+case ":$PATH:" in *":$LOCAL_BIN:"*) ;; *) export PATH="$LOCAL_BIN:$PATH" ;; esac
+
+# Podman VM memory in MB (macOS only); empty when unknown.
+podman_vm_mem_mb() {
+  [ "$PLATFORM" = "darwin" ] && have podman || return 0
+  podman machine inspect 2>/dev/null | grep -m1 '"Memory"' | tr -dc '0-9'
+}

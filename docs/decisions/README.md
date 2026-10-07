@@ -15,5 +15,8 @@
 | [0011](0011-tenancy-identity-usage-seams.md) | Tenancy, identity and usage seams from day one | Accepted |
 | [0012](0012-music-model-ace-step.md) | Music model: ACE-Step 1.5, not YuE2 | Accepted |
 | [0013](0013-auth-mvp-authjs.md) | MVP authentication with Auth.js | Accepted |
+| [0014](0014-shared-nextjs-app.md) | One shared Next.js app with route groups | Accepted |
+| [0015](0015-phase-0-tooling-choices.md) | Phase 0 tooling choices | Accepted |
+| [0016](0016-helm-chart-structure.md) | One umbrella Helm chart, plain Ingress, in-cluster state for non-prod | Accepted |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.

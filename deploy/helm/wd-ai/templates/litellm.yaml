@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-litellm
+  labels: {{- include "wd.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "wd.selector" (dict "root" . "component" "litellm") | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "wd.selector" (dict "root" . "component" "litellm") | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/litellm-config.yaml") . | sha256sum | trunc 16 | quote }}
+    spec:
+      containers:
+        - name: litellm
+          image: {{ .Values.litellm.image }}
+          args: ["--config", "/app/config.yaml", "--port", "4000"]
+          ports: [{ name: http, containerPort: 4000 }]
+          env:
+            - name: LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef: { name: {{ .Values.secrets.existingSecret }}, key: LITELLM_API_KEY }
+            - { name: OLLAMA_BASE_URL, value: {{ include "wd.ollamaUrl" . | quote }} }
+          readinessProbe:
+            httpGet: { path: /health/readiness, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          volumeMounts:
+            - { name: config, mountPath: /app/config.yaml, subPath: config.yaml, readOnly: true }
+          resources: {{- toYaml .Values.litellm.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap: { name: {{ .Release.Name }}-litellm }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-litellm
+  labels: {{- include "wd.labels" . | nindent 4 }}
+spec:
+  selector: {{- include "wd.selector" (dict "root" . "component" "litellm") | nindent 4 }}
+  ports: [{ name: http, port: 4000, targetPort: http }]

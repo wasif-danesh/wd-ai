@@ -1,0 +1,89 @@
+# Base values. Overlay order (later wins):
+#   values.yaml  ->  values/<env>.yaml  ->  values/cloud/<cloud>.yaml
+# Secrets never live here. They come from the Secret named by `secrets.existingSecret`
+# (keys: LITELLM_API_KEY, POSTGRES_PASSWORD, and DATABASE_URL when postgres.enabled=false).
+
+image:
+  registry: ghcr.io/wasif-danesh/wd-ai   # <registry>/<api|web|media-worker>:<tag>
+  tag: latest
+  pullPolicy: IfNotPresent
+  pullSecrets: []                        # e.g. [{name: ghcr-pull}] if images are private
+
+secrets:
+  existingSecret: wd-ai-secrets
+
+env:
+  LOG_LEVEL: INFO
+  COMFYUI_BASE_URL: ""                   # Phase 4
+
+api:
+  replicas: 1
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+web:
+  replicas: 1
+  service:
+    type: ClusterIP
+    nodePort: null
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }
+
+mediaWorker:
+  enabled: true
+  replicas: 1
+  resources:
+    requests: { cpu: 25m, memory: 64Mi }
+    limits: { memory: 256Mi }
+
+litellm:
+  image: ghcr.io/berriai/litellm:main-stable
+  # alias -> backend. `ollama_chat/<model>` entries also tell the Ollama pod what to pull.
+  models:
+    - { alias: default-chat, model: "ollama_chat/gpt-oss:20b" }
+    - { alias: lyrics-writer, model: "ollama_chat/gpt-oss:20b" }
+    - { alias: moderator, model: "ollama_chat/gpt-oss:20b" }
+  resources:
+    requests: { cpu: 100m, memory: 512Mi }
+    limits: { memory: 2Gi }
+
+ollama:
+  enabled: true
+  externalUrl: ""                        # set to use an Ollama outside the cluster
+  image: ollama/ollama:latest
+  storage: 30Gi
+  storageClass: ""
+  resources:
+    requests: { cpu: "1", memory: 8Gi }
+    limits: { memory: 24Gi }
+  # GPU: set e.g. { "nvidia.com/gpu": 1 } in a cloud overlay (Phase 4)
+  gpuResources: {}
+  nodeSelector: {}
+  tolerations: []
+
+postgres:
+  enabled: true                          # false -> managed DB; provide DATABASE_URL in the Secret
+  image: pgvector/pgvector:pg16
+  database: wd
+  user: wd
+  storage: 5Gi
+  storageClass: ""
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+redis:
+  enabled: true
+  image: redis:7
+  resources:
+    requests: { cpu: 25m, memory: 64Mi }
+    limits: { memory: 256Mi }
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  tls: []

@@ -1,0 +1,9 @@
+# Production environment. Completed in Phase 6 (GCP): managed Postgres/Redis, vLLM or hosted
+# LLM behind LiteLLM, pinned image tags (promotion only), External Secrets.
+image:
+  pullPolicy: IfNotPresent
+
+api:
+  replicas: 2
+web:
+  replicas: 2

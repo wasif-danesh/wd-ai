@@ -27,10 +27,13 @@ prove them while the code is small.
 
 ## Phase 2: Skeleton on Kubernetes
 
-- [ ] Helm chart(s) with `base` / `env` / `cloud` values
-- [ ] Install to `kind` locally, then CI smoke test on `kind`
-- [ ] Home lab: k3s, Argo CD, Tailscale; Argo CD syncs the chart
-- [ ] CPU Ollama with a small model is enough here; no GPU needed yet
+- [x] Helm chart with `base` / `env` / `cloud` values (`deploy/helm/wd-ai`, ADR-0016)
+- [x] Install to `kind` locally (`make kind-up`, `make kind-test`)
+- [x] CI smoke test on `kind` (`helm-kind` job gates the image push)
+- [x] In-cluster Ollama pulls its model into a PVC (tested on kind with a small model)
+- [ ] Home lab: k3s, Argo CD, Tailscale. Manifests and [runbook](runbooks/homelab-k3s.md) are
+      written; execute them on the lab (or a stand-in Linux box) and record the result
+- [ ] Follow-up: roll out new staging images automatically (pinned tags or Image Updater)
 
 ## Phase 3: Platform core
 
