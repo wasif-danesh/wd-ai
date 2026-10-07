@@ -1,8 +1,15 @@
 CONTAINER_ENGINE ?= podman
+export CONTAINER_ENGINE
 
-.PHONY: dev down migrate test lint format contracts kind-up
+.PHONY: setup preflight dev down logs migrate test lint format contracts kind-up
+setup:
+	./scripts/setup.sh
+preflight:
+	./scripts/preflight.sh
 dev:
-	$(CONTAINER_ENGINE) compose up --build
+	./scripts/dev.sh
+logs:
+	$(CONTAINER_ENGINE) compose logs -f
 down:
 	$(CONTAINER_ENGINE) compose down
 migrate:

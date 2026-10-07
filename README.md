@@ -74,35 +74,47 @@ graphs through the same generic routes.
 
 ## Quick start
 
-### Prerequisites
-
-| Tool | Notes |
-|---|---|
-| Podman (+ Podman Desktop) | Start the VM once with `podman machine start` |
-| [`uv`](https://docs.astral.sh/uv/) | Python 3.12 workspace and tooling |
-| `pnpm` and Node 22 | TypeScript workspace |
-| [Ollama](https://ollama.com) (native) | Runs on the host to use the Mac GPU. Pull a model: `ollama pull gpt-oss:20b` |
-
-The LiteLLM alias `default-chat` points at `gpt-oss:20b`. To use a smaller or faster model,
-edit `deploy/compose/litellm.yaml` and restart LiteLLM.
-
-### Run the stack
+On a fresh clone, two commands do everything:
 
 ```bash
-cp .env.example .env
-# set LITELLM_API_KEY in .env, e.g. generate one with: echo sk-$(openssl rand -hex 24)
-uv sync --all-packages && pnpm install
-
-make dev        # builds and starts postgres, redis, litellm, api, worker, web (foreground)
+git clone https://github.com/wasif-danesh/wd-ai.git && cd wd-ai
+make setup      # installs missing tools, starts Podman + Ollama, pulls the model, creates .env
+make dev        # starts the stack, waits for Postgres, runs migrations, follows logs
 ```
 
-In a second terminal, once Postgres is up (first run only):
+Then open http://localhost:3000 and press **Run**. A reply from the model streams into the page.
 
-```bash
-make migrate
-```
+### What `make setup` does
 
-Open http://localhost:3000 and press **Run**. A reply from the model streams into the page.
+It is idempotent (safe to re-run) and asks before every install or large download. Add `-y`
+(`./scripts/setup.sh -y`) to accept everything without prompts.
+
+1. Checks for `podman`, `uv`, `pnpm`, Node 22+, `ollama`, `curl`, `git` and a Compose provider,
+   and installs what is missing (macOS: Homebrew; Debian/Ubuntu/Kali: `apt`, plus the official
+   `uv` and Ollama install scripts).
+2. Creates and starts the Podman VM on macOS.
+3. Starts Ollama and pulls every model named in `deploy/compose/litellm.yaml`
+   (`gpt-oss:20b`, about 13 GB).
+4. Creates `.env` from `.env.example` and generates random secrets. Nothing is printed.
+5. Runs `uv sync --all-packages` and `pnpm install`.
+
+The only thing it cannot do for you is install [Homebrew](https://brew.sh) on a Mac that
+lacks it; it stops and tells you.
+
+`make dev` runs `make preflight` first: a fast, read-only check that lists exactly what is
+missing and points back to `make setup`.
+
+### Hardware notes
+
+- `gpt-oss:20b` needs about 16 GB of RAM and 20 GB of free disk. Setup warns when a machine is
+  short. To use a smaller or faster model, change the `ollama_chat/...` entries in
+  `deploy/compose/litellm.yaml`; setup and preflight read the model names from there.
+- Ollama runs natively on the host so it can use the GPU. On Apple Silicon it uses Metal. On
+  Intel Macs and machines without a supported GPU it runs on CPU, so replies are slow.
+- Linux: Ollama listens on `127.0.0.1` by default. If containers cannot reach it, set
+  `OLLAMA_HOST=0.0.0.0` for the Ollama service.
+
+### Services
 
 | Service | URL |
 |---|---|
@@ -111,7 +123,7 @@ Open http://localhost:3000 and press **Run**. A reply from the model streams int
 | LiteLLM | http://localhost:4000 |
 | Postgres / Redis | `localhost:5432` / `localhost:6379` |
 
-Stop everything with `make down`.
+`make logs` follows container logs, and `make down` stops everything.
 
 ### Develop with live reload
 
@@ -199,8 +211,10 @@ make test        # Python (no GPU or network needed) + TypeScript tests
 make lint        # ruff, pyright, Biome, tsc
 make format      # ruff format + autofix
 make contracts   # regenerate TS types from the API's OpenAPI schema
-make migrate     # alembic upgrade head (Postgres on localhost)
-make dev / down  # start / stop the container stack
+make setup       # one-time machine setup (see Quick start)
+make preflight   # read-only readiness check
+make dev / down  # start (with migrations) / stop the container stack
+make migrate     # alembic upgrade head only (Postgres on localhost)
 ```
 
 - **Tooling:** Python 3.12 with `uv`, `ruff`, `pyright`, `pytest`, Alembic. TypeScript with
@@ -224,6 +238,7 @@ make dev / down  # start / stop the container stack
 | Port already in use | `make down`, then try again |
 | Slow first reply | The model loads on first use, and `gpt-oss` is a reasoning model. Try a smaller model |
 | `podman compose` cannot connect | Run `podman machine start` |
+| `make dev` says "Not ready" | Run `make setup`; it fixes every item the preflight lists |
 
 ## Environments
 
