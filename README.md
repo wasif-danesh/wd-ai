@@ -7,15 +7,17 @@ streaming, a stateful agent runtime, a model gateway, GPU media workers, storage
 (later) auth, billing and observability. Each **product** is a thin layer on top: a few
 LangGraph graphs, a Next.js UI and a config file.
 
-> **Status: prototype.** Phases 0 and 1 are done: a walking skeleton streams a model reply
-> from Ollama to the browser through every layer. Media generation, auth, Kubernetes and the
-> first real product (`wd-music-ai`) are still to come. See the [roadmap](docs/roadmap.md).
+> **Status: prototype.** Phases 0-2 are largely done: a walking skeleton streams a model reply
+> from Ollama to the browser through every layer, runs in containers, and installs on a local
+> Kubernetes cluster from a Helm chart. The home-lab (k3s + Argo CD) rollout, media generation,
+> auth and the first real product (`wd-music-ai`) are still to come. See the
+> [roadmap](docs/roadmap.md).
 
 ## Contents
 
 - [How it works](#how-it-works)
 - [Products](#products)
-- [Quick start](#quick-start)
+- [Quick start](#quick-start) (including [what to install first](#before-you-start-manual-prerequisites))
 - [Using the API](#using-the-api)
 - [Project layout](#project-layout)
 - [Configuration](#configuration)
@@ -75,7 +77,8 @@ graphs through the same generic routes.
 
 ## Quick start
 
-On a fresh clone, two commands do everything:
+Do the [one-time prerequisites](#before-you-start-manual-prerequisites) for your platform, then
+two commands do everything else:
 
 ```bash
 git clone https://github.com/wasif-danesh/wd-ai.git && cd wd-ai
@@ -85,13 +88,55 @@ make dev        # starts the stack, waits for Postgres, runs migrations, follows
 
 Then open http://localhost:3000 and press **Run**. A reply from the model streams into the page.
 
+If `make` is not installed yet (common on a fresh Linux box), run the script directly. It
+installs `make` for you: `./scripts/setup.sh`, then `make dev`.
+
+### Before you start (manual prerequisites)
+
+`make setup` installs almost everything, but a few things must exist first because they need
+administrator rights, a reboot, or are needed to run the setup at all. Do these once.
+
+**Every platform**
+
+- An internet connection, and about 25 GB of free disk (the default model is about 13 GB).
+- 16 GB of RAM or more for the default `gpt-oss:20b` model. With less, switch to a smaller model
+  (see [Hardware notes](#hardware-notes)).
+- A GPU is optional. Apple Silicon (Metal) and NVIDIA GPUs speed up replies; CPU-only works but
+  is slow.
+
+**macOS**
+
+1. Install [Homebrew](https://brew.sh).
+2. Install Apple's command line tools (they provide `git` and `make`): `xcode-select --install`.
+
+**Linux** (Debian, Ubuntu, Kali, Fedora, Arch and derivatives)
+
+1. Use a distro with `apt`, `dnf` or `pacman`, and an account with `sudo`.
+2. Install `git` (for example `sudo apt install git`). `make`, `curl` and `openssl` are installed
+   by setup if missing.
+3. For the local Kubernetes cluster only (`make kind-up`) with rootless Podman, enable cgroup
+   delegation once: [runbooks/linux-kind.md](docs/runbooks/linux-kind.md).
+
+**Windows 10 (22H2) or 11**: use WSL2 with Ubuntu. Native PowerShell and cmd are not supported.
+
+1. Turn on hardware virtualisation in the BIOS/UEFI, and use an administrator account.
+2. From an elevated PowerShell, run `wsl --install -d Ubuntu-24.04`, reboot if asked, and finish
+   the Ubuntu first-run user setup.
+3. Optional but recommended: enable systemd in Ubuntu (`printf '[boot]\nsystemd=true\n' | sudo tee /etc/wsl.conf`),
+   then run `wsl --shutdown` from PowerShell and reopen Ubuntu.
+4. For GPU acceleration, install a current NVIDIA driver on **Windows**, not inside Linux.
+5. Clone the repo inside Ubuntu's own filesystem (`~`), not under `/mnt/c`, then follow the Linux
+   steps above.
+
+Details and tips: [docs/windows.md](docs/windows.md).
+
 ### Supported platforms
 
 | Platform | Status |
 |---|---|
-| macOS (Apple Silicon and Intel) | Supported; Homebrew required |
-| Linux: Debian, Ubuntu, Kali (apt), Fedora (dnf), Arch (pacman) | Supported; setup tested in Ubuntu and Fedora containers and in CI |
-| Windows 10/11 | Supported **through WSL2** (Ubuntu); see [docs/windows.md](docs/windows.md). Untested on real Windows so far |
+| macOS (Apple Silicon and Intel) | Supported; Homebrew and Xcode command line tools required first |
+| Linux: Debian, Ubuntu, Kali (apt), Fedora (dnf), Arch (pacman) | Supported; the tool installation is tested in Ubuntu and Fedora containers and in CI. Engine, Ollama and model steps are tested on macOS only |
+| Windows 10/11 | Supported **through WSL2** (Ubuntu); see [docs/windows.md](docs/windows.md). Not yet tested on a real Windows machine |
 
 ### What `make setup` does
 
@@ -113,8 +158,9 @@ and also installs `kind`, `helm` and `kubectl`.
 4. Creates `.env` from `.env.example` and generates random secrets. Nothing is printed.
 5. Runs `uv sync --all-packages` and `pnpm install`.
 
-The only thing it cannot do for you is install [Homebrew](https://brew.sh) on a Mac that lacks
-it; it stops and tells you.
+Anything it cannot do for you is listed under
+[Before you start](#before-you-start-manual-prerequisites); the script stops with a message if
+something is missing.
 
 `make dev` runs `make preflight` first: a fast, read-only check that lists exactly what is
 missing and points back to `make setup`.
@@ -218,10 +264,10 @@ wd-ai/
 │  ├─ helm/wd-ai/            # Helm chart + values overlays (local, staging, prod, cloud/*)
 │  ├─ kind/                  # local cluster config
 │  └─ argocd/                # Argo CD Application for staging
-├─ scripts/                  # export_openapi.py (feeds TS type generation)
+├─ scripts/                  # setup, preflight, dev, kind and install helpers; export_openapi.py
 ├─ docs/                     # architecture, ADRs, contracts, roadmap
 ├─ compose.yaml              # local dev stack
-└─ Makefile                  # dev, test, lint, contracts, migrate
+└─ Makefile                  # setup, dev, test, lint, contracts, migrate, kind-*
 ```
 
 Python packages are snake_case (`wd_api`); folders and URLs are kebab-case.
@@ -264,8 +310,8 @@ make kind-up / kind-test / kind-down   # local Kubernetes (see above)
   e.g. `feat(api): ...`.
 - **Containers:** use `${CONTAINER_ENGINE:-podman}` in scripts, never hard-code an engine.
   Images build for `linux/arm64` and `linux/amd64`.
-- **CI:** GitHub Actions runs lint, typecheck and tests, then builds multi-arch images on
-  `main`.
+- **CI:** GitHub Actions runs lint, typecheck and tests, a `setup` job on Ubuntu and macOS, a
+  Helm lint and `kind` smoke test, and on `main` builds and pushes multi-arch images.
 
 ### Troubleshooting
 
@@ -277,12 +323,15 @@ make kind-up / kind-test / kind-down   # local Kubernetes (see above)
 | Slow first reply | The model loads on first use, and `gpt-oss` is a reasoning model. Try a smaller model |
 | `podman compose` cannot connect | Run `podman machine start` |
 | `make dev` says "Not ready" | Run `make setup`; it fixes every item the preflight lists |
+| `command not found` right after setup (Linux, WSL) | Tools are installed in `~/.local/bin`. Add it to your PATH (`export PATH="$HOME/.local/bin:$PATH"` in `~/.profile`) and reopen the shell |
+| `make kind-up` fails on Linux with rootless Podman | Enable cgroup delegation: [runbooks/linux-kind.md](docs/runbooks/linux-kind.md) |
+| WSL is slow or runs out of memory | Keep the repo under `~`, not `/mnt/c`, and raise the limit in `.wslconfig` ([docs/windows.md](docs/windows.md)) |
 
 ## Environments
 
 | Environment | Where | Purpose |
 |---|---|---|
-| Dev | MacBook (Apple Silicon), Podman | Day-to-day development |
+| Dev | macOS, Linux or Windows (WSL2), Podman | Day-to-day development |
 | Staging | Home lab k3s, 24 GB NVIDIA GPU | Integration and test runs |
 | Prod | Managed Kubernetes, GCP first (AWS and Azure kept deployable) | Production |
 
