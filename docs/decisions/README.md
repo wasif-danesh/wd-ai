@@ -43,5 +43,8 @@
 | [0039](0039-picture-input.md) | Picture input: choose, drag and drop, paste | Accepted |
 | [0040](0040-one-library.md) | One library: "My creations" | Accepted |
 | [0041](0041-semantic-search.md) | Semantic search in My creations (multilingual, bge-m3) | Accepted |
+| [0042](0042-text-to-speech.md) | Text to Speech (voice catalog; Kokoro and Indic Parler-TTS for Bengali and Indic languages) | Proposed |
+| [0043](0043-speech-to-text.md) | Speech to Text (audio and video upload, recording, Whisper, chunked search) | Proposed |
+| [0044](0044-lip-sync.md) | Lip Sync (InfiniteTalk; character image plus voice, song or script; safety policy) | Proposed |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.
