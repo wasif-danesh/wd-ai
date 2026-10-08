@@ -11,23 +11,21 @@ export type Product = {
 export const PRODUCTS: Product[] = [
   {
     id: "music",
-    title: "Generate Music",
-    blurb:
-      "Describe a song, approve the lyrics, and get a 60-second track with its own cover art. You approve the lyrics before any music is made.",
+    title: "Music",
+    blurb: "Turn a story or feeling into lyrics, then hear it come to life.",
     href: "/music",
     status: "live",
   },
   {
     id: "image",
-    title: "Generate Image",
-    blurb:
-      "Describe a picture, or upload one and say what to change. Your upload is deleted as soon as the image is made.",
+    title: "Image",
+    blurb: "Describe a scene or transform a picture into something new.",
     href: "/image",
     status: "live",
   },
   {
     id: "video",
-    title: "Generate Video",
+    title: "Video",
     blurb: "Bring a story to life as a short clip.",
     href: "/video",
     status: "soon",

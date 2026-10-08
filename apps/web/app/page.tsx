@@ -9,11 +9,20 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <>
+    <div className="page--home">
       <header className="studio-hero">
-        <h1>WD AI Studio</h1>
-        <p>Turn your ideas into music, images and video.</p>
+        <span className="studio-hero__eyebrow">Your creative space</span>
+        <h1>
+          Make something
+          <br />
+          worth feeling.
+        </h1>
+        <p>Bring an idea. Leave with a song, an image, or a whole new direction.</p>
       </header>
+      <div className="studio-section-heading">
+        <h2>Choose your canvas</h2>
+        <p>Pick a tool and make it yours</p>
+      </div>
       <ul className="product-grid" aria-label="What you can make">
         {PRODUCTS.map((p) => (
           <li key={p.id}>
@@ -21,6 +30,6 @@ export default function Home() {
           </li>
         ))}
       </ul>
-    </>
+    </div>
   );
 }

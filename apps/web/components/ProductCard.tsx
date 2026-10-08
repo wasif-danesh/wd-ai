@@ -5,6 +5,12 @@ import { ProductArt } from "./ProductArt";
 /** One card on the home page; the whole card is the link. */
 export function ProductCard({ product }: { product: Product }) {
   const live = product.status === "live";
+  const action =
+    product.id === "music"
+      ? "Create a song"
+      : product.id === "image"
+        ? "Make an image"
+        : "On the way";
   return (
     <Link
       href={product.href}
@@ -13,17 +19,19 @@ export function ProductCard({ product }: { product: Product }) {
       data-status={product.status}
     >
       <ProductArt id={product.id} />
-      <h2>{product.title}</h2>
-      <p>{product.blurb}</p>
-      <span className="product-card__cta">
-        {live ? (
-          <>
-            Start creating <span aria-hidden="true">→</span>
-          </>
-        ) : (
-          "Coming soon"
-        )}
-      </span>
+      <div className="product-card__body">
+        <div className="product-card__heading">
+          <h2>{product.title}</h2>
+          <span className={`product-card__status${live ? "" : " product-card__status--soon"}`}>
+            {live ? "Available" : "Coming soon"}
+          </span>
+        </div>
+        <p>{product.blurb}</p>
+        <span className="product-card__cta">
+          {live ? action : "On the way"}
+          <span aria-hidden="true">{live ? "↗" : "···"}</span>
+        </span>
+      </div>
     </Link>
   );
 }

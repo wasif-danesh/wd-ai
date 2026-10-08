@@ -94,6 +94,7 @@ See [product spec](../products/wd-music-ai/README.md).
 ## Backlog (not yet scheduled)
 
 - [ ] Audio uploads (the image upload endpoint exists; ADR-0035)
+- [ ] Video product `wd-video-ai`: text to video and image to video on LTX-Video 2B (ADR-0037, proposed)
 - [ ] Screen finished images before showing them; measure the picture guardrail on unsafe pictures
 - [ ] Evaluate audio input on real recordings, not only synthetic speech (ADR-0020)
 - [ ] Pin the SeaweedFS image to a version instead of `:latest`

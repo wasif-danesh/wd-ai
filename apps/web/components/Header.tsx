@@ -5,6 +5,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Logo } from "./Logo";
 import { NavLink } from "./NavLink";
+import { ThemeToggle } from "./ThemeToggle";
 
 export async function Header() {
   await connection(); // per request: the session is not known at build time
@@ -17,38 +18,43 @@ export async function Header() {
       <div className="header__inner">
         <Logo />
         <nav className="nav" aria-label="Main">
+          <NavLink href="/" exact>
+            Explore
+          </NavLink>
           <NavLink href="/music" exact>
             Music
           </NavLink>
-          {signedIn && <NavLink href="/music/songs">My songs</NavLink>}
           <NavLink href="/image" exact>
             Image
           </NavLink>
-          {signedIn && <NavLink href="/image/creations">My images</NavLink>}
+          {signedIn && <NavLink href="/creations">My Creations</NavLink>}
           {isAdmin && <NavLink href="/admin">Admin</NavLink>}
         </nav>
-        {who ? (
-          <form
-            className="account"
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/signin" });
-            }}
-          >
-            <span className="account__name" title={session?.user?.email ?? undefined}>
-              {who}
+        <div className="header__actions">
+          <ThemeToggle />
+          {who ? (
+            <form
+              className="account"
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/signin" });
+              }}
+            >
+              <span className="account__name" title={session?.user?.email ?? undefined}>
+                {who}
+              </span>
+              <button type="submit" className="btn btn--ghost">
+                Sign out
+              </button>
+            </form>
+          ) : !signedIn ? (
+            <span className="account">
+              <Link href="/signin" className="btn btn--primary">
+                Sign in
+              </Link>
             </span>
-            <button type="submit" className="btn btn--ghost">
-              Sign out
-            </button>
-          </form>
-        ) : !signedIn ? (
-          <span className="account">
-            <Link href="/signin" className="btn btn--primary">
-              Sign in
-            </Link>
-          </span>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </header>
   );

@@ -18,20 +18,20 @@ describe("the studio's products", () => {
 });
 
 describe("ProductCard", () => {
-  it("is one link to the product, with a call to action for a live product", () => {
+  it("is one link to the product, with a direct action for a live product", () => {
     render(<ProductCard product={PRODUCTS[0]} />);
-    const link = screen.getByRole("link", { name: /Generate Music/ });
+    const link = screen.getByRole("link", { name: /Music/ });
     expect(link).toHaveAttribute("href", "/music");
-    expect(within(link).getByText(/Start creating/)).toBeInTheDocument();
+    expect(within(link).getByText("Create a song")).toBeInTheDocument();
     expect(link).toHaveAttribute("data-status", "live");
   });
 
   it("says plainly that a product is not ready, and still links to its page", () => {
     render(<ProductCard product={PRODUCTS[2]} />);
-    const link = screen.getByRole("link", { name: /Generate Video/ });
+    const link = screen.getByRole("link", { name: /Video/ });
     expect(link).toHaveAttribute("href", "/video");
     expect(within(link).getByText("Coming soon")).toBeInTheDocument();
-    expect(within(link).queryByText(/Start creating/)).not.toBeInTheDocument();
+    expect(within(link).queryByText("Create a song")).not.toBeInTheDocument();
   });
 
   it("hides the decorative art from screen readers", () => {

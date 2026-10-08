@@ -15,7 +15,7 @@ export function Equaliser({ still = false }: { still?: boolean }) {
 export function Logo() {
   return (
     <Link href="/" className="logo" aria-label="WD AI Studio, home">
-      <Equaliser />
+      <Equaliser still />
       <span>WD AI Studio</span>
     </Link>
   );

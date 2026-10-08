@@ -47,7 +47,8 @@ The event contract the UI builds against is in `products/wd-music-ai/README.md`.
 Hand-written modern CSS in `app/globals.css`; no framework and no runtime dependency.
 
 - **Design tokens** as OKLCH custom properties, with `light-dark()`, so dark mode follows the system
-  with no second stylesheet. `color-mix()` derives borders, tints and glows from the tokens.
+  with no second stylesheet. The header theme control can override the system choice and remembers
+  that preference in the browser. `color-mix()` derives borders, tints and glows from the tokens.
 - **Cascade layers** (`reset, tokens, base, layout, components, utilities`) keep specificity predictable.
 - **Native nesting**, **container queries** (the stepper and the song layout adapt to the width of their
   container, not the viewport), `@starting-style` entrance animations, `field-sizing: content` for

@@ -38,5 +38,6 @@
 | [0034](0034-song-downloads.md) | Song downloads: audio with its cover inside, and a video | Accepted |
 | [0035](0035-image-uploads.md) | Secured upload endpoint for user images | Accepted |
 | [0036](0036-image-product.md) | The image product: text to image and image to image | Accepted |
+| [0037](0037-video-product.md) | The video product: text to video and image to video (LTX-Video 2B) | Proposed |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.
