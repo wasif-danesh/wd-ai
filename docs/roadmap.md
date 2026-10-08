@@ -114,6 +114,8 @@ See [product spec](../products/wd-music-ai/README.md).
       Comfy API v2, OpenAI-compatible images) chosen per product capability at `/admin/media`
 - [ ] Try the media backends against the real services: a paid Comfy Cloud key (do our ACE-Step and klein
       files exist there, and what does a song cost?) and an image API key
+- [x] Semantic search in My creations: multilingual (bge-m3) vectors plus an exact-word check over a per-user index (ADR-0041). Every future creation kind must be indexed (checklist in the ADR)
+- [ ] Move the RAG helper to a multilingual embedder (768 to 1024 dimensions, new migration; ADR-0041 known issue 4)
 - [ ] Billing and pricing: credits ledger, payment provider, cost on usage events (ADR-0029: Stripe, prepaid credits)
 - [ ] SEO and shareable song pages (ADR-0026)
 - [ ] First-party analytics: page views, logins, privacy-safe IP handling (ADR-0027)

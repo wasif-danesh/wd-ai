@@ -128,6 +128,14 @@ Details: [configuration.md](configuration.md), ADR-0010.
 
 Docker/Podman on macOS cannot reach the Metal GPU, so GPU services run natively on the Mac.
 
+## Everything a user makes is searchable
+
+My creations (`/creations`, ADR-0040) is one library with one search (ADR-0041): a per-user index of the words
+of every song, image and video, with a multilingual embedding (`bge-m3`) and an exact-word check. **A new product
+or kind of creation is not finished until it is indexed**: text to index, `caps.index_creation` on save,
+`deps.unindex` on delete, a registered `IndexSource`, an `ids=` filter on its list route and a card in the
+library. The checklist is in ADR-0041 ("A rule for everything built later").
+
 ## Seams for later features
 
 | Feature | Seam built now |

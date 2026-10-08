@@ -179,7 +179,7 @@ and also installs `kind`, `helm` and `kubectl`.
      into `~/.local/bin`. pnpm comes from Corepack. No Homebrew or sudo is needed for those.
 2. Creates and starts the Podman VM on macOS, and checks it has enough memory (offers to resize).
 3. Starts Ollama and pulls every model named in `services/api/src/wd_api/model_defaults.yaml`
-   (`gemma4:e4b`, about 10 GB, plus `nomic-embed-text`). On Linux it also checks that containers can reach Ollama and
+   (`gemma4:e4b`, about 10 GB, plus `nomic-embed-text` and the multilingual `bge-m3`, about 1.5 GB together). On Linux it also checks that containers can reach Ollama and
    offers a fix if not.
 4. Creates `.env` from `.env.example` and generates random secrets. Nothing is printed.
 5. Runs `uv sync --all-packages` and `pnpm install`.
@@ -260,6 +260,7 @@ Without a valid token every route except `/health` answers `401`. Responses for 
 | `GET /admin/models`, `PUT /admin/models/{alias}`, `POST /admin/models/{alias}/test`, `/reset` | Admin only: see and change which provider and model serve each LiteLLM alias; keys are write-only |
 | `GET /admin/users`, `/admin/songs`, `/admin/usage?days=`, `/admin/audit` | Admin only (`403` for others): users, songs from all users, usage totals, the audit log. Listing users is itself audited |
 | `POST /products/{id}/uploads/images` (raw image body) | Store the user's picture (re-encoded, metadata-free) and return its key ([ADR-0035](docs/decisions/0035-image-uploads.md)) |
+| `GET /creations/search?q=&kind=&limit=` | Search the signed-in user's own creations by meaning and exact words, in any language ([ADR-0041](docs/decisions/0041-semantic-search.md)); every list route also takes `ids=` |
 | `POST /products/{id}/prompt/enhance` | Rewrite the user's prompt for the product's model ([ADR-0038](docs/decisions/0038-prompt-enhancement.md)) |
 | `DELETE /products/{id}/uploads/images/{upload_id}` | Take back an uploaded picture ([ADR-0039](docs/decisions/0039-picture-input.md)) |
 | `GET /products/wd-video-ai/videos`, `GET/DELETE /products/wd-video-ai/videos/{id}`, `.../download` | The signed-in user's clips, including ones still being made ([ADR-0037](docs/decisions/0037-video-product.md)) |

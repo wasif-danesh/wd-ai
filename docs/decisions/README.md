@@ -42,5 +42,6 @@
 | [0038](0038-prompt-enhancement.md) | Prompt enhancement for every product | Accepted |
 | [0039](0039-picture-input.md) | Picture input: choose, drag and drop, paste | Accepted |
 | [0040](0040-one-library.md) | One library: "My creations" | Accepted |
+| [0041](0041-semantic-search.md) | Semantic search in My creations (multilingual, bge-m3) | Accepted |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.

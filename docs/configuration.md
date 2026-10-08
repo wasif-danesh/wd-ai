@@ -140,12 +140,12 @@ interface applies (`obstore`); the adapter for each is a constructor in
 
 ### LiteLLM aliases
 
-An alias (`default-chat`, `lyrics-writer`, `prompt-enhancer`, `moderator`, `moderator-nothink`, `multimodal`,
+An alias (`default-chat`, `lyrics-writer`, `prompt-enhancer`, `creation-embedder`, `moderator`, `moderator-nothink`, `multimodal`,
 `embedder`) maps to a real model. Changing the underlying LLM never touches product config
 ([ADR-0025](decisions/0025-model-access-configuration.md)).
 
-- **Defaults** are in `services/api/src/wd_api/model_defaults.yaml` (Gemma 4 E4B and nomic-embed-text
-  on Ollama). The API seeds them into LiteLLM's database at start, once. `make setup` pulls the
+- **Defaults** are in `services/api/src/wd_api/model_defaults.yaml` (Gemma 4 E4B, nomic-embed-text and the
+  multilingual bge-m3 on Ollama). The API seeds them into LiteLLM's database at start, once. `make setup` pulls the
   Ollama models named there, and Helm's `ollama.models` must list the same ones (a test checks it).
 - **Overrides** are made in the admin area (`/admin/models`): pick a provider (Ollama, Gemini, Groq,
   Cerebras, OpenRouter, any OpenAI-compatible server, or any LiteLLM model string), a model and, for
@@ -173,6 +173,16 @@ The worker looks the binding up for every job, so a change applies to the next j
 encrypted with `MEDIA_SECRETS_KEY` (set once by `make setup`; changing it makes saved keys unreadable) and are
 never shown, logged or audited. Remote backends take no GPU lock; their time is recorded as
 `media.remote_seconds`.
+
+### Search over My creations
+
+`SEARCH_MIN_SIMILARITY` (default 0.57) is the floor under which a match by meaning is not shown; re-tune it on
+real data (ADR-0041, known issue 1). `SEARCH_INDEX_MODEL` (default `bge-m3/v2`) names what made the index rows: the embedder and the
+text format. If an admin changes the model behind the `creation-embedder` alias, or `search_text` changes, change
+this too and the background indexer re-embeds everything (a model with a different number of dimensions needs a
+migration).
+`SEARCH_RECONCILE_EVERY_S` (300) and `SEARCH_RECONCILE_BATCH` (200) set how often the background indexer checks for
+creations that are missing from the index and how many it embeds each time.
 
 ### A separate ComfyUI for video
 
