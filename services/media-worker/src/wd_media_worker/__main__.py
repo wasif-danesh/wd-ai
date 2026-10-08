@@ -7,13 +7,16 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import create_async_engine
 from wd_platform_sdk import (
     InMemoryUsageRecorder,
+    PostgresMediaBindingStore,
     PostgresUsageRecorder,
     RedisEventLog,
+    SecretBox,
     UsageRecorder,
     memory_storage,
     s3_storage,
 )
 
+from wd_media_worker.backends import BackendRouter
 from wd_media_worker.comfy import ComfyClient
 from wd_media_worker.consumer import Worker
 from wd_media_worker.gpu import RedisGpuLock
@@ -57,15 +60,24 @@ async def main() -> None:
     else:
         runner = ComfyRunner(comfy, s.job_timeout_s)
 
+    http = httpx.AsyncClient(timeout=30)
+    # The admin chooses the backend per product capability (ADR-0025); `runner` is the default.
+    router = BackendRouter(
+        runner,
+        s,
+        PostgresMediaBindingStore(engine) if engine else None,
+        SecretBox(s.media_secrets_key),
+        http,
+    )
     processor = JobProcessor(
         s,
         RedisEventLog(redis),
         storage,
         usage,
-        runner,
+        router,
         RedisGpuLock(redis, s.gpu_id),
         RedisJobState(redis),
-        httpx.AsyncClient(timeout=30),
+        http,
     )
     worker = Worker(redis, processor)
 
@@ -79,6 +91,8 @@ async def main() -> None:
         log.info("worker stopping")
     finally:
         await comfy.aclose()
+        await router.aclose()
+        await http.aclose()
         await redis.aclose()
         if engine:
             await engine.dispose()

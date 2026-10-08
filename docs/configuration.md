@@ -4,7 +4,7 @@ There are three kinds of configuration. Each has one home.
 
 | Kind | Examples | Local | Kubernetes |
 |---|---|---|---|
-| **Secrets** | OAuth client secrets, DB passwords, API keys, `AUTH_SECRET`, `LITELLM_SALT_KEY` | `.env` (gitignored); keys listed in `.env.example` | Kubernetes Secret from External Secrets or SOPS |
+| **Secrets** | OAuth client secrets, DB passwords, API keys, `AUTH_SECRET`, `LITELLM_SALT_KEY`, `MEDIA_SECRETS_KEY` | `.env` (gitignored); keys listed in `.env.example` | Kubernetes Secret from External Secrets or SOPS |
 | **Environment wiring** | `OLLAMA_BASE_URL`, `COMFYUI_BASE_URL`, `LITELLM_BASE_URL`, `DATABASE_URL`, bucket name | `.env` + `compose.yaml` | Helm values → ConfigMap |
 | **Product config** | Model bindings, workflow choice, prompts, quotas | `products/<id>/product.yaml` (in Git) | Same file, baked into the image |
 
@@ -141,6 +141,23 @@ An alias (`default-chat`, `lyrics-writer`, `moderator`, `moderator-nothink`, `mu
   cases on the candidate (about half a minute) and only changes it if every must-refuse case is refused.
 - LiteLLM keeps its tables in the `litellm` schema of the platform Postgres; `litellm.yaml` /
   the Helm ConfigMap hold settings only.
+
+### Media backends
+
+By default a product's media capabilities (`image.generate`, `music.generate`) run their ComfyUI
+workflow on the local ComfyUI (`COMFYUI_BASE_URL`). An admin can choose another backend per product
+capability at `/admin/media` ([ADR-0032](decisions/0032-media-backends.md)):
+
+| Backend | Runs | Settings |
+|---|---|---|
+| `comfyui-local` | the workflow on a ComfyUI server (the default) | server address (optional) |
+| `comfy-api` | the same workflow on Comfy Cloud, a serverless deployment or comfy-api-proxy (API v2) | API address (default `https://cloud.comfy.org`), API key |
+| `openai-images` | images only: the prompt sent to `POST /images/generations` | API address, model, size (optional), API key (optional) |
+
+The worker looks the binding up for every job, so a change applies to the next job. API keys are
+encrypted with `MEDIA_SECRETS_KEY` (set once by `make setup`; changing it makes saved keys unreadable) and are
+never shown, logged or audited. Remote backends take no GPU lock; their time is recorded as
+`media.remote_seconds`.
 
 ### ComfyUI workflows and map files
 

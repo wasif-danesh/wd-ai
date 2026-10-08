@@ -71,7 +71,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | Song graph: guardrail, lyrics, approval, music, cover, daily quota | Working with real models ([ADR-0022](docs/decisions/0022-song-graph-and-guardrail.md), [ADR-0024](docs/decisions/0024-real-model-validation.md)) |
 | `wd-music-ai` web app: create, review lyrics, progress, player, My songs | Working |
 | Sign-in (Auth.js with Google, GitHub, Microsoft; signed API tokens; users table) | Working; verified with a real GitHub login. Google and Microsoft are wired but not tried ([ADR-0030](docs/decisions/0030-authentication.md)) |
-| Admin area (`/admin`): users, songs, usage, audit log, model access | Working; LLM providers (Gemini, Groq, Cerebras, OpenRouter, any OpenAI-compatible or LiteLLM model, or local) are changed at run time, the guardrail model is vetted first. Media providers (Comfy Cloud and others) are next ([ADR-0025](docs/decisions/0025-model-access-configuration.md)) |
+| Admin area (`/admin`): users, songs, usage, audit log, model access | Working; LLM providers (Gemini, Groq, Cerebras, OpenRouter, any OpenAI-compatible or LiteLLM model, or local) are changed at run time, the guardrail model is vetted first. Media backends (local ComfyUI, Comfy Cloud / Comfy API v2, OpenAI-compatible image APIs) are chosen per product capability at `/admin/media` ([ADR-0032](docs/decisions/0032-media-backends.md); tested against stand-in servers, not yet the real Comfy Cloud) |
 | Helm chart, local Kubernetes (kind), CI smoke test | Working |
 | k3s home lab with Argo CD | Manifests and runbook written, not yet run (Phase 2) |
 
@@ -251,6 +251,7 @@ Without a valid token every route except `/health` answers `401`. Responses for 
 | `GET /runs/{run_id}/events` | Reconnect to a run; honours `Last-Event-ID` |
 | `POST /runs/{run_id}/resume` | Answer an `interrupt` (approve, edit); continues the stream. Body: `{"value": ...}` |
 | `GET /me` | The caller's user id, tenant and role |
+| `GET /admin/media`, `PUT /admin/media/{product}/{capability}`, `POST .../test`, `.../reset` | Admin only: choose which backend runs a product's media capability; keys are write-only |
 | `GET /admin/models`, `PUT /admin/models/{alias}`, `POST /admin/models/{alias}/test`, `/reset` | Admin only: see and change which provider and model serve each LiteLLM alias; keys are write-only |
 | `GET /admin/users`, `/admin/songs`, `/admin/usage?days=`, `/admin/audit` | Admin only (`403` for others): users, songs from all users, usage totals, the audit log. Listing users is itself audited |
 | `GET /products/wd-music-ai/songs`, `GET /products/wd-music-ai/songs/{id}` | The signed-in user's songs, with presigned audio and cover links (product-provided routes, [ADR-0023](docs/decisions/0023-product-provided-routes.md)) |
@@ -367,6 +368,7 @@ make kind-up / kind-test / kind-down   # local Kubernetes (see above)
 | Slow first reply | The model loads into memory on first use. CPU-only machines are slower; try `gemma4:e2b` |
 | Empty reply with a small `max_tokens` | Gemma 4 "thinking" uses the token budget. It is off for the chat and lyrics aliases; keep budgets generous for the `moderator` ([ADR-0018](docs/decisions/0018-default-text-model-gemma4-e4b.md)) |
 | Every model call fails with "model not found" right after start | The API seeds the model aliases into LiteLLM when it starts; give it a minute and check `podman logs wd-ai-api-1`. `LITELLM_API_KEY` must match between the API and LiteLLM |
+| "API keys can't be saved yet" in `/admin/media` | `MEDIA_SECRETS_KEY` is missing: run `make setup`, then restart the API and the worker |
 | `make dev` fails with "LITELLM_SALT_KEY" | Run `make setup`; it generates the key. Never change it afterwards: saved provider keys are encrypted with it |
 | `podman compose` cannot connect | Run `podman machine start` |
 | `make dev` says "Not ready" | Run `make setup`; it fixes every item the preflight lists |

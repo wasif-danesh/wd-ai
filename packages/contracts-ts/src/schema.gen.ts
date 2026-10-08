@@ -21,6 +21,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Media */
+        get: operations["list_media_admin_media_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/media/{product_id}/{capability}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Media */
+        put: operations["set_media_admin_media__product_id___capability__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/media/{product_id}/{capability}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Media */
+        post: operations["reset_media_admin_media__product_id___capability__reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/media/{product_id}/{capability}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test Media */
+        post: operations["test_media_admin_media__product_id___capability__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/models": {
         parameters: {
             query?: never;
@@ -342,6 +410,19 @@ export interface components {
             /** Entries */
             entries: components["schemas"]["AuditEntry"][];
         };
+        /** BackendView */
+        BackendView: {
+            /** Description */
+            description: string;
+            /** Families */
+            families: string[];
+            /** Fields */
+            fields: components["schemas"]["FieldView"][];
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+        };
         /** Binding */
         Binding: {
             /** Api Base */
@@ -414,6 +495,21 @@ export interface components {
             thread_id: string;
             /** Ts */
             ts?: string;
+        };
+        /** FieldView */
+        FieldView: {
+            /** Help */
+            help: string;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+            /** Placeholder */
+            placeholder: string;
+            /** Required */
+            required: boolean;
+            /** Secret */
+            secret: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -504,6 +600,63 @@ export interface components {
             tenant_id: string;
             /** User Id */
             user_id: string;
+        };
+        /** MediaBindingIn */
+        MediaBindingIn: {
+            /** Api Key */
+            api_key?: string | null;
+            /** Backend */
+            backend: string;
+            /**
+             * Config
+             * @default {}
+             */
+            config: {
+                [key: string]: string;
+            };
+        };
+        /** MediaList */
+        MediaList: {
+            /** Backends */
+            backends: components["schemas"]["BackendView"][];
+            /** Items */
+            items: components["schemas"]["MediaView"][];
+            /** Secrets Ready */
+            secrets_ready: boolean;
+        };
+        /** MediaTestOutcome */
+        MediaTestOutcome: {
+            /** Latency Ms */
+            latency_ms: number;
+            /** Message */
+            message: string;
+            /** Ok */
+            ok: boolean;
+        };
+        /** MediaView */
+        MediaView: {
+            /** Allowed Backends */
+            allowed_backends: string[];
+            /** Backend */
+            backend: string;
+            /** Capability */
+            capability: string;
+            /** Config */
+            config: {
+                [key: string]: string;
+            };
+            /** Key Set */
+            key_set: boolean;
+            /** Product Id */
+            product_id: string;
+            /** Source */
+            source: string;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By */
+            updated_by: string | null;
+            /** Workflow */
+            workflow: string | null;
         };
         /** ModelList */
         ModelList: {
@@ -767,6 +920,130 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_media_admin_media_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaList"];
+                };
+            };
+        };
+    };
+    set_media_admin_media__product_id___capability__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                capability: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaBindingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_media_admin_media__product_id___capability__reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                capability: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_media_admin_media__product_id___capability__test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                capability: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MediaBindingIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaTestOutcome"];
                 };
             };
             /** @description Validation Error */

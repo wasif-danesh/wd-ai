@@ -100,8 +100,10 @@ See [product spec](../products/wd-music-ai/README.md).
       with users, songs, usage and audit log
 - [x] Model access, LLM part (ADR-0025 step 2): aliases seeded into LiteLLM's database, `/admin/models`
       with test connection, save, reset and the moderator canary; keys write-only
-- [ ] Model access, media part: provider adapters for the media worker (local ComfyUI, Comfy Cloud,
-      OpenAI-compatible images) and their admin screens
+- [x] Model access, media part (ADR-0032): backends for the media worker (local ComfyUI, Comfy Cloud /
+      Comfy API v2, OpenAI-compatible images) chosen per product capability at `/admin/media`
+- [ ] Try the media backends against the real services: a paid Comfy Cloud key (do our ACE-Step and klein
+      files exist there, and what does a song cost?) and an image API key
 - [ ] Billing and pricing: credits ledger, payment provider, cost on usage events (ADR-0029: Stripe, prepaid credits)
 - [ ] SEO and shareable song pages (ADR-0026)
 - [ ] First-party analytics: page views, logins, privacy-safe IP handling (ADR-0027)

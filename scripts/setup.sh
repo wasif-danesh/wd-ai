@@ -214,6 +214,13 @@ set_secret LITELLM_API_KEY sk-dev-change-me sk-
 set_secret AUTH_SECRET change-me ""
 set_secret API_AUTH_SECRET change-me-with-at-least-32-characters ""
 set_secret LITELLM_SALT_KEY change-me ""
+# A Fernet key: 32 random bytes, URL-safe base64 (used to encrypt media provider keys).
+cur="$(env_value MEDIA_SECRETS_KEY)"
+if [ -z "$cur" ] || [ "$cur" = "change-me" ]; then
+  val="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '\n')"
+  sed -i.bak "s|^MEDIA_SECRETS_KEY=.*|MEDIA_SECRETS_KEY=$val|" "$ROOT/.env" && rm -f "$ROOT/.env.bak"
+  ok "generated MEDIA_SECRETS_KEY (not printed)"
+else ok "MEDIA_SECRETS_KEY already set"; fi
 set_secret STORAGE_SECRET_KEY change-me ""
 
 # ---- 5. Dependencies ---------------------------------------------------------------------

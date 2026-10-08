@@ -33,3 +33,10 @@ export type ModelList = components["schemas"]["ModelList"];
 export type ModelBinding = components["schemas"]["Binding"];
 export type ModelUpdated = components["schemas"]["ModelUpdated"];
 export type TestOutcome = components["schemas"]["TestOutcome"];
+
+// Media access (admin)
+export type MediaList = components["schemas"]["MediaList"];
+export type MediaView = components["schemas"]["MediaView"];
+export type MediaBackend = components["schemas"]["BackendView"];
+export type MediaField = components["schemas"]["FieldView"];
+export type MediaTestOutcome = components["schemas"]["MediaTestOutcome"];

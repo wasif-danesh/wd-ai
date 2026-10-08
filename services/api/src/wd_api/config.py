@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     comfyui_base_url: str = "http://host.containers.internal:8188"
     ollama_base_url: str = "http://host.containers.internal:11434"
     log_level: str = "INFO"
+    media_secrets_key: str = ""  # encrypts media provider API keys saved in the admin area
 
     products_dir: str = "products"
     product_env: str = ""  # selects products/<id>/product.<env>.yaml overlays

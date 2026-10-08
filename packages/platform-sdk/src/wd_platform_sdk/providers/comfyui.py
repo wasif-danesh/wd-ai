@@ -29,7 +29,8 @@ class ComfyUIProvider:
     ) -> JobHandle:
         ctx = require_context()
         wf = self._workflow(binding.workflow or "")
-        graph = wf.fill({**binding.defaults, **inputs})
+        merged = {**binding.defaults, **inputs}
+        graph = wf.fill(merged)
         request = JobRequest(
             tenant_id=ctx.tenant_id,
             product_id=ctx.product_id,
@@ -39,6 +40,7 @@ class ComfyUIProvider:
             capability=capability,
             workflow=wf.name,
             prompt=graph,
+            inputs=merged,
             outputs={k: v.model_dump() for k, v in wf.map.outputs.items()},
         )
         await self._sink.submit(request)

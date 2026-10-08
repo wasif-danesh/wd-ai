@@ -33,6 +33,7 @@ spec:
             - { name: GPU_ID, value: {{ .Values.mediaWorker.gpuId | quote }} }
             - { name: JOB_TIMEOUT_S, value: {{ .Values.mediaWorker.jobTimeoutSeconds | quote }} }
             - { name: LOG_LEVEL, value: {{ .Values.env.LOG_LEVEL | quote }} }
+            {{- include "wd.mediaSecretsEnv" . | nindent 12 }}
             {{- include "wd.storageEnv" . | nindent 12 }}
           securityContext: { allowPrivilegeEscalation: false }
           resources: {{- toYaml .Values.mediaWorker.resources | nindent 12 }}

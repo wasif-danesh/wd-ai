@@ -100,6 +100,14 @@ providers) an API key, then **Test connection** (nothing is saved) or **Save**. 
 empty. Saving a new model for the guardrail's `moderator` first runs the guardrail test cases on it and refuses the change if it
 lets a must-refuse request through; this takes about half a minute. **Reset to default** undoes a change.
 
+### Media
+
+`/admin/media` lists each product's media capabilities (for example `wd-music-ai` `image.generate` and `music.generate`) and
+what runs them. By default that is the product's own ComfyUI workflow on the local ComfyUI. Choose **Comfy Cloud / Comfy API (v2)**
+or, for images, an **OpenAI-compatible image API**, enter its address and key, then **Test connection** (it checks the service
+answers; it does not generate anything) or **Save**. The next job uses it. A saved key is kept when you save again for the same
+backend, and is never shown. Needs `MEDIA_SECRETS_KEY` (`make setup` creates it) before a key can be saved.
+
 ## Not done yet
 
 - Only GitHub sign-in has been tried with a real login; Google and Microsoft are wired the same way.

@@ -83,6 +83,7 @@ imagePullSecrets:
   value: {{ .Values.env.COMFYUI_BASE_URL | quote }}
 - name: LOG_LEVEL
   value: {{ .Values.env.LOG_LEVEL | quote }}
+{{ include "wd.mediaSecretsEnv" . }}
 - name: AUTH_MODE
   value: {{ .Values.auth.mode | quote }}
 {{- if ne .Values.auth.mode "stub" }}
@@ -93,6 +94,13 @@ imagePullSecrets:
   value: {{ .Values.auth.adminEmails | quote }}
 {{- end }}
 {{- include "wd.storageEnv" . | nindent 0 }}
+{{- end -}}
+
+{{/* Encrypts media provider API keys saved in the admin area. Optional: without it the admin area refuses to save a key. */}}
+{{- define "wd.mediaSecretsEnv" -}}
+- name: MEDIA_SECRETS_KEY
+  valueFrom:
+    secretKeyRef: { name: {{ .Values.secrets.existingSecret }}, key: MEDIA_SECRETS_KEY, optional: true }
 {{- end -}}
 
 {{/* Sign-in settings for the web pod (ADR-0030). Provider keys are optional: a provider with no key is simply not offered. */}}

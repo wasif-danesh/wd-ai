@@ -1,7 +1,7 @@
 # Base values. Overlay order (later wins):
 #   values.yaml  ->  values/<env>.yaml  ->  values/cloud/<cloud>.yaml
 # Secrets never live here. They come from the Secret named by `secrets.existingSecret`
-# (keys: LITELLM_API_KEY, LITELLM_SALT_KEY, POSTGRES_PASSWORD, and DATABASE_URL + LITELLM_DATABASE_URL when postgres.enabled=false;
+# (keys: LITELLM_API_KEY, LITELLM_SALT_KEY, MEDIA_SECRETS_KEY, POSTGRES_PASSWORD, and DATABASE_URL + LITELLM_DATABASE_URL when postgres.enabled=false;
 # AUTH_SECRET and API_AUTH_SECRET unless auth.mode=stub; optional AUTH_<PROVIDER>_ID / _SECRET).
 
 image:

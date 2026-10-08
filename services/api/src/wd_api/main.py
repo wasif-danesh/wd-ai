@@ -17,7 +17,9 @@ from wd_platform_sdk import (
     EventLog,
     GraphRegistry,
     InMemoryJobSink,
+    InMemoryMediaBindingStore,
     JobSink,
+    PostgresMediaBindingStore,
     PostgresUsageRecorder,
     ProviderDeps,
     RedisEventLog,
@@ -26,6 +28,7 @@ from wd_platform_sdk import (
     RouteDeps,
     RunStore,
     ScopedStorage,
+    SecretBox,
     UsageRecorder,
     build_capabilities,
     load_product_config,
@@ -35,6 +38,7 @@ from wd_platform_sdk import (
 from wd_api.admin import AdminStore, PostgresAdminStore
 from wd_api.admin import me_router as me_router
 from wd_api.admin import router as admin_router
+from wd_api.admin_media import router as admin_media_router
 from wd_api.admin_models import router as admin_models_router
 from wd_api.auth import MIN_SECRET_BYTES
 from wd_api.config import get_settings
@@ -43,6 +47,7 @@ from wd_api.identity import get_identity
 from wd_api.jobs_consumer import JobCompletionConsumer
 from wd_api.litellm_admin import BackendError, InMemoryModelBackend, LiteLLMBackend
 from wd_api.logging import configure_logging, request_id
+from wd_api.media_access import MediaAccess, media_capabilities_from
 from wd_api.model_access import ModelAccess, load_defaults
 from wd_api.model_checks import RegistryCheckRunner
 from wd_api.rag import DIMENSIONS, RagService
@@ -83,6 +88,7 @@ def create_app(
     users: UserStore | None = None,
     admin_store: AdminStore | None = None,
     model_access: ModelAccess | None = None,
+    media_access: MediaAccess | None = None,
 ) -> FastAPI:
     """App factory. Tests inject a registry, products dir (with `provider: fake` bindings),
     checkpointer, usage recorder, event log, run store and job sink, so no GPU, network, database
@@ -158,6 +164,12 @@ def create_app(
                 )
                 seeder = asyncio.create_task(_seed_models(models))
         app.state.models = models
+        app.state.media = media_access or MediaAccess(
+            InMemoryMediaBindingStore() if injected else PostgresMediaBindingStore(db),
+            SecretBox(settings.media_secrets_key),
+            lambda: media_capabilities_from(reg, pdir, settings.product_env),
+            settings.comfyui_base_url,
+        )
 
         def build_graphs(saver: Any) -> dict[str, Any]:
             graphs: dict[str, Any] = {}
@@ -222,6 +234,7 @@ def create_app(
     app.include_router(me_router)
     app.include_router(admin_router)
     app.include_router(admin_models_router)
+    app.include_router(admin_media_router)
 
     # Product-provided routes (ADR-0023): mounted now so the OpenAPI schema (and the TypeScript
     # types generated from it) include them; the database and storage they use are read from

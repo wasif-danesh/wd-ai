@@ -35,6 +35,9 @@ class JobRequest(BaseModel):
     capability: str
     workflow: str
     prompt: dict[str, Any]  # ComfyUI API-format graph with inputs filled in
+    # What was asked, before it became a ComfyUI graph (prompt text, size, seed, lyrics, ...): other
+    # backends (ADR-0025) work from this and ignore the graph.
+    inputs: dict[str, Any] = Field(default_factory=dict)
     outputs: dict[str, Any]  # output name -> {node, type}, from the workflow map
     created_at: str = Field(default_factory=_now)
 

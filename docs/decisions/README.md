@@ -33,5 +33,6 @@
 | [0029](0029-billing-and-payments.md) | Billing and payments (Stripe, prepaid credits) | Proposed |
 | [0030](0030-authentication.md) | Authentication (Auth.js sign-in, signed API tokens) | Accepted |
 | [0031](0031-model-access-implementation.md) | Model access: what building it taught us about LiteLLM | Accepted |
+| [0032](0032-media-backends.md) | Media backends: local ComfyUI, Comfy Cloud and OpenAI-compatible image APIs | Accepted |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.

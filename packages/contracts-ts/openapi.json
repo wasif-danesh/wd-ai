@@ -245,6 +245,45 @@
         "title": "AuditPage",
         "type": "object"
       },
+      "BackendView": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "families": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Families",
+            "type": "array"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldView"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "description",
+          "families",
+          "fields"
+        ],
+        "title": "BackendView",
+        "type": "object"
+      },
       "Binding": {
         "properties": {
           "api_base": {
@@ -385,6 +424,44 @@
           "message"
         ],
         "title": "ErrorEvent",
+        "type": "object"
+      },
+      "FieldView": {
+        "properties": {
+          "help": {
+            "title": "Help",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "placeholder": {
+            "title": "Placeholder",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "secret": {
+            "title": "Secret",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "required",
+          "secret",
+          "placeholder",
+          "help"
+        ],
+        "title": "FieldView",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -565,6 +642,176 @@
           "role"
         ],
         "title": "Me",
+        "type": "object"
+      },
+      "MediaBindingIn": {
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "backend": {
+            "title": "Backend",
+            "type": "string"
+          },
+          "config": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Config",
+            "type": "object"
+          }
+        },
+        "required": [
+          "backend"
+        ],
+        "title": "MediaBindingIn",
+        "type": "object"
+      },
+      "MediaList": {
+        "properties": {
+          "backends": {
+            "items": {
+              "$ref": "#/components/schemas/BackendView"
+            },
+            "title": "Backends",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MediaView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "secrets_ready": {
+            "title": "Secrets Ready",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "backends",
+          "secrets_ready"
+        ],
+        "title": "MediaList",
+        "type": "object"
+      },
+      "MediaTestOutcome": {
+        "properties": {
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "message",
+          "latency_ms"
+        ],
+        "title": "MediaTestOutcome",
+        "type": "object"
+      },
+      "MediaView": {
+        "properties": {
+          "allowed_backends": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Backends",
+            "type": "array"
+          },
+          "backend": {
+            "title": "Backend",
+            "type": "string"
+          },
+          "capability": {
+            "title": "Capability",
+            "type": "string"
+          },
+          "config": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Config",
+            "type": "object"
+          },
+          "key_set": {
+            "title": "Key Set",
+            "type": "boolean"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "workflow": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow"
+          }
+        },
+        "required": [
+          "product_id",
+          "capability",
+          "workflow",
+          "backend",
+          "source",
+          "config",
+          "key_set",
+          "allowed_backends",
+          "updated_by",
+          "updated_at"
+        ],
+        "title": "MediaView",
         "type": "object"
       },
       "ModelList": {
@@ -1238,6 +1485,207 @@
           }
         },
         "summary": "Audit Log",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/media": {
+      "get": {
+        "operationId": "list_media_admin_media_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Media",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/media/{product_id}/{capability}": {
+      "put": {
+        "operationId": "set_media_admin_media__product_id___capability__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "capability",
+            "required": true,
+            "schema": {
+              "title": "Capability",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaBindingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Media",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/media/{product_id}/{capability}/reset": {
+      "post": {
+        "operationId": "reset_media_admin_media__product_id___capability__reset_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "capability",
+            "required": true,
+            "schema": {
+              "title": "Capability",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Media",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/media/{product_id}/{capability}/test": {
+      "post": {
+        "operationId": "test_media_admin_media__product_id___capability__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "capability",
+            "required": true,
+            "schema": {
+              "title": "Capability",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaBindingIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Binding"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaTestOutcome"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Media",
         "tags": [
           "admin"
         ]

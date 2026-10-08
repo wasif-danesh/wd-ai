@@ -12,6 +12,8 @@ class WorkerSettings(BaseSettings):
     comfyui_base_url: str = "http://localhost:8188"
     comfyui_mode: str = "real"  # real | stub (stub returns placeholder files, no GPU needed)
 
+    media_secrets_key: str = ""  # decrypts the API keys saved in the admin area (ADR-0025)
+
     ollama_base_url: str = ""  # set to unload LLMs from the GPU before each job
     unload_llm: bool = True
 

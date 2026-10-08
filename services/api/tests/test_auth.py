@@ -69,7 +69,7 @@ def test_a_good_token_yields_claims():
         token(sub=None),
         token(exp=None),
         "not-a-token",
-        jwt.encode({"iss": "wd-web", "aud": "wd-api", "sub": "google:1"}, None, algorithm="none"),
+        jwt.encode({"iss": "wd-web", "aud": "wd-api", "sub": "google:1"}, "", algorithm="none"),
     ],
 )
 def test_bad_tokens_are_rejected(bad):
