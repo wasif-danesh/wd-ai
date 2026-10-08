@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 MAX_PIXELS = 24_000_000  # refuses decompression bombs before the pixels are decoded
 MAX_SIDE = 2048  # the models work at about one megapixel; more is only storage
 ALLOWED_FORMATS = {"PNG", "JPEG", "WEBP"}
-UPLOADS_PER_HOUR = 30
+UPLOADS_PER_HOUR = 60
 UNUSED_LIFETIME = timedelta(hours=24)
 UPLOAD_CREATED = "upload.created"
 
@@ -207,13 +207,14 @@ class InMemoryUploadLimiter:
 
 
 class RedisUploadLimiter:
-    """A counter per user per clock hour, in Redis, so every API replica shares it."""
+    """A counter per user per clock hour, in Redis, so every API replica shares it. `name` keeps
+    separate limits apart (uploads, prompt enhancements)."""
 
-    def __init__(self, redis, per_hour: int = UPLOADS_PER_HOUR, clock=time.time):
-        self._r, self._max, self._clock = redis, per_hour, clock
+    def __init__(self, redis, per_hour: int = UPLOADS_PER_HOUR, clock=time.time, name="uploads"):
+        self._r, self._max, self._clock, self._name = redis, per_hour, clock, name
 
     async def allow(self, tenant_id: str, user_id: str) -> bool:
-        key = f"wd:uploads:{tenant_id}:{user_id}:{int(self._clock() // 3600)}"
+        key = f"wd:{self._name}:{tenant_id}:{user_id}:{int(self._clock() // 3600)}"
         count = await self._r.incr(key)
         if count == 1:
             await self._r.expire(key, 3700)

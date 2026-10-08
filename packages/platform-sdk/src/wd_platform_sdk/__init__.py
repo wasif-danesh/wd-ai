@@ -11,6 +11,12 @@ from wd_platform_sdk.config import (
     load_product_config,
 )
 from wd_platform_sdk.context import RunContext, require_context, reset_context, set_context
+from wd_platform_sdk.enhance import (
+    ENHANCED,
+    EnhanceRefused,
+    build_enhance_router,
+    clean_output,
+)
 from wd_platform_sdk.errors import RunError
 from wd_platform_sdk.eventlog import EventLog, InMemoryEventLog, RedisEventLog
 from wd_platform_sdk.identity import Identity
@@ -80,6 +86,8 @@ __all__ = [
     "input_image_name",
     "UPLOAD_CREATED",
     "InMemoryUploadLimiter",
+    "build_enhance_router",
+    "clean_output",
     "InMemoryUploadStore",
     "PostgresUploadStore",
     "ProcessedImage",
@@ -109,6 +117,8 @@ __all__ = [
     "Identity",
     "RouteDeps",
     "RouteFactory",
+    "ENHANCED",
+    "EnhanceRefused",
     "RunError",
     "start_of_day_utc",
     "sum_usage",

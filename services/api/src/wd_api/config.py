@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     litellm_base_url: str = "http://localhost:4000"
     litellm_api_key: str = ""
     comfyui_base_url: str = "http://host.containers.internal:8188"
+    comfyui_video_base_url: str = ""  # the ComfyUI video runs on (ADR-0037); empty: the one above
     ollama_base_url: str = "http://host.containers.internal:11434"
     log_level: str = "INFO"
     media_secrets_key: str = ""  # encrypts media provider API keys saved in the admin area

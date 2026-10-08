@@ -8,6 +8,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -95,6 +96,33 @@ async def upload_image(
         height=image.height,
         bytes=record.bytes,
     )
+
+
+@router.delete("/products/{product_id}/uploads/images/{upload_id}", status_code=204)
+async def delete_upload(
+    product_id: str,
+    upload_id: str,
+    request: Request,
+    identity: Identity = Depends(get_identity),
+) -> None:
+    """Remove the caller's own unused upload (the user took the picture back, ADR-0039)."""
+    state: Any = request.app.state
+    try:
+        key = f"uploads/{UUID(upload_id)}.png"
+    except ValueError:
+        raise HTTPException(404, "upload not found") from None
+    store: UploadStore = state.uploads
+    record = await store.find(identity.tenant_id, product_id, identity.user_id, key)
+    if record is None:  # also what someone else's upload looks like: no hint that it exists
+        raise HTTPException(404, "upload not found")
+    storage: ScopedStorage | None = state.storage
+    if storage is None:
+        raise HTTPException(503, "file storage is not available")
+    try:
+        await storage.delete_for(record.owner, record.key)
+    except FileNotFoundError:
+        pass
+    await store.consume(record)
 
 
 async def sweep_uploads(

@@ -31,6 +31,18 @@ async def test_run_reports_progress_and_returns_outputs(comfy):
     await client.aclose()
 
 
+def test_a_saved_video_is_found_under_images_but_a_picture_is_not_a_video():
+    outputs = {
+        "58": {"images": [{"filename": "clip_00001_.mp4", "subfolder": "video", "type": "output"}],
+               "animated": [True]},
+        "10": {"images": [{"filename": "out_10.png", "subfolder": "", "type": "output"}]},
+    }  # fmt: skip
+    f = ComfyClient.pick(outputs, "58", "video")
+    assert (f.filename, f.subfolder) == ("clip_00001_.mp4", "video")
+    with pytest.raises(ComfyError):
+        ComfyClient.pick(outputs, "10", "video")
+
+
 async def test_missing_output_is_a_job_error(comfy):
     base, _ = comfy
     client = ComfyClient(base)

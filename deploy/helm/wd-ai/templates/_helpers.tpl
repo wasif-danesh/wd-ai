@@ -81,6 +81,8 @@ imagePullSecrets:
   value: {{ include "wd.ollamaUrl" . | quote }}
 - name: COMFYUI_BASE_URL
   value: {{ .Values.env.COMFYUI_BASE_URL | quote }}
+- name: COMFYUI_VIDEO_BASE_URL
+  value: {{ .Values.env.COMFYUI_VIDEO_BASE_URL | quote }}
 - name: LOG_LEVEL
   value: {{ .Values.env.LOG_LEVEL | quote }}
 {{ include "wd.mediaSecretsEnv" . }}

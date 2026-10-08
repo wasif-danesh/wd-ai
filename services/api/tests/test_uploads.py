@@ -45,7 +45,7 @@ def parts(tmp_path):
     }
 
 
-def client_for(parts, per_hour=30):
+def client_for(parts, per_hour=60):
     app = mem_app(
         hello_registry(), parts["tmp"], parts["usage"], storage=parts["storage"],
         uploads=parts["store"], upload_limiter=InMemoryUploadLimiter(per_hour),
@@ -151,6 +151,25 @@ def test_the_hourly_limit_is_429(parts):
         codes = [post(c, photo()).status_code for _ in range(3)]
     assert codes == [201, 201, 429]
     assert len(parts["store"].rows) == 2
+
+
+def test_an_upload_can_be_taken_back_and_only_by_its_owner(parts):
+    import asyncio
+
+    with client_for(parts) as c:
+        body = post(c, photo()).json()
+        path = f"/products/hello/uploads/images/{body['upload_id']}"
+        key = object_key("dev-tenant", "hello", "dev-user", body["key"])
+        stored = parts["storage"]._storage
+        assert asyncio.run(stored.get(key))
+        assert c.delete(f"/products/other/uploads/images/{body['upload_id']}").status_code == 404
+        assert c.delete("/products/hello/uploads/images/not-a-uuid").status_code == 404
+        assert parts["store"].rows  # still there
+        assert c.delete(path).status_code == 204
+        assert not parts["store"].rows
+        with pytest.raises(FileNotFoundError):
+            asyncio.run(stored.get(key))
+        assert c.delete(path).status_code == 404  # already gone
 
 
 def test_uploading_needs_a_signed_in_user(parts, monkeypatch):

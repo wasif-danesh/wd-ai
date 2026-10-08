@@ -105,11 +105,13 @@ class MediaAccess:
         capabilities: Callable[[], list[MediaCapability]],
         local_url: str,
         http: httpx.AsyncClient | None = None,
+        video_local_url: str = "",
     ):
         self._store = store
         self._box = box
         self._capabilities = capabilities
         self._local_url = local_url
+        self._video_local_url = video_local_url
         self._http = http
 
     def _find(self, product_id: str, capability: str) -> MediaCapability:
@@ -185,7 +187,8 @@ class MediaAccess:
             except InvalidBackendConfig as exc:
                 raise MediaAccessError(str(exc)) from exc
             backend, key = proposed.backend, api_key or (self._saved_key(saved) if same else None)
-        return await check_backend(backend, config, key, self._local_url, self._http)
+        url = self._video_local_url if capability.startswith("video.") else ""
+        return await check_backend(backend, config, key, url or self._local_url, self._http)
 
     def _saved_key(self, saved: MediaBinding | None) -> str | None:
         if saved is None or saved.secret_enc is None:

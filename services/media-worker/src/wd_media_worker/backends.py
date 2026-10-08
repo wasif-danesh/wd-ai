@@ -304,17 +304,17 @@ class BackendRouter:
 
     async def resolve(self, job: JobRequest) -> Any:
         b = await self._binding(job)
-        if b is None:
-            return self._default
         from wd_media_worker.processor import ComfyRunner  # circular at import time
+
+        if b is None:
+            video_url = self._video_url(job)
+            return self._local_runner(video_url, ComfyRunner) if video_url else self._default
 
         cfg = b.config
         match b.backend:
             case "comfyui-local":
-                url = cfg.get("base_url") or self._s.comfyui_base_url
-                if url not in self._comfy:
-                    self._comfy[url] = ComfyClient(url)
-                return ComfyRunner(self._comfy[url], self._s.job_timeout_s)
+                url = cfg.get("base_url") or self._video_url(job) or self._s.comfyui_base_url
+                return self._local_runner(url, ComfyRunner)
             case "comfy-api":
                 return ComfyApiRunner(
                     cfg.get("base_url") or "https://cloud.comfy.org", self._secret(b),
@@ -330,6 +330,17 @@ class BackendRouter:
                 raise ComfyError(
                     "backend_misconfigured", "The generation backend is not set up correctly."
                 )
+
+    def _video_url(self, job: JobRequest) -> str:
+        """The separate ComfyUI for video jobs, if set (never in stub mode)."""
+        if job.capability.startswith("video.") and self._s.comfyui_mode != "stub":
+            return self._s.comfyui_video_base_url
+        return ""
+
+    def _local_runner(self, url: str, runner_class: Any) -> Any:
+        if url not in self._comfy:
+            self._comfy[url] = ComfyClient(url)
+        return runner_class(self._comfy[url], self._s.job_timeout_s)
 
     async def aclose(self) -> None:
         for client in self._comfy.values():

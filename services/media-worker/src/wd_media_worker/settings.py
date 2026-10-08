@@ -10,6 +10,9 @@ class WorkerSettings(BaseSettings):
     database_url: str = ""  # usage events; unset = do not record (local experiments only)
 
     comfyui_base_url: str = "http://localhost:8188"
+    # Video runs on its own ComfyUI (ADR-0037): the model needs fp32 weights on a Mac, a
+    # process-wide setting that would slow the image and music models. Empty: COMFYUI_BASE_URL.
+    comfyui_video_base_url: str = ""
     comfyui_mode: str = "real"  # real | stub (stub returns placeholder files, no GPU needed)
 
     media_secrets_key: str = ""  # decrypts the API keys saved in the admin area (ADR-0025)
@@ -18,7 +21,7 @@ class WorkerSettings(BaseSettings):
     unload_llm: bool = True
 
     gpu_id: str = "gpu0"  # workers sharing one GPU share this id and take turns
-    job_timeout_s: int = 900
+    job_timeout_s: int = 1200  # a 5 s clip takes about 8 minutes on a Mac (ADR-0037)
     max_attempts: int = 3
     log_level: str = "INFO"
 

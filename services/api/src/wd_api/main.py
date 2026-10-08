@@ -65,6 +65,7 @@ from wd_api.users import CachedUsers, PostgresUserStore, UserStore
 
 # redis-py defaults to 5 s; stream reads block for the heartbeat interval, so allow well over it.
 REDIS_SOCKET_TIMEOUT_S = 60
+ENHANCES_PER_HOUR = 40  # prompt enhancements per user per hour (ADR-0038)
 
 
 async def _seed_models(models: ModelAccess) -> None:
@@ -99,6 +100,7 @@ def create_app(
     media_access: MediaAccess | None = None,
     uploads: UploadStore | None = None,
     upload_limiter: UploadLimiter | None = None,
+    enhance_limiter: UploadLimiter | None = None,
 ) -> FastAPI:
     """App factory. Tests inject a registry, products dir (with `provider: fake` bindings),
     checkpointer, usage recorder, event log, run store and job sink, so no GPU, network, database
@@ -179,9 +181,11 @@ def create_app(
             SecretBox(settings.media_secrets_key),
             lambda: media_capabilities_from(reg, pdir, settings.product_env),
             settings.comfyui_base_url,
+            video_local_url=settings.comfyui_video_base_url,
         )
 
         configs: dict[str, Any] = {}
+        app.state.caps = {}  # product id -> its capabilities, for product routes (prompt enhancing)
         # what each product accepts as an upload (ADR-0035): None for a product that accepts none
         app.state.upload_rules = lambda pid: (
             configs[pid].uploads.get("image") if pid in configs else None
@@ -196,6 +200,7 @@ def create_app(
                 caps = build_capabilities(config, deps)
                 if "text.embed" in config.capabilities:
                     caps.rag = RagService(db, lambda texts, c=caps: c.text.embed("embed", texts))
+                app.state.caps[product_id] = caps
                 graphs[product_id] = reg.build(product_id, caps, saver)
             return graphs
 
@@ -209,6 +214,11 @@ def create_app(
         )
         app.state.upload_limiter = upload_limiter or (
             RedisUploadLimiter(conn) if conn is not None else InMemoryUploadLimiter()
+        )
+        app.state.enhance_limiter = enhance_limiter or (
+            RedisUploadLimiter(conn, per_hour=ENHANCES_PER_HOUR, name="enhance")
+            if conn is not None
+            else InMemoryUploadLimiter(ENHANCES_PER_HOUR)
         )
         sweeper = (
             asyncio.create_task(sweep_forever(app.state.uploads, store))

@@ -333,6 +333,35 @@ async def test_a_local_comfyui_binding_uses_its_own_address(router_parts):
     await router.aclose()
 
 
+async def test_video_jobs_use_the_separate_video_comfyui_when_one_is_set(router_parts):
+    _, store, box, default = router_parts
+    settings = WorkerSettings(
+        comfyui_base_url="http://local:8188", comfyui_video_base_url="http://local:8189"
+    )
+    router = BackendRouter(
+        default, settings, store, box, client(lambda r: httpx.Response(404)), poll_s=0
+    )
+    video = job("video.generate", outputs={"video": {"node": "58", "type": "video"}})
+    chosen = await router.resolve(video)  # no binding: the video ComfyUI, not the default
+    assert isinstance(chosen, ComfyRunner) and chosen._client._base == "http://local:8189"
+    assert await router.resolve(job()) is default  # images are untouched
+    await store.put("t1", MediaBinding("p1", "video.generate", "comfyui-local", {}, None))
+    router._cache.clear()
+    bound = await router.resolve(video)  # a local binding with no address: still the video one
+    assert bound._client._base == "http://local:8189"
+    await router.aclose()
+
+
+async def test_the_video_address_is_ignored_in_stub_mode(router_parts):
+    _, store, box, default = router_parts
+    settings = WorkerSettings(comfyui_mode="stub", comfyui_video_base_url="http://local:8189")
+    router = BackendRouter(
+        default, settings, store, box, client(lambda r: httpx.Response(404)), poll_s=0
+    )
+    video = job("video.generate", outputs={"video": {"node": "58", "type": "video"}})
+    assert await router.resolve(video) is default
+
+
 async def test_the_lookup_is_cached_for_a_moment(router_parts):
     router, _, _, _ = router_parts
     await router.resolve(job())

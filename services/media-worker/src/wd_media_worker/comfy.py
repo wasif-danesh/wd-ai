@@ -14,7 +14,8 @@ import websockets
 log = logging.getLogger(__name__)
 
 # ComfyUI history keys per output kind
-_OUTPUT_KEYS = {"image": ("images",), "audio": ("audio",), "video": ("videos", "gifs")}
+_OUTPUT_KEYS = {"image": ("images",), "audio": ("audio",), "video": ("videos", "gifs", "images")}
+_VIDEO_SUFFIXES = (".mp4", ".webm", ".mov", ".mkv")  # SaveVideo lists its file under "images"
 
 ProgressFn = Callable[[float], Awaitable[None]]
 
@@ -108,6 +109,10 @@ class ComfyClient:
         """The first file of `kind` produced by `node`."""
         for key in _OUTPUT_KEYS.get(kind, ()):
             files = outputs.get(node, {}).get(key) or []
+            if kind == "video" and key == "images":  # only a real video file counts there
+                files = [
+                    f for f in files if str(f.get("filename", "")).lower().endswith(_VIDEO_SUFFIXES)
+                ]
             if files:
                 f = files[0]
                 return ComfyFile(f["filename"], f.get("subfolder", ""), f.get("type", "output"))

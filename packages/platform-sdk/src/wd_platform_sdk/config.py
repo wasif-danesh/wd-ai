@@ -59,6 +59,16 @@ class UploadRule(BaseModel):
     max_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=25 * 1024 * 1024)
 
 
+class EnhanceRule(BaseModel):
+    """One kind of prompt the user can have rewritten (ADR-0038)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    prompt: str  # the enhancer instructions: a file stem under the product's prompts/
+    max_chars: int = Field(default=500, ge=50, le=4000)  # the longest result (and input) allowed
+    needs_picture: bool = False  # the user's uploaded picture is described first
+
+
 class ProductConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -67,6 +77,8 @@ class ProductConfig(BaseModel):
     quotas: dict[str, int] = Field(default_factory=dict)
     # Kinds of file a user may upload to this product: `uploads: { image: { max_bytes: ... } }`.
     uploads: dict[Literal["image"], UploadRule] = Field(default_factory=dict)
+    # Prompts the user can have rewritten, by kind (ADR-0038). Absent: no Enhance button.
+    enhance: dict[str, EnhanceRule] = Field(default_factory=dict)
     settings: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
