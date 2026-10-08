@@ -7,7 +7,7 @@ in front of the API. One app serves every product (ADR-0014); today `wd-music-ai
 |---|---|
 | `/` | The studio home, "WD AI Studio": a card per product (public) |
 | `/music` | Create a song: idea form, live progress, lyric review, result (sign-in required) |
-| `/creations` | My creations: one library of everything the user made (songs, images, videos, including clips still being made), newest first, with filters and "Load more" (sign-in required) |
+| `/creations` | My creations: one library of everything the user made (songs, images, videos, including clips still being made), newest first, with filters, "Load more" and a search box that finds things by meaning or exact words in any language (sign-in required) |
 | `/music/songs/[id]` | One song: cover, player, downloads, lyrics (links are signed fresh on every visit) |
 | `/image`, `/video` | Create an image or a video (sign-in required); one item is at `/image/creations/[id]` and `/video/creations/[id]` |
 | `/admin/...` | The admin area (admins only) |

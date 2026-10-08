@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RUN, sse } from "../../test-utils";
+import { GET as searchGET } from "./creations/search/route";
 import { GET as imageDownloadGET } from "./products/[productId]/images/[imageId]/download/route";
 import {
   DELETE as imageDELETE,
@@ -352,5 +353,14 @@ describe("images and uploads", () => {
       params({ productId: "wd-video-ai", videoId: "../x" }),
     );
     expect(bad.status).toBe(400);
+  });
+
+  it("passes a search through with its query string", async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ query: "fox", degraded: false, results: [] }));
+    const res = await searchGET(
+      new Request("http://web/api/creations/search?q=fox&kind=song&limit=5"),
+    );
+    expect(await res.json()).toMatchObject({ query: "fox" });
+    expect(upstreamUrl()).toMatch(/\/creations\/search\?q=fox&kind=song&limit=5$/);
   });
 });

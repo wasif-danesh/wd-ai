@@ -1378,6 +1378,19 @@
     color: var(--danger);
     font-size: var(--step--1);
   }
+  .creations-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block-end: 1rem;
+    .input {
+      flex: 1 1 18rem;
+    }
+    .field__hint {
+      flex-basis: 100%;
+    }
+  }
   .btn--sm {
     padding: 0.3rem 0.7rem;
     font-size: var(--step--1);

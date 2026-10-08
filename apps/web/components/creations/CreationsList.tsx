@@ -2,26 +2,15 @@
 
 import { Equaliser } from "@/components/Logo";
 import { Notice } from "@/components/Notice";
-import { styleTags, timeAgo } from "@/lib/format";
+import { useCreationSearch } from "@/hooks/use-creation-search";
+import type { Entry, Filter } from "@/lib/creations";
 import { PRODUCT } from "@/lib/run-client";
-import type {
-  ImagePage,
-  ImageSummary,
-  SongPage,
-  SongSummary,
-  VideoPage,
-  VideoSummary,
-} from "@wd/contracts";
+import type { ImagePage, SongPage, VideoPage } from "@wd/contracts";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
+import { CreationCard } from "./CreationCard";
 
 const PAGE = 12;
-type Filter = "all" | "songs" | "images" | "videos";
-type Entry =
-  | { kind: "song"; id: string; createdAt: string; song: SongSummary }
-  | { kind: "image"; id: string; createdAt: string; image: ImageSummary }
-  | { kind: "video"; id: string; createdAt: string; video: VideoSummary };
-
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "songs", label: "Songs" },
@@ -137,9 +126,41 @@ export function CreationsList({
           ? Boolean(imageNext)
           : Boolean(videoNext);
 
-  const empty = entries.length === 0;
+  const [query, setQuery] = useState("");
+  const searchId = useId();
+  const search = useCreationSearch(query, filter);
+  const searching = search.status !== "idle";
+  const shown = search.status === "done" ? search.entries : entries;
+  const empty = !searching && entries.length === 0;
+
   return (
     <section className="creations-library" aria-label="Your creations">
+      <search className="creations-search">
+        <label htmlFor={searchId} className="sr-only">
+          Search your creations
+        </label>
+        <input
+          id={searchId}
+          type="search"
+          className="input"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by what it's about, in any language…"
+          maxLength={200}
+          autoComplete="off"
+          enterKeyHint="search"
+          aria-describedby={`${searchId}-hint`}
+        />
+        {query ? (
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setQuery("")}>
+            Clear
+          </button>
+        ) : null}
+        <span className="field__hint" id={`${searchId}-hint`}>
+          Try “rain in Madrid” or “zorro en la nieve”.
+        </span>
+      </search>
+
       <div className="creations-toolbar">
         <fieldset className="creations-filters">
           <legend className="sr-only">Filter creations</legend>
@@ -155,12 +176,42 @@ export function CreationsList({
             </button>
           ))}
         </fieldset>
-        <span className="creations-count">
-          {entries.length} {entries.length === 1 ? "creation" : "creations"}
+        <span className="creations-count" aria-live="polite">
+          {search.status === "searching" ? (
+            "Searching…"
+          ) : search.status === "done" ? (
+            <>
+              {search.entries.length} {search.entries.length === 1 ? "result" : "results"} for “
+              {search.query}”
+            </>
+          ) : (
+            <>
+              {entries.length} {entries.length === 1 ? "creation" : "creations"}
+            </>
+          )}
         </span>
       </div>
 
-      {empty ? (
+      {search.status === "error" ? (
+        <Notice tone="error" title="Search didn't work">
+          {search.message}
+        </Notice>
+      ) : null}
+      {search.status === "done" && search.degraded ? (
+        <Notice tone="info" title="Showing exact word matches only">
+          Search by meaning is not available right now.
+        </Notice>
+      ) : null}
+
+      {search.status === "done" && search.entries.length === 0 ? (
+        <div className="empty panel creations-empty">
+          <h2>Nothing matched “{search.query}”</h2>
+          <p>Try other words, or describe what it was about.</p>
+          <button type="button" className="btn btn--ghost" onClick={() => setQuery("")}>
+            Clear the search
+          </button>
+        </div>
+      ) : empty ? (
         <div className="empty panel creations-empty">
           {filter === "all" || filter === "songs" ? <Equaliser still /> : null}
           <h2>{filter === "all" ? "Your creative space is ready" : `No ${filter} yet`}</h2>
@@ -177,50 +228,24 @@ export function CreationsList({
             </Link>
           </div>
         </div>
+      ) : search.status === "searching" ? (
+        <ul className="grid creations-grid" aria-busy="true" aria-label="Searching">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="skeleton" style={{ aspectRatio: "3 / 4" }} />
+          ))}
+        </ul>
       ) : (
         <ul className="grid creations-grid">
-          {entries.map((entry) =>
-            entry.kind === "song" ? (
-              <li key={`song-${entry.id}`}>
-                <Link href={`/music/songs/${entry.id}`} className="song-card creation-card">
-                  {entry.song.cover_url ? (
-                    <img src={entry.song.cover_url} alt="" loading="lazy" />
-                  ) : (
-                    <div className="song-card__cover cover-placeholder" aria-hidden="true" />
-                  )}
-                  <span className="creation-kind">Song</span>
-                  <div className="stack creation-card__details">
-                    <h3>{entry.song.title}</h3>
-                    <div className="tags">
-                      {styleTags(entry.song.style)
-                        .slice(0, 3)
-                        .map((tag) => (
-                          <span className="tag" key={tag}>
-                            {tag}
-                          </span>
-                        ))}
-                    </div>
-                    <time dateTime={entry.createdAt}>{timeAgo(entry.createdAt)}</time>
-                  </div>
-                </Link>
-              </li>
-            ) : entry.kind === "video" ? (
-              <li key={`video-${entry.id}`}>
-                <VideoCard video={entry.video} />
-              </li>
-            ) : (
-              <li key={`image-${entry.id}`}>
-                <Link href={`/image/creations/${entry.id}`} className="song-card creation-card">
-                  <img src={entry.image.thumb_url} alt="" loading="lazy" />
-                  <span className="creation-kind">Image</span>
-                  <div className="stack creation-card__details">
-                    <h3 className="clamp">{entry.image.prompt}</h3>
-                    <time dateTime={entry.createdAt}>{timeAgo(entry.createdAt)}</time>
-                  </div>
-                </Link>
-              </li>
-            ),
-          )}
+          {shown.map((entry) => (
+            <li key={`${entry.kind}-${entry.id}`}>
+              <CreationCard
+                entry={entry}
+                note={
+                  search.status === "done" && search.words.has(entry.id) ? "Exact words" : undefined
+                }
+              />
+            </li>
+          ))}
         </ul>
       )}
 
@@ -229,7 +254,7 @@ export function CreationsList({
           Check your connection and try again.
         </Notice>
       ) : null}
-      {!empty && hasMore ? (
+      {!searching && !empty && hasMore ? (
         <div className="actions creations-load-more">
           <button type="button" className="btn btn--ghost" onClick={more} disabled={loading}>
             {loading ? <span className="spinner" aria-hidden="true" /> : null}Load more
@@ -237,34 +262,5 @@ export function CreationsList({
         </div>
       ) : null}
     </section>
-  );
-}
-
-/** A clip: its poster when ready, a "making" card while it is, and the reason when it failed. */
-function VideoCard({ video }: { video: VideoSummary }) {
-  return (
-    <Link
-      href={`/video/creations/${video.id}`}
-      className="song-card creation-card"
-      data-status={video.status}
-    >
-      {video.status === "done" && video.poster_url ? (
-        <img src={video.poster_url} alt="" loading="lazy" />
-      ) : (
-        <div className="song-card__cover cover-placeholder video-placeholder" aria-hidden="true">
-          {video.status === "working" ? <span className="spinner" /> : null}
-        </div>
-      )}
-      <span className="creation-kind">Video</span>
-      <div className="stack creation-card__details">
-        <h3 className="clamp">{video.prompt}</h3>
-        {video.status === "working" ? (
-          <span className="tag">Making your video…</span>
-        ) : video.status === "failed" ? (
-          <span className="tag">Couldn't be made</span>
-        ) : null}
-        <time dateTime={video.created_at}>{timeAgo(video.created_at)}</time>
-      </div>
-    </Link>
   );
 }

@@ -208,3 +208,77 @@ describe("creations with videos", () => {
     );
   });
 });
+
+describe("searching My creations", () => {
+  const songs = { songs: [], next_before: null };
+  const images = { images: [], next_before: null };
+  const search = (results: object[], degraded = false) =>
+    Response.json({ query: "fox", degraded, results });
+  const hit = (kind: string, id: string, match = "meaning") => ({
+    kind,
+    product_id: `wd-${kind}-ai`,
+    id,
+    score: 0.7,
+    match,
+  });
+
+  it("shows ranked results in place of the library, says how many, and clears", async () => {
+    fetchMock.mockResolvedValueOnce(search([hit("video", "v9", "words")])).mockResolvedValueOnce(
+      Response.json({
+        videos: [clip({ id: "v9", prompt: "found fox clip" })],
+        next_before: null,
+      }),
+    );
+    const user = userEvent.setup();
+    render(
+      <CreationsList
+        songs={songs}
+        images={images}
+        videos={{ videos: [clip({ id: "v1", prompt: "library clip" })], next_before: null }}
+      />,
+    );
+    expect(screen.getByText("library clip")).toBeInTheDocument();
+    await user.type(screen.getByRole("searchbox", { name: /search your creations/i }), "fox");
+    expect(await screen.findByText("found fox clip")).toBeInTheDocument();
+    expect(screen.queryByText("library clip")).toBeNull();
+    expect(screen.getByText(/1 result for/)).toBeInTheDocument();
+    expect(screen.getByText("Exact words")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.getByText("library clip")).toBeInTheDocument();
+  });
+
+  it("says plainly when nothing matched, and when only exact words were searched", async () => {
+    fetchMock.mockResolvedValueOnce(search([], true));
+    const user = userEvent.setup();
+    render(<CreationsList songs={songs} images={images} videos={null} />);
+    await user.type(screen.getByRole("searchbox", { name: /search your creations/i }), "zzzz");
+    expect(await screen.findByText(/nothing matched/i)).toBeInTheDocument();
+    expect(screen.getByText(/exact word matches only/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /clear the search/i }));
+    expect(screen.queryByText(/nothing matched/i)).toBeNull();
+  });
+
+  it("asks for the kind that is filtered", async () => {
+    fetchMock.mockResolvedValueOnce(search([]));
+    const user = userEvent.setup();
+    render(<CreationsList songs={songs} images={images} videos={null} />);
+    await user.click(screen.getByRole("button", { name: /images/i }));
+    await user.type(screen.getByRole("searchbox", { name: /search your creations/i }), "fox");
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(fetchMock.mock.calls[0][0]).toContain("kind=image");
+  });
+
+  it("shows a notice and keeps the library when the search fails", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("{}", { status: 429 }));
+    const user = userEvent.setup();
+    render(
+      <CreationsList
+        songs={songs}
+        images={images}
+        videos={{ videos: [clip({ prompt: "library clip" })], next_before: null }}
+      />,
+    );
+    await user.type(screen.getByRole("searchbox", { name: /search your creations/i }), "fox");
+    expect(await screen.findByText(/searched a lot/i)).toBeInTheDocument();
+  });
+});
