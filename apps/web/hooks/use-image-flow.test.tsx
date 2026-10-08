@@ -38,29 +38,15 @@ describe("useImageFlow", () => {
     expect(sessionStorage.getItem("wd-image-ai:run")).toBeNull();
   });
 
-  it("uploads the picture first and runs with its key", async () => {
-    fetchMock
-      .mockResolvedValueOnce(Response.json({ key: "t/p/u/uploads/1.png", id: "1" }))
-      .mockResolvedValueOnce(sse([node("check_request"), result]));
+  it("runs image to image with the key of a picture that is already uploaded", async () => {
+    fetchMock.mockResolvedValueOnce(sse([node("check_request"), result]));
     const { result: hook } = renderHook(() => useImageFlow());
-    const file = new File([new Uint8Array(4)], "a.png", { type: "image/png" });
-    act(() => hook.current.start({ mode: "image", prompt: "blue", file }));
+    act(() => hook.current.start({ mode: "image", prompt: "blue", imageKey: "uploads/1.png" }));
     await waitFor(() => expect(hook.current.state.phase).toBe("done"));
-    expect(fetchMock.mock.calls[0][0]).toBe("/api/products/wd-image-ai/uploads/images");
-    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "POST", body: file });
-    expect(JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string)).toEqual({
-      input: { mode: "image", prompt: "blue", image_key: "t/p/u/uploads/1.png" },
+    expect(fetchMock).toHaveBeenCalledTimes(1); // no upload here any more (ADR-0039)
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({
+      input: { mode: "image", prompt: "blue", image_key: "uploads/1.png" },
     });
-  });
-
-  it("stops on a refused upload without retrying", async () => {
-    fetchMock.mockResolvedValueOnce(Response.json({ detail: "Not a picture." }, { status: 422 }));
-    const { result: hook } = renderHook(() => useImageFlow());
-    const file = new File([new Uint8Array(4)], "a.png", { type: "image/png" });
-    act(() => hook.current.start({ mode: "image", prompt: "blue", file }));
-    await waitFor(() => expect(hook.current.state.phase).toBe("error"));
-    expect(hook.current.state.error?.retryable).toBe(false);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("asks for a picture in picture mode", async () => {

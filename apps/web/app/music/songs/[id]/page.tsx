@@ -35,8 +35,8 @@ export default async function SongPage({ params }: Props) {
   const song = await load(id);
   return (
     <>
-      <Link href="/music/songs" className="back">
-        <span aria-hidden="true">←</span> My songs
+      <Link href="/creations" className="back">
+        <span aria-hidden="true">←</span> My creations
       </Link>
       <SongView
         heading="h1"

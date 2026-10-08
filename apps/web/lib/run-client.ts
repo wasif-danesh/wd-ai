@@ -83,6 +83,45 @@ export async function uploadImage(
   return (await res.json()) as UploadedImage;
 }
 
+export type Enhanced = { prompt: string; changed: boolean };
+
+/** Ask the product to rewrite the user's prompt (ADR-0038). A refusal or a busy model arrives as an
+ * `HttpError` whose message is plain text for the user. */
+export async function enhancePrompt(
+  product: string,
+  input: { kind: string; prompt: string; uploadId?: string },
+  signal?: AbortSignal,
+): Promise<Enhanced> {
+  const res = await fetch(`/api/products/${product}/prompt/enhance`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      kind: input.kind,
+      prompt: input.prompt,
+      upload_id: input.uploadId ?? null,
+    }),
+    signal,
+  });
+  if (res.status === 401 && typeof window !== "undefined") {
+    window.location.assign(`/signin?next=${encodeURIComponent(window.location.pathname)}`);
+  }
+  if (!res.ok) throw new HttpError(res.status, await errorMessage(res));
+  return (await res.json()) as Enhanced;
+}
+
+/** Take back a picture that was uploaded but not used (ADR-0039). Failures are not worth showing: the
+ * server deletes unused uploads after 24 hours anyway. `keepalive` lets it finish while the page unloads. */
+export async function deleteUpload(product: string, uploadId: string): Promise<void> {
+  try {
+    await fetch(`/api/products/${product}/uploads/images/${uploadId}`, {
+      method: "DELETE",
+      keepalive: true,
+    });
+  } catch {
+    // see above
+  }
+}
+
 export function resumeRun(runId: string, value: Approval, signal: AbortSignal, onEvent: OnEvent) {
   return stream(
     `/api/runs/${runId}/resume`,

@@ -10,7 +10,7 @@ export function ProductCard({ product }: { product: Product }) {
       ? "Create a song"
       : product.id === "image"
         ? "Make an image"
-        : "On the way";
+        : "Create a video";
   return (
     <Link
       href={product.href}

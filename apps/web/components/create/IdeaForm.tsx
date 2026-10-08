@@ -1,5 +1,6 @@
 "use client";
 
+import { EnhanceButton } from "@/components/EnhanceButton";
 import type { SongInput } from "@/lib/run-client";
 import { type FormEvent, type KeyboardEvent, useId, useState } from "react";
 
@@ -104,6 +105,14 @@ export function IdeaForm({
           <span className="field__hint grow" id={`${id}-hint`}>
             Describe a story, a feeling or a scene. Press Ctrl or ⌘ + Enter to start.
           </span>
+          <EnhanceButton
+            product="wd-music-ai"
+            kind="song_idea"
+            value={idea}
+            maxChars={MAX_IDEA}
+            disabled={busy}
+            onChange={setIdea}
+          />
           <span className="counter" data-near={idea.length > MAX_IDEA * 0.9 || undefined}>
             {idea.length}/{MAX_IDEA}
           </span>

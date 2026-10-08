@@ -70,7 +70,7 @@ export function useSongFlow() {
       dispatch({ type: "event", event });
       const { phase, runId } = local.current;
       // Only a run that is still going (or waiting for the user) is worth re-attaching to after
-      // a reload. A finished one lives in My songs; Create should open on an empty form.
+      // a reload. A finished one lives in My creations; Create should open on an empty form.
       if (phase === "done" || phase === "refused" || phase === "error") remember(null);
       else if (runId) remember(runId);
     },

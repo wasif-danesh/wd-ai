@@ -98,7 +98,7 @@ export function CreateSong() {
           {phase === "done" && state.result ? (
             <>
               <Notice tone="ok" title="Your song is ready">
-                It's saved in My songs, where you can listen again any time.
+                It's saved in My creations, where you can listen again any time.
               </Notice>
               <SongView song={state.result} />
               <div className="actions">

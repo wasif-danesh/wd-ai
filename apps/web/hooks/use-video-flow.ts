@@ -1,5 +1,7 @@
 "use client";
 
+import { HttpError, startRun, watchRun } from "@/lib/run-client";
+import type { ParsedEvent } from "@/lib/sse";
 import {
   type FlowAction,
   type FlowState,
@@ -7,17 +9,21 @@ import {
   flowReducer,
   initialState,
   isResting,
-} from "@/lib/image-flow";
-import { HttpError, startRun, watchRun } from "@/lib/run-client";
-import type { ParsedEvent } from "@/lib/sse";
+} from "@/lib/video-flow";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 
-export const IMAGE_PRODUCT = "wd-image-ai";
-const STORAGE_KEY = "wd-image-ai:run";
+export const VIDEO_PRODUCT = "wd-video-ai";
+const STORAGE_KEY = "wd-video-ai:run";
 const MAX_RECONNECTS = 6;
 
-/** `imageKey` is the key of a picture already uploaded (ADR-0039); text to image has none. */
-export type ImageRequest = { mode: Mode; prompt: string; size?: string; imageKey?: string };
+/** `imageKey` is the key of a picture already uploaded (ADR-0039); text to video has none. */
+export type VideoRequest = {
+  mode: Mode;
+  prompt: string;
+  shape?: string;
+  seconds: number;
+  imageKey?: string;
+};
 
 const sleep = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve) => {
@@ -47,14 +53,14 @@ function describe(e: unknown): string {
 }
 
 /**
- * Drives one image from request to result: starts the run, folds its events into `state` with a pure reducer, reconnects when the connection drops and
+ * Drives one video from request to the moment it is being made (or done): starts the run, folds its events into `state` with a pure reducer, reconnects when the connection drops and
  * re-attaches to a run after a page reload.
  */
-export function useImageFlow() {
+export function useVideoFlow() {
   const [state, dispatchRaw] = useReducer(flowReducer, initialState);
   const local = useRef<FlowState>(initialState);
   const abort = useRef<AbortController | null>(null);
-  const lastRequest = useRef<ImageRequest | null>(null);
+  const lastRequest = useRef<VideoRequest | null>(null);
 
   const dispatch = useCallback((action: FlowAction) => {
     local.current = flowReducer(local.current, action);
@@ -65,7 +71,7 @@ export function useImageFlow() {
     (event: ParsedEvent) => {
       dispatch({ type: "event", event });
       const { phase, runId } = local.current;
-      // Only a run that is still going is worth re-attaching to; a finished image is in My creations.
+      // Only a run that is still going is worth re-attaching to; a finished clip is in My creations.
       if (phase === "done" || phase === "refused" || phase === "error") remember(null);
       else if (runId) remember(runId);
     },
@@ -96,7 +102,8 @@ export function useImageFlow() {
         if (!runId || attempt >= MAX_RECONNECTS) {
           dispatch({
             type: "failed",
-            message: "We lost the connection to your image. Reload to pick it up again.",
+            message:
+              "We lost the connection to your video. It may still be made: check My creations.",
           });
           return;
         }
@@ -109,7 +116,7 @@ export function useImageFlow() {
   );
 
   const start = useCallback(
-    (request: ImageRequest) => {
+    (request: VideoRequest) => {
       abort.current?.abort();
       const ctrl = new AbortController();
       abort.current = ctrl;
@@ -123,9 +130,10 @@ export function useImageFlow() {
       const input = {
         mode: request.mode,
         prompt: request.prompt,
-        ...(request.mode === "text" ? { size: request.size } : { image_key: request.imageKey }),
+        seconds: request.seconds,
+        ...(request.mode === "text" ? { shape: request.shape } : { image_key: request.imageKey }),
       };
-      void follow((signal) => startRun(input, signal, onEvent, IMAGE_PRODUCT), ctrl.signal);
+      void follow((signal) => startRun(input, signal, onEvent, VIDEO_PRODUCT), ctrl.signal);
     },
     [dispatch, follow, onEvent],
   );

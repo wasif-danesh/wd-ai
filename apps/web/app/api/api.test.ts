@@ -5,11 +5,19 @@ import {
   DELETE as imageDELETE,
   GET as imageGET,
 } from "./products/[productId]/images/[imageId]/route";
+import { POST as enhancePOST } from "./products/[productId]/prompt/enhance/route";
 import { POST as runsPOST } from "./products/[productId]/runs/route";
 import { GET as downloadGET } from "./products/[productId]/songs/[songId]/download/[kind]/route";
 import { GET as songGET } from "./products/[productId]/songs/[songId]/route";
 import { GET as songsGET } from "./products/[productId]/songs/route";
+import { DELETE as uploadDELETE } from "./products/[productId]/uploads/images/[uploadId]/route";
 import { POST as uploadPOST } from "./products/[productId]/uploads/images/route";
+import { GET as videoDownloadGET } from "./products/[productId]/videos/[videoId]/download/route";
+import {
+  DELETE as videoDELETE,
+  GET as videoGET,
+} from "./products/[productId]/videos/[videoId]/route";
+import { GET as videosGET } from "./products/[productId]/videos/route";
 import { GET as eventsGET } from "./runs/[runId]/events/route";
 import { POST as resumePOST } from "./runs/[runId]/resume/route";
 
@@ -272,5 +280,77 @@ describe("images and uploads", () => {
     );
     expect(res.headers.get("content-disposition")).toBe('attachment; filename="a.png"');
     expect(await res.text()).toBe("PNG");
+  });
+
+  it("takes back an upload by id and refuses ids that are not UUIDs", async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const res = await uploadDELETE(
+      new Request("http://web/x", { method: "DELETE" }),
+      params({ productId: "wd-image-ai", uploadId: RUN }),
+    );
+    expect(res.status).toBe(204);
+    expect(upstreamUrl()).toMatch(new RegExp(`/uploads/images/${RUN}$`));
+    expect(upstreamInit().method).toBe("DELETE");
+    const bad = await uploadDELETE(
+      new Request("http://web/x", { method: "DELETE" }),
+      params({ productId: "wd-image-ai", uploadId: "../x" }),
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  it("passes a prompt to enhance through as JSON", async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ prompt: "A fox.", changed: true }));
+    const res = await enhancePOST(
+      new Request("http://web/x", {
+        method: "POST",
+        body: JSON.stringify({ kind: "text_to_image", prompt: "fox", upload_id: null }),
+      }),
+      params({ productId: "wd-image-ai" }),
+    );
+    expect(await res.json()).toEqual({ prompt: "A fox.", changed: true });
+    expect(upstreamUrl()).toMatch(/\/products\/wd-image-ai\/prompt\/enhance$/);
+    expect(JSON.parse(upstreamInit().body as string).kind).toBe("text_to_image");
+    const huge = await enhancePOST(
+      new Request("http://web/x", { method: "POST", body: "x".repeat(30_000) }),
+      params({ productId: "wd-image-ai" }),
+    );
+    expect(huge.status).toBe(400);
+  });
+
+  it("lists clips with their paging and status filter, gets and deletes one, and downloads it", async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ videos: [], next_before: null }));
+    await videosGET(
+      new Request("http://web/x?status=working&limit=5"),
+      params({ productId: "wd-video-ai" }),
+    );
+    expect(upstreamUrl()).toMatch(/\/products\/wd-video-ai\/videos\?status=working&limit=5$/);
+    fetchMock.mockResolvedValueOnce(Response.json({ id: RUN }));
+    await videoGET(new Request("http://web/x"), params({ productId: "wd-video-ai", videoId: RUN }));
+    expect(upstreamUrl()).toMatch(new RegExp(`/videos/${RUN}$`));
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await videoDELETE(
+      new Request("http://web/x", { method: "DELETE" }),
+      params({ productId: "wd-video-ai", videoId: RUN }),
+    );
+    expect(upstreamInit().method).toBe("DELETE");
+    fetchMock.mockResolvedValueOnce(
+      new Response("MP4", {
+        headers: {
+          "content-type": "video/mp4",
+          "content-disposition": 'attachment; filename="a.mp4"',
+        },
+      }),
+    );
+    const res = await videoDownloadGET(
+      new Request("http://web/x"),
+      params({ productId: "wd-video-ai", videoId: RUN }),
+    );
+    expect(res.headers.get("content-disposition")).toBe('attachment; filename="a.mp4"');
+    expect(upstreamUrl()).toMatch(/\/download$/);
+    const bad = await videoGET(
+      new Request("http://web/x"),
+      params({ productId: "wd-video-ai", videoId: "../x" }),
+    );
+    expect(bad.status).toBe(400);
   });
 });

@@ -1,22 +1,21 @@
-import { ImageView } from "@/components/image/ImageView";
+import { VideoView } from "@/components/video/VideoView";
 import { ApiError, apiGet } from "@/lib/api";
-import { fullDate } from "@/lib/format";
 import { isUuid } from "@/lib/proxy";
-import type { ImageSummary } from "@wd/contracts";
+import type { VideoSummary } from "@wd/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export const metadata: Metadata = { title: "Image" };
+export const metadata: Metadata = { title: "Video" };
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ id: string }> };
 
-export default async function ImageDetail({ params }: Props) {
+export default async function VideoDetail({ params }: Props) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
-  let image: ImageSummary;
+  let video: VideoSummary;
   try {
-    image = await apiGet<ImageSummary>(`/products/wd-image-ai/images/${id}`);
+    video = await apiGet<VideoSummary>(`/products/wd-video-ai/videos/${id}`);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
     throw e;
@@ -26,7 +25,7 @@ export default async function ImageDetail({ params }: Props) {
       <Link href="/creations" className="back">
         <span aria-hidden="true">←</span> My creations
       </Link>
-      <ImageView image={image} when={fullDate(image.created_at)} />
+      <VideoView initial={video} />
     </>
   );
 }

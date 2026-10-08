@@ -8,12 +8,24 @@ import { ProductCard } from "./ProductCard";
 vi.mock("next/navigation", () => ({ usePathname: () => "/music/songs" }));
 
 describe("the studio's products", () => {
-  it("lists music and image as live and video as coming soon, each with its own page", () => {
+  it("lists music, image and video as live, each with its own page", () => {
     expect(PRODUCTS.map((p) => [p.id, p.status, p.href])).toEqual([
       ["music", "live", "/music"],
       ["image", "live", "/image"],
-      ["video", "soon", "/video"],
+      ["video", "live", "/video"],
     ]);
+  });
+});
+
+describe("the home page", () => {
+  it("has the headline and the subtitle, with Ideas picked out", async () => {
+    const Home = (await import("@/app/page")).default;
+    const { container } = render(<Home />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bring Your Ideas to Life");
+    expect(container.querySelector(".studio-hero__accent")).toHaveTextContent("Ideas");
+    expect(
+      screen.getByText(/Create stunning images, immersive music, and captivating videos/),
+    ).toHaveTextContent("with the power of AI — all in one place.");
   });
 });
 
@@ -27,11 +39,23 @@ describe("ProductCard", () => {
   });
 
   it("says plainly that a product is not ready, and still links to its page", () => {
-    render(<ProductCard product={PRODUCTS[2]} />);
+    render(<ProductCard product={{ ...PRODUCTS[2], status: "soon" }} />);
     const link = screen.getByRole("link", { name: /Video/ });
     expect(link).toHaveAttribute("href", "/video");
     expect(within(link).getByText("Coming soon")).toBeInTheDocument();
     expect(within(link).queryByText("Create a song")).not.toBeInTheDocument();
+  });
+
+  it("has a direct action for each live product", () => {
+    const names = PRODUCTS.map((p) => {
+      const { unmount } = render(<ProductCard product={p} />);
+      const text = screen.getByRole("link").textContent;
+      unmount();
+      return text;
+    });
+    expect(names[0]).toContain("Create a song");
+    expect(names[1]).toContain("Make an image");
+    expect(names[2]).toContain("Create a video");
   });
 
   it("hides the decorative art from screen readers", () => {

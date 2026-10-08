@@ -1,15 +1,15 @@
 # web
 
 The Next.js app (App Router, React 19, strict TypeScript) that users see, and the backend-for-frontend (BFF)
-in front of the API. One app serves every product (ADR-0014); today `wd-music-ai` (`/music`) and `wd-image-ai` (`/image`: create, `/image/creations` My images, `/image/creations/{id}`; image to image uploads the picture first through `/api/products/wd-image-ai/uploads/images`).
+in front of the API. One app serves every product (ADR-0014); today `wd-music-ai` (`/music`) and `wd-video-ai` (`/video`: create, `/video/creations/{id}`; a clip is made in the background, the header shows "Making your video…" and a notice says when it is ready) and `wd-image-ai` (`/image`: create, `/image/creations` My images, `/image/creations/{id}`; image to image uploads the picture first through `/api/products/wd-image-ai/uploads/images`).
 
 | Page | What it is |
 |---|---|
 | `/` | The studio home, "WD AI Studio": a card per product (public) |
 | `/music` | Create a song: idea form, live progress, lyric review, result (sign-in required) |
-| `/music/songs` | My songs: a grid of finished songs, newest first, "Load more" |
+| `/creations` | My creations: one library of everything the user made (songs, images, videos, including clips still being made), newest first, with filters and "Load more" (sign-in required) |
 | `/music/songs/[id]` | One song: cover, player, downloads, lyrics (links are signed fresh on every visit) |
-| `/image`, `/video` | "Coming soon" pages (public, `noindex`) |
+| `/image`, `/video` | Create an image or a video (sign-in required); one item is at `/image/creations/[id]` and `/video/creations/[id]` |
 | `/admin/...` | The admin area (admins only) |
 
 ## How it fits together
@@ -37,7 +37,7 @@ around it:
 - **reconnects** if the stream drops mid-run, asking only for what it missed (`Last-Event-ID`);
 - **re-attaches after a reload** while a run is in progress or waiting for approval (the run id is
   kept in `sessionStorage`; the server replays the events). A *finished* run is not restored: the song
-  lives in My songs, and the create page opens on an empty form;
+  lives in My creations, and the create page opens on an empty form;
 - shows an unreachable server or an API error in plain words, with Try again where retrying can help.
 
 The event contract the UI builds against is in `products/wd-music-ai/README.md`.

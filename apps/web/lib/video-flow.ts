@@ -1,5 +1,5 @@
-// Turns the image run's event stream into UI state. Pure: no fetch, no React, so it is tested against
-// recorded event sequences. See products/wd-image-ai/README.md for the contract.
+// Turns the video run's event stream into UI state. Pure: no fetch, no React, so it is tested against
+// recorded event sequences. See products/wd-video-ai/README.md for the contract.
 import type { ParsedEvent } from "./sse";
 
 export type Mode = "text" | "image";
@@ -7,7 +7,7 @@ export type Mode = "text" | "image";
 export type Phase =
   | "idle"
   | "checking" // request sent, guardrail running
-  | "working" // the image is being made
+  | "making" // the clip is being made: the user may leave, it will be in My creations
   | "done"
   | "refused"
   | "error";
@@ -15,12 +15,13 @@ export type Phase =
 export type JobStatus = "waiting" | "queued" | "running" | "completed" | "failed";
 export type Job = { status: JobStatus; position?: number; progress?: number };
 
-export type ImageResult = {
-  imageId: string;
-  imageUrl: string;
-  thumbUrl: string;
+export type VideoResult = {
+  videoId: string;
+  videoUrl: string;
+  posterUrl: string;
   width: number;
   height: number;
+  seconds: number;
   prompt: string;
   mode: Mode;
 };
@@ -33,7 +34,7 @@ export type FlowState = {
   runId?: string;
   lastSeq: number;
   job: Job;
-  result?: ImageResult;
+  result?: VideoResult;
   refusal?: { code: string; message: string };
   error?: FlowError;
 };
@@ -78,12 +79,12 @@ function applyEvent(state: FlowState, name: string, d: Data): FlowState {
       if (d.node === "check_request") {
         return { ...state, phase: "checking", label: str(d.label, state.label) };
       }
-      if (d.node === "generate_image") {
-        return { ...state, phase: "working", label: str(d.label, state.label) };
+      if (d.node === "generate_video") {
+        return { ...state, phase: "making", label: str(d.label, state.label) };
       }
       return state;
     case "job_progress":
-      return d.capability === "image.generate" || d.capability === "image.edit"
+      return d.capability === "video.generate" || d.capability === "video.animate"
         ? { ...state, job: jobUpdate(state.job, d) }
         : state;
     case "done": {
@@ -95,20 +96,21 @@ function applyEvent(state: FlowState, name: string, d: Data): FlowState {
           phase: "refused",
           refusal: {
             code: str(r.code, "refused"),
-            message: str(r.message, "That request can't be made into an image."),
+            message: str(r.message, "That request can't be made into a video."),
           },
         };
       }
       return {
         ...state,
         phase: "done",
-        label: "Your image is ready",
+        label: "Your video is ready",
         result: {
-          imageId: str(out.image_id),
-          imageUrl: str(out.image_url),
-          thumbUrl: str(out.thumb_url),
+          videoId: str(out.video_id),
+          videoUrl: str(out.video_url),
+          posterUrl: str(out.poster_url),
           width: num(out.width) ?? 0,
           height: num(out.height) ?? 0,
+          seconds: num(out.seconds) ?? 0,
           prompt: str(out.prompt),
           mode: out.mode === "image" ? "image" : "text",
         },

@@ -4,54 +4,60 @@ import { EnhanceButton } from "@/components/EnhanceButton";
 import { PictureInput } from "@/components/PictureInput";
 import { type Picture, usePicture } from "@/hooks/use-picture";
 import { usePictureEvents } from "@/hooks/use-picture-events";
-import type { Mode } from "@/lib/image-flow";
+import type { Mode } from "@/lib/video-flow";
 import { type FormEvent, type KeyboardEvent, useId, useState } from "react";
 
 export const MAX_PROMPT = 500;
-const PRODUCT = "wd-image-ai";
+const PRODUCT = "wd-video-ai";
 
-export const SIZES = [
+export const SHAPES = [
+  { id: "landscape", label: "Landscape", hint: "3:2" },
+  { id: "portrait", label: "Portrait", hint: "2:3" },
   { id: "square", label: "Square", hint: "1:1" },
-  { id: "landscape", label: "Landscape", hint: "4:3" },
-  { id: "portrait", label: "Portrait", hint: "3:4" },
-  { id: "wide", label: "Wide", hint: "16:9" },
-  { id: "tall", label: "Tall", hint: "9:16" },
+] as const;
+
+/** Clips are 2 or 5 seconds; a longer one does not fit the time a GPU job may take (ADR-0037). */
+export const LENGTHS = [
+  { seconds: 2, label: "2 seconds", wait: "about 3 minutes" },
+  { seconds: 5, label: "5 seconds", wait: "about 8 minutes" },
 ] as const;
 
 const EXAMPLES: Record<Mode, string[]> = {
   text: [
-    "A lighthouse on a cliff at sunrise, soft watercolour",
-    "A cosy reading nook with a sleeping cat, warm light",
-    "A paper-craft city at night, glowing windows",
+    "A red fox walks through fresh snow at dawn, the camera slowly follows it",
+    "Waves roll onto a quiet beach at sunset, seagulls drifting overhead",
+    "A paper boat floats down a rain-soaked street, ripples spreading around it",
   ],
   image: [
-    "Make it look like a watercolour painting",
-    "Change the background to a snowy forest",
-    "Turn the daytime scene into a golden-hour evening",
+    "Snow begins to fall softly and the camera slowly pushes in",
+    "Clouds drift across the sky and the grass moves in the wind",
+    "The light flickers gently and the camera slowly pans right",
   ],
 };
 
 /** What the form hands over: the picture is already uploaded (ADR-0039), so a run needs only its key. */
-export type ImageFormValue = {
+export type VideoFormValue = {
   mode: Mode;
   prompt: string;
-  size: string;
+  shape: string;
+  seconds: number;
   picture: Picture | null;
 };
 
-export function ImageForm({
+export function VideoForm({
   onSubmit,
   initial,
   busy = false,
 }: {
-  onSubmit: (value: ImageFormValue) => void;
-  initial?: Partial<Pick<ImageFormValue, "mode" | "prompt" | "size">>;
+  onSubmit: (value: VideoFormValue) => void;
+  initial?: Partial<Pick<VideoFormValue, "mode" | "prompt" | "shape" | "seconds">>;
   busy?: boolean;
 }) {
   const id = useId();
   const [mode, setMode] = useState<Mode>(initial?.mode ?? "text");
   const [prompt, setPrompt] = useState(initial?.prompt ?? "");
-  const [size, setSize] = useState(initial?.size ?? "square");
+  const [shape, setShape] = useState(initial?.shape ?? "landscape");
+  const [seconds, setSeconds] = useState<number>(initial?.seconds ?? 2);
   const pic = usePicture(PRODUCT);
   // A picture dropped or pasted while on "From text" switches to the picture mode.
   const { dragging } = usePictureEvents((file) => {
@@ -64,6 +70,7 @@ export function ImageForm({
     trimmed.length > 0 &&
     prompt.length <= MAX_PROMPT &&
     (mode === "text" || (pic.picture !== null && pic.status !== "uploading"));
+  const wait = LENGTHS.find((l) => l.seconds === seconds)?.wait ?? "a few minutes";
 
   function submit(e?: FormEvent) {
     e?.preventDefault();
@@ -72,7 +79,8 @@ export function ImageForm({
     onSubmit({
       mode,
       prompt: trimmed,
-      size,
+      shape,
+      seconds,
       picture: mode === "image" ? pic.picture : null,
     });
   }
@@ -112,7 +120,7 @@ export function ImageForm({
 
       <div className="field">
         <label htmlFor={`${id}-prompt`}>
-          {mode === "text" ? "What should the image show?" : "What should change?"}
+          {mode === "text" ? "What should the video show?" : "What should move?"}
         </label>
         <textarea
           id={`${id}-prompt`}
@@ -127,11 +135,13 @@ export function ImageForm({
         />
         <div className="row">
           <span className="field__hint grow" id={`${id}-hint`}>
-            Press Ctrl or ⌘ + Enter to start.
+            {mode === "image"
+              ? "Describe the picture and what moves in it. Press Ctrl or ⌘ + Enter to start."
+              : "Describe the scene and how it moves. Press Ctrl or ⌘ + Enter to start."}
           </span>
           <EnhanceButton
             product={PRODUCT}
-            kind={mode === "text" ? "text_to_image" : "edit_image"}
+            kind={mode === "text" ? "text_to_video" : "image_to_video"}
             value={prompt}
             uploadId={pic.picture?.uploadId}
             needsPicture={mode === "image"}
@@ -152,17 +162,34 @@ export function ImageForm({
         </div>
       </div>
 
+      <fieldset className="field" style={{ border: 0, padding: 0 }}>
+        <legend className="field__label">Length</legend>
+        <div className="chips">
+          {LENGTHS.map((l) => (
+            <button
+              type="button"
+              className="chip"
+              key={l.seconds}
+              aria-pressed={seconds === l.seconds}
+              onClick={() => setSeconds(l.seconds)}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
       {mode === "text" ? (
         <fieldset className="field" style={{ border: 0, padding: 0 }}>
           <legend className="field__label">Shape</legend>
           <div className="chips">
-            {SIZES.map((s) => (
+            {SHAPES.map((s) => (
               <button
                 type="button"
                 className="chip"
                 key={s.id}
-                aria-pressed={size === s.id}
-                onClick={() => setSize(s.id)}
+                aria-pressed={shape === s.id}
+                onClick={() => setShape(s.id)}
               >
                 {s.label} <span className="muted">{s.hint}</span>
               </button>
@@ -174,12 +201,11 @@ export function ImageForm({
       <div className="actions">
         <button type="submit" className="btn btn--primary btn--lg" disabled={!valid || busy}>
           {busy ? <span className="spinner" aria-hidden="true" /> : null}
-          Make my image
+          Make my video
         </button>
         <span className="muted">
-          {mode === "image"
-            ? "The result keeps the size of your picture."
-            : "Takes about a minute."}
+          Takes {wait}. You can explore the site while it's made.
+          {mode === "image" ? " The clip keeps the shape of your picture." : ""}
         </span>
       </div>
     </form>

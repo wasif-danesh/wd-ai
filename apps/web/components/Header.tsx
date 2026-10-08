@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import { Logo } from "./Logo";
 import { NavLink } from "./NavLink";
 import { ThemeToggle } from "./ThemeToggle";
+import { VideoActivity } from "./video/VideoActivity";
 
 export async function Header() {
   await connection(); // per request: the session is not known at build time
@@ -27,10 +28,14 @@ export async function Header() {
           <NavLink href="/image" exact>
             Image
           </NavLink>
-          {signedIn && <NavLink href="/creations">My Creations</NavLink>}
+          <NavLink href="/video" exact>
+            Video
+          </NavLink>
+          {signedIn && <NavLink href="/creations">My creations</NavLink>}
           {isAdmin && <NavLink href="/admin">Admin</NavLink>}
         </nav>
         <div className="header__actions">
+          <VideoActivity enabled={signedIn} />
           <ThemeToggle />
           {who ? (
             <form

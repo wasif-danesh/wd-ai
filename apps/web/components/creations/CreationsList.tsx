@@ -4,24 +4,46 @@ import { Equaliser } from "@/components/Logo";
 import { Notice } from "@/components/Notice";
 import { styleTags, timeAgo } from "@/lib/format";
 import { PRODUCT } from "@/lib/run-client";
-import type { ImagePage, ImageSummary, SongPage, SongSummary } from "@wd/contracts";
+import type {
+  ImagePage,
+  ImageSummary,
+  SongPage,
+  SongSummary,
+  VideoPage,
+  VideoSummary,
+} from "@wd/contracts";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
 const PAGE = 12;
-type Filter = "all" | "songs" | "images";
+type Filter = "all" | "songs" | "images" | "videos";
 type Entry =
   | { kind: "song"; id: string; createdAt: string; song: SongSummary }
-  | { kind: "image"; id: string; createdAt: string; image: ImageSummary };
+  | { kind: "image"; id: string; createdAt: string; image: ImageSummary }
+  | { kind: "video"; id: string; createdAt: string; video: VideoSummary };
+
+const FILTERS: { value: Filter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "songs", label: "Songs" },
+  { value: "images", label: "Images" },
+  { value: "videos", label: "Videos" },
+];
 
 export function CreationsList({
   songs: songPage,
   images: imagePage,
-}: { songs: SongPage | null; images: ImagePage | null }) {
+  videos: videoPage = null,
+}: {
+  songs: SongPage | null;
+  images: ImagePage | null;
+  videos?: VideoPage | null;
+}) {
   const [songs, setSongs] = useState(songPage?.songs ?? []);
   const [images, setImages] = useState(imagePage?.images ?? []);
+  const [videos, setVideos] = useState(videoPage?.videos ?? []);
   const [songNext, setSongNext] = useState(songPage?.next_before ?? null);
   const [imageNext, setImageNext] = useState(imagePage?.next_before ?? null);
+  const [videoNext, setVideoNext] = useState(videoPage?.next_before ?? null);
   const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -40,52 +62,80 @@ export function CreationsList({
         createdAt: image.created_at,
         image,
       })),
+      ...videos.map((video) => ({
+        kind: "video" as const,
+        id: video.id,
+        createdAt: video.created_at,
+        video,
+      })),
     ];
+    const wanted = { all: null, songs: "song", images: "image", videos: "video" }[filter];
     return all
-      .filter((entry) => filter === "all" || entry.kind === (filter === "songs" ? "song" : "image"))
+      .filter((entry) => wanted === null || entry.kind === wanted)
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  }, [filter, images, songs]);
+  }, [filter, images, songs, videos]);
+
+  /** Load the next page of one kind. Returns true when it failed. */
+  async function page<T>(url: string, apply: (p: T) => void): Promise<boolean> {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(String(res.status));
+      apply((await res.json()) as T);
+      return false;
+    } catch {
+      return true;
+    }
+  }
 
   async function more() {
-    if (loading || (!songNext && !imageNext)) return;
+    if (loading) return;
     setLoading(true);
     setFailed(false);
-    const requests = await Promise.allSettled([
-      songNext && filter !== "images"
-        ? fetch(
-            `/api/products/${PRODUCT}/songs?limit=${PAGE}&before=${encodeURIComponent(songNext)}`,
-          )
-        : Promise.resolve(null),
-      imageNext && filter !== "songs"
-        ? fetch(
-            `/api/products/wd-image-ai/images?limit=${PAGE}&before=${encodeURIComponent(imageNext)}`,
-          )
-        : Promise.resolve(null),
-    ]);
-    let hadFailure = false;
-    if (requests[0].status === "fulfilled" && requests[0].value) {
-      try {
-        if (!requests[0].value.ok) throw new Error();
-        const page = (await requests[0].value.json()) as SongPage;
-        setSongs((current) => [...current, ...page.songs]);
-        setSongNext(page.next_before ?? null);
-      } catch {
-        hadFailure = true;
-      }
-    } else if (requests[0].status === "rejected") hadFailure = true;
-    if (requests[1].status === "fulfilled" && requests[1].value) {
-      try {
-        if (!requests[1].value.ok) throw new Error();
-        const page = (await requests[1].value.json()) as ImagePage;
-        setImages((current) => [...current, ...page.images]);
-        setImageNext(page.next_before ?? null);
-      } catch {
-        hadFailure = true;
-      }
-    } else if (requests[1].status === "rejected") hadFailure = true;
-    setFailed(hadFailure);
+    const q = (before: string) => `limit=${PAGE}&before=${encodeURIComponent(before)}`;
+    const jobs: Promise<boolean>[] = [];
+    if (songNext && (filter === "all" || filter === "songs")) {
+      jobs.push(
+        page<SongPage>(`/api/products/${PRODUCT}/songs?${q(songNext)}`, (p) => {
+          setSongs((cur) => [...cur, ...p.songs]);
+          setSongNext(p.next_before ?? null);
+        }),
+      );
+    }
+    if (imageNext && (filter === "all" || filter === "images")) {
+      jobs.push(
+        page<ImagePage>(`/api/products/wd-image-ai/images?${q(imageNext)}`, (p) => {
+          setImages((cur) => [...cur, ...p.images]);
+          setImageNext(p.next_before ?? null);
+        }),
+      );
+    }
+    if (videoNext && (filter === "all" || filter === "videos")) {
+      jobs.push(
+        page<VideoPage>(`/api/products/wd-video-ai/videos?${q(videoNext)}`, (p) => {
+          setVideos((cur) => [...cur, ...p.videos]);
+          setVideoNext(p.next_before ?? null);
+        }),
+      );
+    }
+    const results = await Promise.all(jobs);
+    setFailed(results.some(Boolean));
     setLoading(false);
   }
+
+  const counts = {
+    all: songs.length + images.length + videos.length,
+    songs: songs.length,
+    images: images.length,
+    videos: videos.length,
+  };
+  const hasMore =
+    filter === "all"
+      ? Boolean(songNext || imageNext || videoNext)
+      : filter === "songs"
+        ? Boolean(songNext)
+        : filter === "images"
+          ? Boolean(imageNext)
+          : Boolean(videoNext);
 
   const empty = entries.length === 0;
   return (
@@ -93,7 +143,7 @@ export function CreationsList({
       <div className="creations-toolbar">
         <fieldset className="creations-filters">
           <legend className="sr-only">Filter creations</legend>
-          {(["all", "songs", "images"] as const).map((value) => (
+          {FILTERS.map(({ value, label }) => (
             <button
               key={value}
               type="button"
@@ -101,14 +151,7 @@ export function CreationsList({
               aria-pressed={filter === value}
               onClick={() => setFilter(value)}
             >
-              {value === "all" ? "All" : value === "songs" ? "Songs" : "Images"}
-              <span>
-                {value === "all"
-                  ? songs.length + images.length
-                  : value === "songs"
-                    ? songs.length
-                    : images.length}
-              </span>
+              {label} <span>{counts[value]}</span>
             </button>
           ))}
         </fieldset>
@@ -119,7 +162,7 @@ export function CreationsList({
 
       {empty ? (
         <div className="empty panel creations-empty">
-          {filter !== "images" ? <Equaliser still /> : null}
+          {filter === "all" || filter === "songs" ? <Equaliser still /> : null}
           <h2>{filter === "all" ? "Your creative space is ready" : `No ${filter} yet`}</h2>
           <p>Make something new and it will appear here.</p>
           <div className="actions">
@@ -128,6 +171,9 @@ export function CreationsList({
             </Link>
             <Link href="/image" className="btn btn--ghost">
               Make an image
+            </Link>
+            <Link href="/video" className="btn btn--ghost">
+              Make a video
             </Link>
           </div>
         </div>
@@ -158,6 +204,10 @@ export function CreationsList({
                   </div>
                 </Link>
               </li>
+            ) : entry.kind === "video" ? (
+              <li key={`video-${entry.id}`}>
+                <VideoCard video={entry.video} />
+              </li>
             ) : (
               <li key={`image-${entry.id}`}>
                 <Link href={`/image/creations/${entry.id}`} className="song-card creation-card">
@@ -179,8 +229,7 @@ export function CreationsList({
           Check your connection and try again.
         </Notice>
       ) : null}
-      {!empty &&
-      (filter === "all" ? songNext || imageNext : filter === "songs" ? songNext : imageNext) ? (
+      {!empty && hasMore ? (
         <div className="actions creations-load-more">
           <button type="button" className="btn btn--ghost" onClick={more} disabled={loading}>
             {loading ? <span className="spinner" aria-hidden="true" /> : null}Load more
@@ -188,5 +237,34 @@ export function CreationsList({
         </div>
       ) : null}
     </section>
+  );
+}
+
+/** A clip: its poster when ready, a "making" card while it is, and the reason when it failed. */
+function VideoCard({ video }: { video: VideoSummary }) {
+  return (
+    <Link
+      href={`/video/creations/${video.id}`}
+      className="song-card creation-card"
+      data-status={video.status}
+    >
+      {video.status === "done" && video.poster_url ? (
+        <img src={video.poster_url} alt="" loading="lazy" />
+      ) : (
+        <div className="song-card__cover cover-placeholder video-placeholder" aria-hidden="true">
+          {video.status === "working" ? <span className="spinner" /> : null}
+        </div>
+      )}
+      <span className="creation-kind">Video</span>
+      <div className="stack creation-card__details">
+        <h3 className="clamp">{video.prompt}</h3>
+        {video.status === "working" ? (
+          <span className="tag">Making your video…</span>
+        ) : video.status === "failed" ? (
+          <span className="tag">Couldn't be made</span>
+        ) : null}
+        <time dateTime={video.created_at}>{timeAgo(video.created_at)}</time>
+      </div>
+    </Link>
   );
 }

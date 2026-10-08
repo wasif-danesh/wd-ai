@@ -26,8 +26,9 @@ export const PRODUCTS: Product[] = [
   {
     id: "video",
     title: "Video",
-    blurb: "Bring a story to life as a short clip.",
+    blurb:
+      "Describe a scene, or bring a picture to life as a short clip. Leave while it's made: we'll tell you when it's ready.",
     href: "/video",
-    status: "soon",
+    status: "live",
   },
 ];

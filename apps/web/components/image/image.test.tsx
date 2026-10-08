@@ -3,8 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ImageSummary } from "@wd/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ImageForm, MAX_UPLOAD_BYTES, fileProblem } from "./ImageForm";
-import { ImageList } from "./ImageList";
+import { ImageForm } from "./ImageForm";
 import { ImageView } from "./ImageView";
 
 const push = vi.fn();
@@ -37,17 +36,6 @@ const img = (id: string, prompt = "a cat"): ImageSummary => ({
   thumb_url: `http://x/${id}.jpg`,
 });
 
-describe("fileProblem", () => {
-  it("accepts png, jpeg and webp and rejects the rest", () => {
-    expect(fileProblem(png())).toBeNull();
-    expect(fileProblem(png(10, "image/jpeg"))).toBeNull();
-    expect(fileProblem(png(10, "image/webp"))).toBeNull();
-    expect(fileProblem(png(10, "image/gif"))).toMatch(/PNG, JPEG or WebP/);
-    expect(fileProblem(png(MAX_UPLOAD_BYTES + 1))).toMatch(/10 MB/);
-    expect(fileProblem(png(0))).toMatch(/empty/);
-  });
-});
-
 describe("ImageForm", () => {
   it("makes a text image with the chosen shape", async () => {
     const onSubmit = vi.fn();
@@ -62,11 +50,14 @@ describe("ImageForm", () => {
       mode: "text",
       prompt: "a lighthouse",
       size: "wide",
-      file: null,
+      picture: null,
     });
   });
 
-  it("needs a picture in picture mode, refuses bad files, and mentions deletion", async () => {
+  it("needs a picture in picture mode, uploads it at once, and hands it to the run", async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({ upload_id: "u1", key: "uploads/u1.png", width: 300, height: 200, bytes: 9 }),
+    );
     const onSubmit = vi.fn();
     const user = userEvent.setup({ applyAccept: false });
     render(<ImageForm onSubmit={onSubmit} />);
@@ -74,45 +65,83 @@ describe("ImageForm", () => {
     await user.type(screen.getByRole("textbox"), "make it blue");
     const go = screen.getByRole("button", { name: /make my image/i });
     expect(go).toBeDisabled();
-    expect(screen.getByText(/deleted once the image is made/i)).toBeInTheDocument();
+    expect(screen.getByText(/deleted once it has been used/i)).toBeInTheDocument();
 
-    const input = screen.getByLabelText(/your picture/i);
-    await user.upload(input, new File(["x"], "a.gif", { type: "image/gif" }));
-    expect(screen.getByRole("alert")).toHaveTextContent(/PNG, JPEG or WebP/);
-    expect(go).toBeDisabled();
-
-    const good = png();
-    await user.upload(input, good);
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(go).toBeEnabled();
+    await user.upload(screen.getByLabelText("Your picture"), png());
+    await waitFor(() => expect(go).toBeEnabled());
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/products/wd-image-ai/uploads/images");
     await user.click(go);
-    expect(onSubmit).toHaveBeenCalledWith({
-      mode: "image",
-      prompt: "make it blue",
-      size: "square",
-      file: good,
-    });
-  });
-});
-
-describe("ImageList", () => {
-  it("shows an empty state", () => {
-    render(<ImageList initial={{ images: [], next_before: null }} />);
-    expect(screen.getByText(/no images yet/i)).toBeInTheDocument();
+    const value = onSubmit.mock.calls[0][0];
+    expect(value).toMatchObject({ mode: "image", prompt: "make it blue", size: "square" });
+    expect(value.picture).toMatchObject({ uploadId: "u1", key: "uploads/u1.png" });
   });
 
-  it("loads more pages", async () => {
-    const user = userEvent.setup();
+  it("refuses a bad file in the browser without uploading it", async () => {
+    const user = userEvent.setup({ applyAccept: false });
+    render(<ImageForm onSubmit={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: /from a picture/i }));
+    await user.upload(
+      screen.getByLabelText("Your picture"),
+      new File(["x"], "a.gif", { type: "image/gif" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(/PNG, JPEG or WebP/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("switches to the picture mode when a picture is pasted, and ignores a text paste", async () => {
     fetchMock.mockResolvedValueOnce(
-      Response.json({ images: [img("b", "second")], next_before: null }),
+      Response.json({ upload_id: "u2", key: "uploads/u2.png", width: 3, height: 2, bytes: 9 }),
     );
-    render(
-      <ImageList initial={{ images: [img("a", "first")], next_before: "2026-10-07T00:00:00Z" }} />,
+    render(<ImageForm onSubmit={vi.fn()} />);
+    const file = png();
+    const paste = (types: string[], withFile: boolean) => {
+      const e = new Event("paste", { bubbles: true, cancelable: true }) as Event & {
+        clipboardData: unknown;
+      };
+      e.clipboardData = {
+        types,
+        items: withFile ? [{ kind: "file", getAsFile: () => file }] : [],
+        files: withFile ? [file] : [],
+      };
+      document.dispatchEvent(e);
+      return e;
+    };
+    expect(paste(["text/plain"], false).defaultPrevented).toBe(false);
+    expect(paste(["text/plain", "Files"], true).defaultPrevented).toBe(false); // a spreadsheet copy
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(paste(["Files"], true).defaultPrevented).toBe(true);
+    await waitFor(() => expect(screen.getByAltText(/preview of your upload/i)).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /from a picture/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
     );
-    await user.click(screen.getByRole("button", { name: /load more/i }));
-    await waitFor(() => expect(screen.getByText("second")).toBeInTheDocument());
-    expect(fetchMock.mock.calls[0][0]).toContain("before=2026-10-07T00%3A00%3A00Z");
-    expect(screen.queryByRole("button", { name: /load more/i })).toBeNull();
+  });
+
+  it("accepts a dropped picture and takes it back from the server when removed", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        Response.json({ upload_id: "u3", key: "uploads/u3.png", width: 3, height: 2, bytes: 9 }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const user = userEvent.setup();
+    render(<ImageForm onSubmit={vi.fn()} />);
+    const file = png();
+    const drop = new Event("drop", { bubbles: true, cancelable: true }) as Event & {
+      dataTransfer: unknown;
+    };
+    drop.dataTransfer = {
+      types: ["Files"],
+      items: [{ kind: "file", getAsFile: () => file }],
+      files: [file],
+    };
+    window.dispatchEvent(drop);
+    expect(drop.defaultPrevented).toBe(true); // the browser must not open the file
+    await waitFor(() => expect(screen.getByAltText(/preview of your upload/i)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /remove/i }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/products/wd-image-ai/uploads/images/u3");
+    expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: "DELETE" });
+    expect(screen.getByRole("button", { name: /choose a picture/i })).toBeInTheDocument();
   });
 });
 
@@ -128,7 +157,7 @@ describe("ImageView", () => {
     await user.click(screen.getByRole("button", { name: /^delete$/i }));
     expect(fetchMock).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: /yes, delete/i }));
-    await waitFor(() => expect(push).toHaveBeenCalledWith("/image/creations"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/creations"));
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "DELETE" });
   });
 

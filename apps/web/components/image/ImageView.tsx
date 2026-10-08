@@ -18,7 +18,7 @@ export function ImageView({ image, when }: { image: ImageSummary; when: string }
     try {
       const res = await fetch(`/api/products/wd-image-ai/images/${image.id}`, { method: "DELETE" });
       if (!res.ok && res.status !== 404) throw new Error(String(res.status));
-      router.push("/image/creations");
+      router.push("/creations");
       router.refresh();
     } catch {
       setFailed(true);

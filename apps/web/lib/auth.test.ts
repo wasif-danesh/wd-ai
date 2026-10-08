@@ -90,7 +90,7 @@ describe("auth mode and redirects", () => {
 });
 
 describe("which pages need a session", () => {
-  it.each(["/", "/video", "/signin", "/video/"])("%s is public", (path) => {
+  it.each(["/", "/signin"])("%s is public", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });
 
@@ -106,6 +106,9 @@ describe("which pages need a session", () => {
     "/image/",
     "/image/creations",
     "/image/secret",
+    "/video",
+    "/video/",
+    "/video/creations/1",
     "/signin/x",
   ])("%s needs a session", (path) => {
     expect(isPublicPath(path)).toBe(false);
@@ -116,6 +119,8 @@ describe("which pages need a session", () => {
     expect(signInReason("/music/songs/abc")).toMatch(/create music/);
     expect(signInReason("/image")).toMatch(/create images/);
     expect(signInReason("/image/creations/x")).toMatch(/create images/);
+    expect(signInReason("/video")).toMatch(/create videos/);
+    expect(signInReason("/video/creations/x")).toMatch(/create videos/);
     expect(signInReason("/admin")).toBe("Sign in to continue.");
     expect(signInReason("/")).toBe("Sign in to continue.");
   });

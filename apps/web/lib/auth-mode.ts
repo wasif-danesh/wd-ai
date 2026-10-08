@@ -11,8 +11,8 @@ export function safeNext(value: string | null | undefined): string {
   return value;
 }
 
-/** Pages anyone may open without signing in: the home page and the "coming soon" product pages. */
-const PUBLIC_PATHS = new Set(["/", "/video", "/signin"]);
+/** Pages anyone may open without signing in: the home page and the sign-in page. */
+const PUBLIC_PATHS = new Set(["/", "/signin"]);
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname);
@@ -25,6 +25,9 @@ export function signInReason(next: string): string {
   }
   if (next === "/image" || next.startsWith("/image/")) {
     return "Sign in to create images and keep them.";
+  }
+  if (next === "/video" || next.startsWith("/video/")) {
+    return "Sign in to create videos and keep them.";
   }
   return "Sign in to continue.";
 }

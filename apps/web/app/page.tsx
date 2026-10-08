@@ -13,11 +13,12 @@ export default function Home() {
       <header className="studio-hero">
         <span className="studio-hero__eyebrow">Your creative space</span>
         <h1>
-          Make something
-          <br />
-          worth feeling.
+          Bring Your <span className="studio-hero__accent">Ideas</span> to Life
         </h1>
-        <p>Bring an idea. Leave with a song, an image, or a whole new direction.</p>
+        <p>
+          Create stunning images, immersive music, and captivating videos with the power of AI — all
+          in one place.
+        </p>
       </header>
       <div className="studio-section-heading">
         <h2>Choose your canvas</h2>

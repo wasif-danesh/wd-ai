@@ -14,10 +14,8 @@ const play = (events: ParsedEvent[], from: FlowState = initialState) =>
 const started = (node: string) => ev("node", { node, status: "started", label: node });
 
 describe("image flow", () => {
-  it("moves from uploading to checking to working to done", () => {
-    let s = flowReducer(initialState, { type: "uploading" });
-    expect(s.phase).toBe("uploading");
-    s = flowReducer(s, { type: "submitted" });
+  it("moves from checking to working to done", () => {
+    let s = flowReducer(initialState, { type: "submitted" });
     expect(s.phase).toBe("checking");
     s = play([started("check_request")], s);
     expect(s.phase).toBe("checking");

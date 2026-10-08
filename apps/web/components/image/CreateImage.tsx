@@ -28,11 +28,16 @@ export function CreateImage() {
   // What the user asked for, kept so a refusal or an error can bring it back for editing.
   const [asked, setAsked] = useState<ImageFormValue | undefined>();
   const { phase } = state;
-  const working = phase === "uploading" || phase === "checking" || phase === "working";
+  const working = phase === "checking" || phase === "working";
 
   const submit = (value: ImageFormValue) => {
     setAsked(value);
-    start(value);
+    start({
+      mode: value.mode,
+      prompt: value.prompt,
+      size: value.size,
+      imageKey: value.picture?.key,
+    });
   };
 
   return (
@@ -108,7 +113,7 @@ export function CreateImage() {
           {phase === "done" && state.result ? (
             <>
               <Notice tone="ok" title="Your image is ready">
-                It's saved in My images, where you can download it any time.
+                It's saved in My creations, where you can download it any time.
               </Notice>
               <figure className="image-result panel">
                 <img
@@ -136,7 +141,7 @@ export function CreateImage() {
                     className="btn btn--ghost"
                     href={`/image/creations/${state.result.imageId}`}
                   >
-                    Open in My images
+                    Open in My creations
                   </Link>
                 ) : null}
               </div>
