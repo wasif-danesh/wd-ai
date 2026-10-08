@@ -10,7 +10,7 @@ description ("text to video") or from one picture plus a description of what mov
 open model that runs on the Mac we develop on, and later on any GPU through the same capability names.
 
 We tried the two candidates on the local ComfyUI 0.39 (Apple silicon, 64 GB, MPS) before choosing. Same prompt, a
-2-second clip each. Times include loading the model. Frames were looked at, not just counted.
+2-second clip each, and later 5, 8 and 10 seconds for LTX. Times include loading the model. Frames were looked at, not just counted.
 
 | Model | Mode | Setting | Result | Time |
 |---|---|---|---|---|
@@ -18,6 +18,19 @@ We tried the two candidates on the local ComfyUI 0.39 (Apple silicon, 64 GB, MPS
 | LTX-Video 2B 0.9.5 | image to video | 640x352, 49 frames, 30 steps, image strength 1.0 | Faithful to the picture, little motion | 95-130 s |
 | Wan 2.2 TI2V 5B | text to video | 640x352, 17 frames, 12 steps | Works, cartoonish, but only in fp32 | 110 s |
 | Wan 2.2 TI2V 5B | image to video | 640x352, 33 frames, 20 steps | **Broken**: frame 1 is the picture, later frames collapse to noise | 205-296 s |
+
+Longer LTX clips, text to video at 768x512 and 30 steps in fp32 on the Mac (coherent at every length; the fox
+keeps walking, the framing drifts a little at 8 s):
+
+| Length | Frames at 24 fps | Time |
+|---|---|---|
+| 2 s | 49 | about 3 min |
+| 5 s | 121 | 7.5 min (451 s) |
+| 8 s | 193 | 15 min (902 s) |
+| 10 s | 241 | 21.6 min (1297 s) |
+
+Cost grows faster than length (attention), and the worker's `job_timeout_s` is 900 s, so 8 and 10 seconds do not
+fit. They are left for faster hardware. Image to video was timed at 2 s only.
 
 Findings that shape the decision:
 
@@ -41,9 +54,10 @@ Findings that shape the decision:
   9.8 GB). Wan 2.2 5B is **not** used now: its image to video is broken on our hardware and it needs fp32 anyway.
   It stays a candidate for a CUDA host, where the `video.*` capabilities can be pointed at it without a code change.
 - **Two modes, one picture at most.** *Text to video*: a prompt and a shape (landscape 768x512, portrait 512x768,
-  square 512x512). *Image to video*: one uploaded picture (ADR-0035) and a description of what happens; the
-  clip keeps the picture's shape, scaled to about 0.3 megapixel and to multiples of 32. Fixed length: **49 frames
-  at 24 fps, about 2 seconds**. Longer clips, several pictures, audio and upscaling are not in the first version.
+  square 512x512) and a length of **2 or 5 seconds**. *Image to video*: one uploaded picture (ADR-0035) and a description of what happens; the
+  clip keeps the picture's shape, scaled to about 0.3 megapixel and to multiples of 32. A clip is 49
+  frames (2 s) or 121 frames (5 s) at 24 fps. 8 and 10 second clips (ADR evidence above) are not offered until the
+  hardware or the timeout allows them; several pictures, audio and upscaling are not in the first version.
 - **Capabilities, not models.** `video.generate` (text to video) and `video.animate` (image to video), bound in
   `product.yaml` to ComfyUI workflows `ltx-video-2b-t2v` and `ltx-video-2b-i2v` with map files, **both run for
   real** before acceptance. `video.animate` is a new verb next to `generate` and `edit` in the SDK; it takes
@@ -56,13 +70,26 @@ Findings that shape the decision:
   a time and the LLM-unload rule still applies. The dedicated instance's start command goes in
   `docs/configuration.md` and the setup script. If half precision is later shown to work for LTX on this hardware,
   the second instance can be dropped.
-- **Jobs take minutes.** A clip is 2-3 minutes on the Mac, so the worker's `job_timeout_s` (900 s today) is enough;
-  queue position and progress use the existing `job_progress` events (ADR-0021). The UI says "about 3 minutes".
-  Quota: `videos_per_user_per_day: 5` (to be tuned with real usage).
+- **Jobs take minutes.** About 3 minutes for 2 s and 8 minutes for 5 s on the Mac, within the worker's
+  `job_timeout_s` (900 s). Queue position and progress use the existing `job_progress` events (ADR-0021). Quota:
+  `videos_per_user_per_day: 5`, counted in clips (to be tuned), and **one working clip per user at a time**, because
+  the GPU does one job at a time.
+- **The user does not have to wait on the page.** A run is server-side and survives the browser (ADR-0021), but its
+  SSE stream only helps a page that is open. So "being made" is a saved state: the `videos` row is created when the
+  run starts with `status = working` and is set to `done` or `failed` by the graph (a row stuck in `working` for over
+  30 minutes is marked `failed`). The create page follows the SSE stream for the guardrail step, so a refusal shows
+  at once, then says the video is being created, how long it takes, and that the user can explore the site. Any
+  page shows a small "Making your video..." badge in the header while a clip is working, using a 10 second poll of
+  `GET /videos?status=working` that runs only while something is pending. When the clip is done a toast links to it,
+  and My creations shows the working clip as a "Making..." card that becomes the clip. **No WebSocket and no global
+  stream:** polling is simpler and sturdier than a per-user live feed, and can be replaced behind the same hook.
+  Email or browser notifications for a user who has left the site are not in this version (email needs a provider,
+  a new dependency, which we ask about first).
 - **Graph.** `check_request` (input validation, quota, guardrail) then `start_job` / `await_job` and `finalise`:
   save the MP4 (H.264, no audio), make a 480 px JPEG poster from its first frame (with the bundled ffmpeg the
   downloads already use, ADR-0034), delete the uploaded picture, write the `videos` row (migration 0010:
-  id, tenant, product, user, mode, prompt, width, height, frames, fps, video_key, poster_key, created_at) and the
+  id, tenant, product, user, mode, status, prompt, width, height, frames, fps, video_key, poster_key,
+  created_at) and the
   usage event `video.created`. A failed job also deletes the upload.
 - **Guardrail: the same as the image product (ADR-0036), fail closed.** The prompt goes to the `moderator` alias, a
   picture also to `multimodal`, with the same categories, fixed refusal texts and a canary. Animating a photo of a
@@ -71,12 +98,12 @@ Findings that shape the decision:
   or lip-sync, which limits impersonation. The finished clip is **not screened** (same known gap as images; the
   next safety step for both products, and more pressing for video).
 - **My creations.** Clips appear in the unified My creations library at `/creations`, which already lists songs
-  and images; it gains a "Videos" filter and a clip card (poster, prompt, time). `GET /videos`, `GET/DELETE
+  and images; it gains a "Videos" filter and a clip card (poster, prompt, time). `GET /videos` (with `status`), `GET/DELETE
   /videos/{id}` and a same-origin download route (the MP4 as an attachment, like songs and images) serve it.
   Deleting removes the row, the video and the poster.
-- **Web.** `/video` mirrors `/image`: a "From text" / "From a picture" switch, the 10 MB picture check, a note that
-  the upload is deleted once the clip is made, and a hint to describe the picture and what should move (image to
-  video fights a prompt that contradicts its picture). Result: an inline player, Download, Make another, Open in
+- **Web.** `/video` mirrors `/image`: a "From text" / "From a picture" switch, the 10 MB picture check, a length choice (2 s or 5 s),
+  a note that the upload is deleted once the clip is made, and a hint to describe the picture and what should move (image to
+  video fights a prompt that contradicts its picture). Result, when the user is still on the page: an inline player, Download, Make another, Open in
   My creations. Sign-in is required for `/video`, like `/music` and `/image`.
 
 ## Consequences
@@ -91,6 +118,7 @@ Findings that shape the decision:
   already allow more than one.
 - The Open RAIL-M restrictions must reach users through the terms of service, which do not exist yet
   ("Legal basics" in the roadmap). That must be done before the video product is opened to the public.
+- A `status` column and a stuck-run sweep are new; the image product does not need them because its wait is short.
 - Clips are short and the image-to-video motion is gentle. Better motion (higher resolution, more steps, a newer
   model) is a later change behind the same capability names.
 
