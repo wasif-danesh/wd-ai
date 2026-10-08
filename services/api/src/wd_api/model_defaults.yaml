@@ -65,6 +65,14 @@ aliases:
       api_base: "{OLLAMA_OPENAI_BASE_URL}"
       api_key: none
       reasoning_effort: none  # this route ignores `think`; reasoning_effort is honoured
+  # Search over a user's own creations (ADR-0041): multilingual (bge-m3, MIT, 1024 dimensions). The
+  # `embedder` above stays on 768 dimensions for the RAG helper (migration 0003), so search has its own.
+  creation-embedder:
+    purpose: Multilingual embeddings for searching My creations
+    kind: embedding
+    litellm_params:
+      model: ollama/bge-m3
+      api_base: "{OLLAMA_BASE_URL}"
   embedder:
     purpose: Text embeddings for search (RAG)
     kind: embedding

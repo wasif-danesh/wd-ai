@@ -56,6 +56,7 @@ def test_defaults_load_with_addresses_filled_in():
         "default-chat",
         "lyrics-writer",
         "prompt-enhancer",
+        "creation-embedder",
         "moderator",
         "moderator-nothink",
         "multimodal",
@@ -85,7 +86,7 @@ def test_describe_reads_provider_and_model(params, expected):
 
 async def test_seed_creates_every_alias_once():
     backend, models, _ = make()
-    assert await models.seed() == 7
+    assert await models.seed() == 8
     assert await models.seed() == 0  # idempotent: a second API replica changes nothing
     views = {v.alias: v for v in await models.list()}
     assert views["moderator"].source == "default" and views["moderator"].provider == "ollama"

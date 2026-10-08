@@ -14,6 +14,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from wd_contracts import SseEvent
 from wd_platform_sdk import (
+    CapabilityBinding,
     EventLog,
     GraphRegistry,
     InMemoryJobSink,
@@ -40,6 +41,7 @@ from wd_platform_sdk import (
     load_product_config,
     s3_storage,
 )
+from wd_platform_sdk.providers.litellm import LiteLLMTextProvider
 
 from wd_api.admin import AdminStore, PostgresAdminStore
 from wd_api.admin import me_router as me_router
@@ -48,6 +50,16 @@ from wd_api.admin_media import router as admin_media_router
 from wd_api.admin_models import router as admin_models_router
 from wd_api.auth import MIN_SECRET_BYTES
 from wd_api.config import get_settings
+from wd_api.creation_index import (
+    ContextIndexer,
+    CreationIndex,
+    Embedder,
+    IndexStore,
+    InMemoryIndexStore,
+    PostgresIndexStore,
+    reconcile_forever,
+)
+from wd_api.creations import router as creations_router
 from wd_api.graphs import default_registry
 from wd_api.identity import get_identity
 from wd_api.jobs_consumer import JobCompletionConsumer
@@ -66,6 +78,8 @@ from wd_api.users import CachedUsers, PostgresUserStore, UserStore
 # redis-py defaults to 5 s; stream reads block for the heartbeat interval, so allow well over it.
 REDIS_SOCKET_TIMEOUT_S = 60
 ENHANCES_PER_HOUR = 40  # prompt enhancements per user per hour (ADR-0038)
+SEARCHES_PER_HOUR = 50  # searches of My creations per user per hour (ADR-0041)
+SEARCH_ALIAS = "creation-embedder"  # the multilingual embedder behind search (ADR-0041)
 
 
 async def _seed_models(models: ModelAccess) -> None:
@@ -101,6 +115,9 @@ def create_app(
     uploads: UploadStore | None = None,
     upload_limiter: UploadLimiter | None = None,
     enhance_limiter: UploadLimiter | None = None,
+    search_limiter: UploadLimiter | None = None,
+    creation_embedder: Embedder | None = None,
+    index_store: IndexStore | None = None,
 ) -> FastAPI:
     """App factory. Tests inject a registry, products dir (with `provider: fake` bindings),
     checkpointer, usage recorder, event log, run store and job sink, so no GPU, network, database
@@ -200,6 +217,7 @@ def create_app(
                 caps = build_capabilities(config, deps)
                 if "text.embed" in config.capabilities:
                     caps.rag = RagService(db, lambda texts, c=caps: c.text.embed("embed", texts))
+                caps.indexer = ContextIndexer(app.state.creation_index)
                 app.state.caps[product_id] = caps
                 graphs[product_id] = reg.build(product_id, caps, saver)
             return graphs
@@ -219,6 +237,40 @@ def create_app(
             RedisUploadLimiter(conn, per_hour=ENHANCES_PER_HOUR, name="enhance")
             if conn is not None
             else InMemoryUploadLimiter(ENHANCES_PER_HOUR)
+        )
+        app.state.search_limiter = search_limiter or (
+            RedisUploadLimiter(conn, per_hour=SEARCHES_PER_HOUR, name="search")
+            if conn is not None
+            else InMemoryUploadLimiter(SEARCHES_PER_HOUR)
+        )
+        search_provider = LiteLLMTextProvider(
+            settings.litellm_base_url, settings.litellm_api_key, recorder
+        )
+        search_binding = CapabilityBinding(provider="litellm", model=SEARCH_ALIAS)
+
+        async def litellm_embed(texts: list[str]) -> list[list[float]]:
+            return await search_provider.embed("search.embed", search_binding, texts)
+
+        embed: Embedder = creation_embedder or litellm_embed
+
+        app.state.creation_index = CreationIndex(
+            index_store or (InMemoryIndexStore() if injected else PostgresIndexStore(db)),
+            embed,
+            settings.search_index_model,
+            settings.search_min_similarity,
+        )
+        index_sources = reg.index_sources()
+        reconciler = (
+            asyncio.create_task(
+                reconcile_forever(
+                    app.state.creation_index,
+                    lambda: [make(db) for make in index_sources.values()],
+                    settings.search_reconcile_every_s,
+                    settings.search_reconcile_batch,
+                )
+            )
+            if not injected and index_sources
+            else None
         )
         sweeper = (
             asyncio.create_task(sweep_forever(app.state.uploads, store))
@@ -248,6 +300,8 @@ def create_app(
                 seeder.cancel()
             if sweeper:
                 sweeper.cancel()
+            if reconciler:
+                reconciler.cancel()
             if consumer:
                 await consumer.stop()
             if getattr(app.state, "runs", None):
@@ -277,6 +331,7 @@ def create_app(
     app.include_router(admin_models_router)
     app.include_router(admin_media_router)
     app.include_router(uploads_router)
+    app.include_router(creations_router)
 
     # Product-provided routes (ADR-0023): mounted now so the OpenAPI schema (and the TypeScript
     # types generated from it) include them; the database and storage they use are read from

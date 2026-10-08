@@ -27,7 +27,7 @@ check "prompt enhancing needs a known kind" "test \"\$(curl -s -o /dev/null -w '
 
 # Model aliases live in LiteLLM's database and are seeded by the API (ADR-0025). The local overlay runs
 # with AUTH_MODE=stub, where the dev user is an admin, so ask the API from inside its own pod.
-check "default model aliases are seeded in the gateway" "kubectl -n $NS exec deploy/wd-ai-api -c api -- python -c \"import urllib.request,json,sys; m=json.load(urllib.request.urlopen('http://localhost:8000/admin/models',timeout=20))['models']; sys.exit(0 if len(m)==7 and all(x['source']=='default' for x in m) else 1)\""
+check "default model aliases are seeded in the gateway" "kubectl -n $NS exec deploy/wd-ai-api -c api -- python -c \"import urllib.request,json,sys; m=json.load(urllib.request.urlopen('http://localhost:8000/admin/models',timeout=20))['models']; sys.exit(0 if len(m)==8 and all(x['source']=='default' for x in m) else 1)\""
 
 # Media pipeline: queue -> worker (stub mode) -> object storage -> completion -> graph resumes.
 # Needs no LLM or GPU, so it also runs in CI.

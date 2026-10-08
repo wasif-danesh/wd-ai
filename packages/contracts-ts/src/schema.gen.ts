@@ -208,6 +208,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/creations/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Creations */
+        get: operations["search_creations_creations_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1037,6 +1054,34 @@ export interface components {
             /** Thread Id */
             thread_id?: string | null;
         };
+        /** SearchHit */
+        SearchHit: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "song" | "image" | "video";
+            /**
+             * Match
+             * @enum {string}
+             */
+            match: "words" | "meaning";
+            /** Product Id */
+            product_id: string;
+            /** Score */
+            score: number;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Degraded */
+            degraded: boolean;
+            /** Query */
+            query: string;
+            /** Results */
+            results: components["schemas"]["SearchHit"][];
+        };
         /** SongDetail */
         SongDetail: {
             /** Audio Url */
@@ -1602,6 +1647,39 @@ export interface operations {
             };
         };
     };
+    search_creations_creations_search_get: {
+        parameters: {
+            query: {
+                q: string;
+                kind?: ("song" | "image" | "video") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;
@@ -1649,6 +1727,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 before?: string | null;
+                ids?: string | null;
             };
             header?: never;
             path?: never;
@@ -1838,6 +1917,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 before?: string | null;
+                ids?: string | null;
             };
             header?: never;
             path?: never;
@@ -1967,6 +2047,7 @@ export interface operations {
                 limit?: number;
                 before?: string | null;
                 status?: ("working" | "done" | "failed") | null;
+                ids?: string | null;
             };
             header?: never;
             path?: never;

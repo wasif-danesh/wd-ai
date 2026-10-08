@@ -60,8 +60,16 @@ from wd_platform_sdk.parts import (
 )
 from wd_platform_sdk.providers import ProviderDeps, build_capabilities, register_provider
 from wd_platform_sdk.registry import CheckResult, GraphRegistry, ModelCheck
-from wd_platform_sdk.routes import RouteDeps, RouteFactory
+from wd_platform_sdk.routes import RouteDeps, RouteFactory, parse_ids
 from wd_platform_sdk.runstore import InMemoryRunStore, RedisRunStore, RunRecord, RunStore
+from wd_platform_sdk.search import (
+    KINDS,
+    CreationIndexer,
+    IndexItem,
+    IndexSource,
+    IndexSourceFactory,
+    search_text,
+)
 from wd_platform_sdk.secretbox import SecretBox, SecretsUnavailable
 from wd_platform_sdk.storage import ScopedStorage, Storage, memory_storage, object_key, s3_storage
 from wd_platform_sdk.uploads import (
@@ -119,7 +127,14 @@ __all__ = [
     "RouteFactory",
     "ENHANCED",
     "EnhanceRefused",
+    "KINDS",
+    "CreationIndexer",
+    "IndexItem",
+    "IndexSource",
+    "IndexSourceFactory",
     "RunError",
+    "parse_ids",
+    "search_text",
     "start_of_day_utc",
     "sum_usage",
     "EventLog",

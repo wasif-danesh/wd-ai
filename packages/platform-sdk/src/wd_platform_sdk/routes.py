@@ -22,13 +22,32 @@ from collections.abc import Awaitable, Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from wd_platform_sdk.context import RunContext, reset_context, set_context
 from wd_platform_sdk.identity import Identity
 from wd_platform_sdk.storage import ScopedStorage
+
+MAX_IDS = 50
+
+
+def parse_ids(raw: str | None) -> list[str] | None:
+    """A comma-separated `ids` query parameter (what My creations asks a list route for after a
+    search, ADR-0041): None when absent, else up to 50 distinct UUIDs in the order given."""
+    if raw is None:
+        return None
+    ids = list(dict.fromkeys(i.strip() for i in raw.split(",") if i.strip()))
+    if len(ids) > MAX_IDS:
+        raise HTTPException(422, f"Please ask for at most {MAX_IDS} items at a time.")
+    for i in ids:
+        try:
+            UUID(i)
+        except ValueError:
+            raise HTTPException(422, "Those ids are not valid.") from None
+    return ids
 
 
 @dataclass
@@ -48,6 +67,17 @@ class RouteDeps:
     @property
     def storage(self) -> ScopedStorage | None:
         return self.state.storage
+
+    async def unindex(self, identity: Identity, product_id: str, item_id: str) -> None:
+        """Take a deleted creation out of search (ADR-0041). Best effort: the background indexer
+        also removes rows whose item is gone."""
+        index = getattr(self.state, "creation_index", None)
+        if index is None:
+            return
+        try:
+            await index.remove(identity.tenant_id, product_id, item_id)
+        except Exception:
+            pass
 
     @contextmanager
     def acting_as(self, identity: Identity, product_id: str) -> Iterator[None]:

@@ -1,0 +1,215 @@
+# A synthetic library for measuring search (ADR-0041): 20 concepts, each as three items in three
+# different languages (a song, an image prompt and a video prompt), so a good search must find them across
+# languages. `queries` are phrased differently from the items, in a language that is sometimes the same
+# as one of the items and sometimes not. `nomatch` queries have nothing in the library to find.
+# Nothing here is user data.
+concepts:
+  - id: rain-city
+    items:
+      - { kind: song,  lang: es, text: "Lluvia en la ciudad. Balada melancólica. Camino solo de noche bajo la lluvia, las luces de neón se reflejan en el asfalto mojado" }
+      - { kind: image, lang: fr, text: "Une rue de Paris la nuit sous une pluie fine, reflets lumineux des enseignes sur les pavés mouillés, ambiance mélancolique" }
+      - { kind: video, lang: zh, text: "夜晚的城市街道下着大雨，霓虹灯倒映在湿漉漉的路面上，镜头缓缓向前推进" }
+    queries:
+      - { lang: en, text: "sad song about walking home alone in the rain at night" }
+      - { lang: hi, text: "रात में शहर की बारिश में भीगी सड़कें और चमकती रोशनी" }
+      - { lang: es, text: "canción triste sobre volver a casa bajo la lluvia" }
+  - id: fox-snow
+    items:
+      - { kind: image, lang: en, text: "A red fox walking through fresh snow in a pine forest at dawn, soft golden light" }
+      - { kind: video, lang: de, text: "Ein Rotfuchs schleicht im Morgengrauen durch tief verschneiten Wald, sein Atem steigt als Dampf auf" }
+      - { kind: song,  lang: ja, text: "雪の森のきつね。静かなフォーク。白い雪の上に小さな足跡を残して、赤いきつねが歩いていく" }
+    queries:
+      - { lang: ru, text: "рыжая лиса на снегу в зимнем лесу" }
+      - { lang: es, text: "un zorro caminando entre árboles nevados" }
+      - { lang: en, text: "fox in the winter woods" }
+  - id: beach-sunset
+    items:
+      - { kind: song,  lang: pt, text: "Pôr do sol na praia. Bossa nova suave. As ondas beijam a areia enquanto o sol se despede no mar" }
+      - { kind: image, lang: ar, text: "أمواج المحيط تتكسر على شاطئ رملي وقت الغروب والسماء بلون برتقالي" }
+      - { kind: video, lang: hi, text: "सूर्यास्त के समय समुद्र की लहरें किनारे पर टकरा रही हैं, आसमान सुनहरा है" }
+    queries:
+      - { lang: en, text: "waves rolling onto the shore as the sun goes down" }
+      - { lang: zh, text: "夕阳下的海滩和海浪" }
+      - { lang: pt, text: "o sol se pondo na beira do mar" }
+  - id: street-guitar
+    items:
+      - { kind: song,  lang: fr, text: "Le vieux guitariste. Chanson folk. Un vieil homme joue sa guitare au coin de la rue, les passants s'arrêtent pour l'écouter" }
+      - { kind: video, lang: en, text: "An elderly man plays an acoustic guitar on a busy street corner while people stop to listen, handheld camera" }
+      - { kind: image, lang: ru, text: "Старик с гитарой играет на улице старого города, вокруг собираются прохожие" }
+    queries:
+      - { lang: de, text: "alter Mann spielt Gitarre auf der Straße" }
+      - { lang: ja, text: "路上でギターを弾くおじいさん" }
+      - { lang: fr, text: "un vieux musicien jouant dans la rue" }
+  - id: kite-hill
+    items:
+      - { kind: image, lang: ja, text: "丘の上で凧揚げをする子ども、青空と白い雲、夏の風景" }
+      - { kind: song,  lang: en, text: "Fly High. Upbeat pop. A little kid runs up the hill with a kite and laughs as the wind lifts it to the sky" }
+      - { kind: video, lang: es, text: "Un niño corre por una colina con una cometa roja, el viento la eleva hacia el cielo azul" }
+    queries:
+      - { lang: pt, text: "criança soltando pipa no alto de um morro" }
+      - { lang: fr, text: "un enfant et son cerf-volant par une journée venteuse" }
+      - { lang: ja, text: "子供が丘で凧を飛ばす" }
+  - id: cat-sofa
+    items:
+      - { kind: image, lang: de, text: "Eine orangefarbene Katze schläft zusammengerollt auf einem Sofa neben dem Fenster, weiches Licht" }
+      - { kind: song,  lang: zh, text: "懒猫午后。轻柔的爵士。猫咪在沙发上打盹，窗外下着小雪" }
+      - { kind: video, lang: en, text: "A ginger cat sleeps on a cosy sofa by a window, snow falling outside, the cat breathes slowly" }
+    queries:
+      - { lang: hi, text: "सोफे पर सोती हुई बिल्ली खिड़की के पास" }
+      - { lang: ar, text: "قطة نائمة على الأريكة بجانب النافذة" }
+      - { lang: de, text: "Katze döst auf der Couch" }
+  - id: mountain-lake
+    items:
+      - { kind: image, lang: hi, text: "भोर में पहाड़ों के बीच शांत झील, पानी पर हल्की धुंध और गुलाबी आसमान" }
+      - { kind: video, lang: fr, text: "Lever de soleil sur un lac de montagne, la brume glisse lentement sur l'eau, les sommets se reflètent" }
+      - { kind: song,  lang: pt, text: "Lago ao amanhecer. Folk instrumental. A névoa sobe devagar e a montanha acorda em silêncio" }
+    queries:
+      - { lang: en, text: "misty alpine lake at dawn" }
+      - { lang: es, text: "amanecer en un lago rodeado de montañas" }
+      - { lang: hi, text: "पहाड़ी झील पर सुबह का कोहरा" }
+  - id: spice-market
+    items:
+      - { kind: video, lang: ar, text: "سوق شعبي مزدحم مليء بالتوابل الملونة والبائعون ينادون على الزبائن" }
+      - { kind: image, lang: en, text: "A bustling outdoor market with pyramids of colourful spices, vendors and warm afternoon light" }
+      - { kind: song,  lang: de, text: "Auf dem Gewürzmarkt. Weltmusik. Zimt und Safran liegen in der Luft, die Händler rufen laut durch die Gassen" }
+    queries:
+      - { lang: ja, text: "色とりどりのスパイスが並ぶ賑やかな市場" }
+      - { lang: ru, text: "рынок со специями и яркими красками" }
+      - { lang: ar, text: "سوق مزدحم بالبهارات" }
+  - id: spaceship-mars
+    items:
+      - { kind: image, lang: ru, text: "Космический корабль приземляется на красной пустынной планете, клубы пыли и два солнца на горизонте" }
+      - { kind: video, lang: ja, text: "宇宙船が赤い惑星の砂漠にゆっくり着陸し、砂煙が舞い上がる" }
+      - { kind: song,  lang: en, text: "Last Landing. Cinematic synth. We touch down on a rust-coloured world far from home, the engines fade to silence" }
+    queries:
+      - { lang: es, text: "una nave espacial aterriza en Marte" }
+      - { lang: zh, text: "飞船降落在红色的星球上" }
+      - { lang: ru, text: "корабль садится на планету с красным песком" }
+  - id: lighthouse-storm
+    items:
+      - { kind: image, lang: zh, text: "暴风雨中的灯塔，巨浪拍打着礁石，闪电划破夜空" }
+      - { kind: video, lang: pt, text: "Um farol enfrenta uma tempestade, ondas gigantes batem nas rochas e a luz gira na escuridão" }
+      - { kind: song,  lang: fr, text: "Le phare dans la tempête. Rock épique. Les vagues rugissent mais sa lumière ne s'éteint jamais" }
+    queries:
+      - { lang: en, text: "lighthouse beam cutting through a violent storm at sea" }
+      - { lang: hi, text: "तूफ़ान में खड़ा प्रकाशस्तंभ" }
+      - { lang: zh, text: "风暴中的灯塔" }
+  - id: spring-garden
+    items:
+      - { kind: image, lang: es, text: "Un jardín florido en primavera lleno de mariposas de colores sobre las flores" }
+      - { kind: video, lang: en, text: "Butterflies flutter over a blooming spring garden, petals drift in a gentle breeze" }
+      - { kind: song,  lang: ar, text: "فراشات الربيع. أغنية هادئة. في الحديقة تتراقص الفراشات بين الزهور وتعلن قدوم الربيع" }
+    queries:
+      - { lang: de, text: "bunte Schmetterlinge im Frühlingsgarten" }
+      - { lang: fr, text: "des papillons sur des fleurs au printemps" }
+      - { lang: es, text: "jardín en primavera con mariposas" }
+  - id: desert-train
+    items:
+      - { kind: video, lang: de, text: "Ein langer Güterzug fährt durch eine weite Wüste, Staub weht, die Kamera folgt aus der Luft" }
+      - { kind: song,  lang: ja, text: "砂漠を行く列車。カントリー。夕日の中、長い列車が地平線の向こうへ走っていく" }
+      - { kind: image, lang: ru, text: "Поезд едет по пустыне на закате, длинная тень тянется по песку" }
+    queries:
+      - { lang: pt, text: "trem atravessando o deserto" }
+      - { lang: en, text: "a locomotive crossing a vast desert landscape" }
+      - { lang: de, text: "Zug in der Wüste" }
+  - id: snow-village
+    items:
+      - { kind: song,  lang: en, text: "Silent Village. Christmas ballad. Snow covers the rooftops and every window glows with candles tonight" }
+      - { kind: image, lang: hi, text: "क्रिसमस की रात बर्फ़ से ढका छोटा गाँव, खिड़कियों में गर्म रोशनी" }
+      - { kind: video, lang: es, text: "Un pueblo nevado en Nochebuena, luces cálidas en las ventanas y copos cayendo lentamente" }
+    queries:
+      - { lang: fr, text: "village sous la neige à Noël" }
+      - { lang: zh, text: "圣诞节的雪村" }
+      - { lang: en, text: "snowy village on Christmas night" }
+  - id: dragon-castle
+    items:
+      - { kind: video, lang: zh, text: "巨龙在中世纪城堡上空盘旋喷火，乌云密布" }
+      - { kind: image, lang: en, text: "A huge dragon circling above a medieval stone castle at dusk, dark clouds, dramatic fantasy art" }
+      - { kind: song,  lang: pt, text: "O dragão e o castelo. Metal sinfônico. Suas asas escurecem o céu sobre as torres de pedra" }
+    queries:
+      - { lang: ru, text: "дракон летает над средневековым замком" }
+      - { lang: ar, text: "تنين يحلق فوق قلعة قديمة" }
+      - { lang: zh, text: "龙在城堡上空飞翔" }
+  - id: rainy-cafe
+    items:
+      - { kind: image, lang: fr, text: "Un petit café chaleureux un matin de pluie, tasse fumante près de la fenêtre embuée" }
+      - { kind: video, lang: ja, text: "雨の朝の小さなカフェ、窓の外を傘が通り過ぎ、湯気の立つコーヒー" }
+      - { kind: song,  lang: de, text: "Regenmorgen im Café. Lo-fi. Der Kaffee dampft, draußen trommelt der Regen gegen die Scheibe" }
+    queries:
+      - { lang: en, text: "cozy cafe while it rains outside" }
+      - { lang: es, text: "tomando café en un día lluvioso" }
+      - { lang: fr, text: "café tranquille sous la pluie" }
+  - id: sailboat
+    items:
+      - { kind: image, lang: pt, text: "Um veleiro branco navega em águas calmas e azuis sob um céu limpo" }
+      - { kind: song,  lang: ar, text: "الإبحار بهدوء. موسيقى هادئة. يمخر القارب الشراعي الماء الساكن والريح خفيفة" }
+      - { kind: video, lang: zh, text: "帆船在平静的海面上缓缓前行，阳光洒在水面上" }
+    queries:
+      - { lang: hi, text: "शांत पानी पर चलती नाव" }
+      - { lang: de, text: "Segelboot auf ruhigem Wasser" }
+      - { lang: pt, text: "barco a vela em mar calmo" }
+  - id: football
+    items:
+      - { kind: song,  lang: es, text: "Gol! Rock estadio. Cincuenta mil voces cantan al unísono cuando la pelota entra en la red" }
+      - { kind: image, lang: ru, text: "Футбольный стадион, переполненный болельщиками, вечерний матч под прожекторами" }
+      - { kind: video, lang: en, text: "A football match in a packed floodlit stadium, the crowd erupts as the striker scores" }
+    queries:
+      - { lang: ja, text: "満員のスタジアムでのサッカーの試合" }
+      - { lang: fr, text: "un but marqué devant une foule en délire" }
+      - { lang: es, text: "canción sobre un gol en el estadio" }
+  - id: wedding-dance
+    items:
+      - { kind: video, lang: hi, text: "गाँव में शादी का नाच, रंग-बिरंगे कपड़ों में लोग ढोल की धुन पर झूम रहे हैं" }
+      - { kind: image, lang: de, text: "Hochzeitstanz auf einem Dorfplatz, Lichterketten und lachende Gäste im Kreis" }
+      - { kind: song,  lang: en, text: "Dance Till Dawn. Folk dance. The whole village sings and spins around the happy couple at the wedding" }
+    queries:
+      - { lang: pt, text: "festa de casamento com dança na aldeia" }
+      - { lang: zh, text: "村里的婚礼舞蹈" }
+      - { lang: hi, text: "गाँव की शादी में नाचते लोग" }
+  - id: jazz-club
+    items:
+      - { kind: image, lang: ja, text: "煙の立ちこめる小さなジャズクラブ、サックスとピアノの生演奏、暖色の照明" }
+      - { kind: video, lang: ar, text: "فرقة جاز تعزف في نادٍ ليلي مليء بالدخان والإضاءة الخافتة" }
+      - { kind: song,  lang: es, text: "Noche de jazz. Jazz clásico. El saxofón suspira en un club lleno de humo y vasos que tintinean" }
+    queries:
+      - { lang: en, text: "live jazz in a dim smoky bar" }
+      - { lang: ru, text: "джазовый оркестр в клубе" }
+      - { lang: ja, text: "ジャズバーのライブ演奏" }
+  - id: autumn-path
+    items:
+      - { kind: song,  lang: ru, text: "Осенняя тропа. Акустика. Листья падают золотым дождём на тихую лесную дорогу" }
+      - { kind: image, lang: zh, text: "秋天的森林小路，金黄色的落叶铺满地面，阳光穿过树枝" }
+      - { kind: video, lang: pt, text: "Um caminho no bosque no outono, folhas douradas caem lentamente enquanto a câmera avança" }
+    queries:
+      - { lang: de, text: "Waldweg im Herbst mit fallendem Laub" }
+      - { lang: en, text: "walking down a path covered in autumn leaves" }
+      - { lang: ru, text: "лесная тропинка осенью с опавшими листьями" }
+nomatch:
+  - { lang: en, text: "a submarine exploring a deep sea trench" }
+  - { lang: es, text: "una panadera amasando pan en la cocina" }
+  - { lang: fr, text: "un skieur descendant une piste raide en haute montagne" }
+  - { lang: de, text: "Feuerwehrleute löschen ein brennendes Haus" }
+  - { lang: zh, text: "一个学生在图书馆里认真读书" }
+  - { lang: ar, text: "طفل يرسم على الجدار" }
+  - { lang: hi, text: "एक वैज्ञानिक प्रयोगशाला में रसायन मिला रहा है" }
+  - { lang: ru, text: "балерина танцует на сцене театра" }
+# Single exact words a user might type (a name, an ingredient, a genre): `target` is text that identifies
+# the one item that should be found; null means nothing in the library has the word.
+exact:
+  - { text: "Paris", target: "Une rue de Paris" }
+  - { text: "Zimt", target: "Zimt und Safran" }
+  - { text: "Safran", target: "Zimt und Safran" }
+  - { text: "Nochebuena", target: "Nochebuena" }
+  - { text: "saxofón", target: "saxofón suspira" }
+  - { text: "Gol!", target: "Gol! Rock" }
+  - { text: "Lo-fi", target: "Lo-fi" }
+  - { text: "bossa nova", target: "Bossa nova" }
+  - { text: "灯塔", target: "灯塔" }
+  - { text: "龙", target: "巨龙" }
+  - { text: "フォーク", target: "フォーク" }
+  - { text: "帆船", target: "帆船" }
+  - { text: "ジャズ", target: "ジャズ" }
+  - { text: "カフェ", target: "カフェ" }
+  - { text: "ukulele", target: null }
+  - { text: "Tokyo", target: null }
+  - { text: "寿司", target: null }

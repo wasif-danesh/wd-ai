@@ -7,6 +7,7 @@ from typing import Any
 
 from wd_platform_sdk.capabilities import Capabilities
 from wd_platform_sdk.routes import RouteFactory
+from wd_platform_sdk.search import IndexSourceFactory
 
 # builder(caps, checkpointer) -> compiled LangGraph graph
 GraphBuilder = Callable[[Capabilities, Any], Any]
@@ -31,6 +32,7 @@ class GraphRegistry:
         self._builders: dict[str, GraphBuilder] = {}
         self._routes: dict[str, RouteFactory] = {}
         self._checks: dict[tuple[str, str], ModelCheck] = {}
+        self._sources: dict[str, IndexSourceFactory] = {}
 
     def register(self, product_id: str, builder: GraphBuilder) -> None:
         if product_id in self._builders:
@@ -40,6 +42,14 @@ class GraphRegistry:
     def add_routes(self, product_id: str, factory: RouteFactory) -> None:
         """Register product-provided API routes, mounted under /products/{product_id}/."""
         self._routes[product_id] = factory
+
+    def add_index_source(self, product_id: str, factory: IndexSourceFactory) -> None:
+        """Make this product's creations searchable (ADR-0041): `factory(engine)` returns an
+        `IndexSource`. Every product that lets a user keep something must register one."""
+        self._sources[product_id] = factory
+
+    def index_sources(self) -> dict[str, IndexSourceFactory]:
+        return dict(self._sources)
 
     def add_check(self, product_id: str, capability: str, check: ModelCheck) -> None:
         """Vet any model that is about to serve `capability` (for example `text.moderate`)."""

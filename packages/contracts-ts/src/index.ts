@@ -50,3 +50,7 @@ export type UploadResult = components["schemas"]["UploadResult"];
 export type VideoSummary = components["schemas"]["VideoSummary"];
 export type VideoPage = components["schemas"]["VideoPage"];
 export type EnhanceResult = components["schemas"]["EnhanceOut"];
+
+// Search over My creations (ADR-0041)
+export type SearchHit = components["schemas"]["SearchHit"];
+export type SearchResponse = components["schemas"]["SearchResponse"];

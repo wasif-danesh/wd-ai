@@ -18,6 +18,15 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     media_secrets_key: str = ""  # encrypts media provider API keys saved in the admin area
 
+    # Search over My creations (ADR-0041). The embedder is the `creation-embedder` alias; the index
+    # records which model made each row, and a row made by another model is re-embedded.
+    search_min_similarity: float = 0.57  # the floor under which a meaning match is not shown
+    # What made each index row: the embedder and the text format. Change it when an admin changes
+    # the alias's model or when `search_text` changes: the background indexer re-embeds everything.
+    search_index_model: str = "bge-m3/v2"
+    search_reconcile_every_s: int = 300
+    search_reconcile_batch: int = 200  # items embedded per check: about 3 seconds of work
+
     products_dir: str = "products"
     product_env: str = ""  # selects products/<id>/product.<env>.yaml overlays
 

@@ -5,6 +5,7 @@ handle = await caps.music.generate(lyrics=..., style=..., duration_s=60)
 key = await caps.storage.put("songs/42/audio.mp3", data)
 """
 
+import logging
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -17,6 +18,8 @@ from wd_platform_sdk.jobs import JobHandle
 from wd_platform_sdk.parts import Prompt, UnsupportedInput, modalities
 from wd_platform_sdk.storage import ScopedStorage
 from wd_platform_sdk.usage import UsageEvent, UsageRecorder, record_safely
+
+log = logging.getLogger(__name__)
 
 
 class CapabilityNotConfigured(LookupError):
@@ -135,7 +138,18 @@ class Capabilities:
     config: ProductConfig | None = None  # this product's validated config (quotas, settings)
     db: AsyncEngine | None = None  # the shared database, for product tables and usage queries
     usage: UsageRecorder | None = None
+    indexer: Any = None  # CreationIndexer: makes a creation searchable (ADR-0041); None in tests
     extras: dict[str, Any] = field(default_factory=dict)
+
+    async def index_creation(self, kind: str, item_id: str, text: str) -> None:
+        """Make a saved creation searchable (ADR-0041): call this when a creation is saved. It never
+        fails the run: if the embedder is down the item is picked up by the background indexer."""
+        if self.indexer is None or not text.strip():
+            return
+        try:
+            await self.indexer.index(kind, item_id, text)
+        except Exception:
+            log.warning("could not index %s %s; the background indexer will retry", kind, item_id)
 
     async def record_usage(self, kind: str, quantity: float, unit: str, **meta: Any) -> None:
         """Write a usage event for the current run (tenant, product, user, run from context)."""
