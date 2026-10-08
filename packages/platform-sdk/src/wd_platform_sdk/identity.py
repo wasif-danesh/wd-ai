@@ -7,3 +7,4 @@ from dataclasses import dataclass
 class Identity:
     tenant_id: str
     user_id: str
+    role: str = "user"  # "user" or "admin" (ADR-0030)

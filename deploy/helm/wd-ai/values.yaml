@@ -1,7 +1,8 @@
 # Base values. Overlay order (later wins):
 #   values.yaml  ->  values/<env>.yaml  ->  values/cloud/<cloud>.yaml
 # Secrets never live here. They come from the Secret named by `secrets.existingSecret`
-# (keys: LITELLM_API_KEY, POSTGRES_PASSWORD, and DATABASE_URL when postgres.enabled=false).
+# (keys: LITELLM_API_KEY, POSTGRES_PASSWORD, and DATABASE_URL when postgres.enabled=false;
+# AUTH_SECRET and API_AUTH_SECRET unless auth.mode=stub; optional AUTH_<PROVIDER>_ID / _SECRET).
 
 image:
   registry: ghcr.io/wasif-danesh/wd-ai   # <registry>/<api|web|media-worker>:<tag>
@@ -15,6 +16,12 @@ secrets:
 env:
   LOG_LEVEL: INFO
   COMFYUI_BASE_URL: ""                   # Phase 4
+
+auth:
+  mode: jwt             # jwt = real sign-in; stub = every request is the dev user (local clusters only)
+  adminEmails: ""       # comma-separated; only a verified email becomes admin
+  url: ""               # REQUIRED unless mode=stub: public origin of the web app, e.g. https://music.example.com
+                        # (without it the OAuth callback address is built from the pod's 0.0.0.0)
 
 api:
   replicas: 1

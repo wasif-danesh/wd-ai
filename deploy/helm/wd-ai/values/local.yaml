@@ -4,6 +4,9 @@ image:
   tag: dev
   pullPolicy: Never
 
+auth:
+  mode: stub               # no OAuth apps on a laptop cluster
+
 web:
   service:
     type: NodePort

@@ -69,9 +69,26 @@ pnpm --filter web build    # production build (also type-checks and lints)
 
 Tests use Vitest; component tests opt in to jsdom with `// @vitest-environment jsdom`.
 
+## Sign-in
+
+Auth.js (ADR-0030). `AUTH_MODE=stub` (the `.env.example` default) skips sign-in: everything runs as
+the dev user. `AUTH_MODE=jwt` needs `AUTH_SECRET`, `API_AUTH_SECRET` (the same value in the API) and at
+least one provider and `AUTH_URL` (the public origin; without it a container builds the callback address
+from `0.0.0.0` and the provider rejects it). Register one OAuth app per environment with this redirect URI:
+
+| Provider | Id in the URI | Variables |
+|---|---|---|
+| Google | `google` | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` |
+| GitHub | `github` | `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` |
+| Microsoft | `microsoft-entra-id` | `AUTH_MICROSOFT_ENTRA_ID_ID`, `_SECRET`, `_ISSUER` (`https://login.microsoftonline.com/<tenant id>/v2.0`) |
+
+Redirect URI: `<web origin>/api/auth/callback/<id>`, e.g. `http://localhost:3000/api/auth/callback/google`.
+Only configured providers appear on `/signin`. Set `ADMIN_EMAILS` (API) to make a verified address an
+admin. Pages redirect to `/signin` without a session; `/api` routes answer 401.
+
 ## Not done yet
 
-- Sign-in (Auth.js): everything runs as the stub dev user until it lands.
+- Only GitHub sign-in has been tried with a real login; Google and Microsoft are wired the same way.
 - Sharing links for songs and a public gallery are out of scope for the MVP.
 - Downloads: browsers ignore the `download` attribute for other-origin links, so files open in a tab
   instead of saving directly. A same-origin download route would fix it.

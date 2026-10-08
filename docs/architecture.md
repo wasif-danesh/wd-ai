@@ -133,7 +133,7 @@ Docker/Podman on macOS cannot reach the Metal GPU, so GPU services run natively 
 | Feature | Seam built now |
 |---|---|
 | Multi-tenancy | `tenant_id` and `product_id` on every table, job and object key |
-| Auth | Identity resolved on every request (stub in dev); Auth.js in Next.js, JWT validated by FastAPI; optional central OIDC (Keycloak / Authentik) later |
+| Auth | Identity resolved on every request (stub in dev); Auth.js in Next.js, the BFF signs a short-lived JWT that FastAPI validates (ADR-0030); optional central OIDC (Keycloak / Authentik) later |
 | Billing | `usage_events` table: tokens, GPU seconds, jobs per tenant and user |
 | Observability | OpenTelemetry instrumentation, structured JSON logs with trace IDs; Langfuse for LLM traces; Prometheus / Grafana / Loki later |
 | Quotas | Usage events + per-product limits in `product.yaml` |

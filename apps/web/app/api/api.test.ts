@@ -17,6 +17,26 @@ const params = <T extends object>(p: T) => ({ params: Promise.resolve(p) });
 const upstreamUrl = () => fetchMock.mock.calls.at(-1)?.[0] as string;
 const upstreamInit = () => fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
 
+describe("without a session", () => {
+  afterEach(() => {
+    process.env.AUTH_MODE = "stub";
+    vi.doUnmock("@/auth");
+    vi.resetModules();
+  });
+
+  it("answers 401 and never calls the API", async () => {
+    process.env.AUTH_MODE = "jwt";
+    vi.doMock("@/auth", () => ({ auth: async () => null }));
+    const { GET } = await import("./products/[productId]/songs/route");
+    const res = await GET(
+      new Request("http://web/api/products/wd-music-ai/songs"),
+      params({ productId: "wd-music-ai" }),
+    );
+    expect(res.status).toBe(401);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("start a run", () => {
   it("forwards the body to the API and streams the events back unchanged", async () => {
     fetchMock.mockResolvedValueOnce(sse([["token", { node: "write_lyrics", text: "hi" }]]));

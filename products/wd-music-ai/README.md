@@ -1,9 +1,9 @@
 # wd-music-ai
 
-Status: **MVP in progress.** Built and tested: the guardrail, quota, lyrics with user approval, queued
-music and cover jobs, song storage, the read API, and the web UI (`apps/web`). Still to do: Auth.js
-sign-in, and running ACE-Step and FLUX.2 klein for real (their workflows are validated against
-ComfyUI's node interface but have never been executed; the models are not installed yet).
+Status: **MVP working.** Built and tested: the guardrail, quota, lyrics with user approval, queued
+music and cover jobs, song storage, the read API, sign-in, and the web UI (`apps/web`). ACE-Step 1.5
+and FLUX.2 klein have been run for real through the full UI ([ADR-0024](../../docs/decisions/0024-real-model-validation.md)).
+Still to do: an upload endpoint, an admin section, billing.
 
 A signed-in user types a song idea. The product writes lyrics, generates a 60-second song
 with vocals, and creates cover art.

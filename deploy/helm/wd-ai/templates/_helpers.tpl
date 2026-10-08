@@ -87,5 +87,38 @@ imagePullSecrets:
   value: {{ .Values.env.COMFYUI_BASE_URL | quote }}
 - name: LOG_LEVEL
   value: {{ .Values.env.LOG_LEVEL | quote }}
+- name: AUTH_MODE
+  value: {{ .Values.auth.mode | quote }}
+{{- if ne .Values.auth.mode "stub" }}
+- name: API_AUTH_SECRET
+  valueFrom:
+    secretKeyRef: { name: {{ .Values.secrets.existingSecret }}, key: API_AUTH_SECRET }
+- name: ADMIN_EMAILS
+  value: {{ .Values.auth.adminEmails | quote }}
+{{- end }}
 {{- include "wd.storageEnv" . | nindent 0 }}
+{{- end -}}
+
+{{/* Sign-in settings for the web pod (ADR-0030). Provider keys are optional: a provider with no key is simply not offered. */}}
+{{- define "wd.webAuthEnv" -}}
+- name: AUTH_MODE
+  value: {{ .Values.auth.mode | quote }}
+{{- if ne .Values.auth.mode "stub" }}
+- name: AUTH_TRUST_HOST
+  value: "true"
+{{- with .Values.auth.url }}
+- name: AUTH_URL
+  value: {{ . | quote }}
+{{- end }}
+{{- range $key := list "AUTH_SECRET" "API_AUTH_SECRET" }}
+- name: {{ $key }}
+  valueFrom:
+    secretKeyRef: { name: {{ $.Values.secrets.existingSecret }}, key: {{ $key }} }
+{{- end }}
+{{- range $key := list "AUTH_GOOGLE_ID" "AUTH_GOOGLE_SECRET" "AUTH_GITHUB_ID" "AUTH_GITHUB_SECRET" "AUTH_MICROSOFT_ENTRA_ID_ID" "AUTH_MICROSOFT_ENTRA_ID_SECRET" "AUTH_MICROSOFT_ENTRA_ID_ISSUER" }}
+- name: {{ $key }}
+  valueFrom:
+    secretKeyRef: { name: {{ $.Values.secrets.existingSecret }}, key: {{ $key }}, optional: true }
+{{- end }}
+{{- end }}
 {{- end -}}

@@ -35,6 +35,15 @@ class Settings(BaseSettings):
     default_tenant_id: str = "dev-tenant"
     dev_user_id: str = "dev-user"
 
+    # Authentication (ADR-0030). "jwt" is the default; "stub" is for local work and tests only.
+    auth_mode: str = "jwt"
+    api_auth_secret: str = ""  # shared with the web app, at least 32 bytes
+    admin_emails: str = ""  # comma-separated; only a verified email can become admin
+
+    @property
+    def admin_email_set(self) -> frozenset[str]:
+        return frozenset(e.strip().lower() for e in self.admin_emails.split(",") if e.strip())
+
 
 @lru_cache
 def get_settings() -> Settings:

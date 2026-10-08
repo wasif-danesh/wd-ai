@@ -69,7 +69,8 @@ See [product spec](../products/wd-music-ai/README.md).
 - [x] Guardrail evaluation on `gemma4:e4b` (results in ADR-0022)
 - [x] ACE-Step 1.5 and FLUX.2 klein 4B workflows + map files, run for real on ComfyUI 0.39 and
       through the UI (results and licences in ADR-0024)
-- [ ] Auth.js with Google, GitHub, Microsoft; FastAPI validates the token (replaces the stub user)
+- [x] Auth.js with Google, GitHub, Microsoft; FastAPI validates the token, users table (ADR-0030).
+      Verified with a real GitHub login (Google and Microsoft are wired but not tried)
 - [x] UI: idea form, live lyric streaming, review and edit, progress with queue position, player,
       cover, downloads, "My songs", song page (see `apps/web/README.md`); verified in a browser against
       the real model; reload and reconnect recovery
@@ -92,6 +93,16 @@ See [product spec](../products/wd-music-ai/README.md).
 - [ ] Evaluate audio input on real recordings, not only synthetic speech (ADR-0020)
 - [ ] Pin the SeaweedFS image to a version instead of `:latest`
 - [ ] Roll out new staging images automatically (pinned tags or Image Updater)
+
+## Planned and recorded (ADRs proposed, not scheduled)
+
+- [ ] Model access configuration: admin UI, config store, media adapters, moderator canary (ADR-0025;
+      needs authentication and an admin role first)
+- [ ] Billing and pricing: credits ledger, payment provider, cost on usage events (ADR-0029: Stripe, prepaid credits)
+- [ ] SEO and shareable song pages (ADR-0026)
+- [ ] First-party analytics: page views, logins, privacy-safe IP handling (ADR-0027)
+- [ ] Google Analytics behind a consent banner, off by default (ADR-0028)
+- [ ] Legal basics: terms, privacy policy, data deletion, takedown process
 
 ## Deferred (seams already in place)
 

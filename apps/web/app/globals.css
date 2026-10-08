@@ -53,7 +53,7 @@
 
   :root {
     color-scheme: light dark;
-    --hue: 295;
+    --hue: 255;
 
     --bg: light-dark(oklch(97.6% 0.012 var(--hue)), oklch(15.5% 0.03 var(--hue)));
     --surface: light-dark(oklch(100% 0 0 / 0.8), oklch(26% 0.04 var(--hue) / 0.62));
@@ -63,10 +63,10 @@
     --muted: light-dark(oklch(47% 0.035 var(--hue)), oklch(77% 0.03 var(--hue)));
     --border: light-dark(oklch(88% 0.02 var(--hue)), oklch(42% 0.05 var(--hue) / 0.7));
 
-    --accent: light-dark(oklch(54% 0.24 295), oklch(72% 0.19 295));
-    --accent-2: light-dark(oklch(60% 0.23 350), oklch(74% 0.19 350));
-    --accent-3: oklch(78% 0.16 75);
-    --on-accent: oklch(99% 0 0);
+    --accent: light-dark(oklch(50% 0.2 262), oklch(74% 0.14 255));
+    --accent-2: light-dark(oklch(52% 0.12 205), oklch(78% 0.12 195));
+    --accent-3: oklch(80% 0.12 175);
+    --on-accent: light-dark(oklch(99% 0 0), oklch(18% 0.04 255));
     --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
 
     --ok: light-dark(oklch(52% 0.15 155), oklch(76% 0.17 155));
@@ -180,6 +180,38 @@
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
+    }
+  }
+
+  .account {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-inline-start: auto;
+
+    .account__name {
+      max-inline-size: 12ch;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .btn {
+      padding: 0.35rem 0.9rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  .signin {
+    max-inline-size: 26rem;
+    margin-inline: auto;
+    display: grid;
+    gap: 1rem;
+
+    .signin__providers {
+      display: grid;
+      gap: 0.7rem;
     }
   }
 

@@ -1,3 +1,5 @@
+import { apiAuthHeaders } from "./api-token";
+
 // The BFF: route handlers forward to FastAPI and pass the response through unchanged, so event
 // streams stay streams. The browser never calls FastAPI directly.
 export const API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:8000";
@@ -24,9 +26,11 @@ export async function proxy(
   path: string,
   opts: ProxyOptions = {},
 ): Promise<Response> {
+  const identity = await apiAuthHeaders();
+  if (!identity) return Response.json({ detail: "sign in required" }, { status: 401 });
   const upstream = await fetch(`${API_BASE_URL}${path}`, {
     method: opts.method ?? req.method,
-    headers: { ...opts.headers },
+    headers: { ...opts.headers, ...identity },
     body: opts.body,
     signal: req.signal,
     cache: "no-store",

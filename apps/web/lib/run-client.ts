@@ -33,6 +33,10 @@ type OnEvent = (e: ParsedEvent) => void;
 
 async function stream(url: string, init: RequestInit, onEvent: OnEvent): Promise<void> {
   const res = await fetch(url, init);
+  if (res.status === 401 && typeof window !== "undefined") {
+    // the session ended: sign in again and come back
+    window.location.assign(`/signin?next=${encodeURIComponent(window.location.pathname)}`);
+  }
   if (!res.ok || !res.body) throw new HttpError(res.status, await errorMessage(res));
   for await (const e of parseSse(res.body)) onEvent(e);
 }

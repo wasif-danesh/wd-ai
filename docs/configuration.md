@@ -12,6 +12,16 @@ Application code reads secrets and wiring only through `pydantic-settings`, and 
 config only through the validated product config model. Code never knows where a value
 came from.
 
+## Authentication settings
+
+| Variable | Where | Meaning |
+|---|---|---|
+| `AUTH_MODE` | api, web | `jwt` (default) real sign-in; `stub` dev user only. Staging and production never set `stub` |
+| `AUTH_SECRET` | web | Auth.js cookie encryption |
+| `API_AUTH_SECRET` | api, web | Shared secret (at least 32 bytes) for the BFF-to-API token; the API refuses to start in `jwt` mode without it |
+| `AUTH_<PROVIDER>_ID` / `_SECRET` | web | One OAuth app per provider and environment (see `apps/web/README.md`) |
+| `ADMIN_EMAILS` | api | Comma-separated; only a verified email becomes admin |
+
 ## Precedence
 
 Later wins:

@@ -18,7 +18,7 @@ and user.
         return router
 """
 
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
@@ -37,7 +37,9 @@ class RouteDeps:
     created when the app starts, so they are read at request time, not when routes are built."""
 
     state: Any
-    identity: Callable[..., Identity]  # a FastAPI dependency: Depends(deps.identity)
+    identity: Callable[
+        ..., Identity | Awaitable[Identity]
+    ]  # a FastAPI dependency: Depends(deps.identity)
 
     @property
     def engine(self) -> AsyncEngine:

@@ -17,6 +17,7 @@ dependencies = [
   "openai>=1.50",
   "wd-contracts",
   "wd-platform-sdk",
+  "pyjwt>=2.9",
 ]
 
 [build-system]

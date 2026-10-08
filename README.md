@@ -4,14 +4,15 @@ A self-hosted, cloud-portable platform for launching AI products quickly.
 
 The **platform core** provides the shared machinery every AI product needs: an API with
 streaming, a stateful agent runtime, a model gateway, GPU media workers, storage, and
-(later) auth, billing and observability. Each **product** is a thin layer on top: a few
+auth, and (later) billing and observability. Each **product** is a thin layer on top: a few
 LangGraph graphs, a Next.js UI and a config file.
 
-> **Status: prototype.** Phases 0-4 are largely done: a walking skeleton streams a model reply
-> from Ollama to the browser through every layer, runs in containers, and installs on a local
-> Kubernetes cluster from a Helm chart. The home-lab (k3s + Argo CD) rollout, media generation,
-> auth and the UI of the first real product (`wd-music-ai`, whose backend is built) are still to come. See the
-> [roadmap](docs/roadmap.md).
+> **Status: prototype.** The platform and its first product, `wd-music-ai`, work end to end on a
+> laptop: sign in, describe a song, approve the lyrics, and get a 60-second track and a cover made
+> by real models (ACE-Step 1.5 and FLUX.2 klein through ComfyUI). It runs in containers and
+> installs on a local Kubernetes cluster from a Helm chart. Still to come: the home-lab (k3s +
+> Argo CD) rollout, an upload endpoint, an admin section, billing and a production deployment.
+> See the [roadmap](docs/roadmap.md).
 
 ## Contents
 
@@ -37,11 +38,12 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
                                         └─► Object storage (SeaweedFS / S3 / GCS / Azure Blob)
 ```
 
-1. The browser talks only to the **Next.js** app. Its route handlers (the BFF) proxy to the API
-   and pass the event stream through unchanged.
+1. The browser talks only to the **Next.js** app, which handles sign-in (Auth.js). Its route
+   handlers (the BFF) check the session, attach a short-lived signed token, proxy to the API and
+   pass the event stream through unchanged.
 2. **FastAPI** runs the product's **LangGraph** graph and streams progress to the browser as
    Server-Sent Events: node status, tokens, interrupts, job progress, and a final result.
-3. Graphs ask for **capabilities** (`text.chat`, later `music.generate`, `image.generate`),
+3. Graphs ask for **capabilities** (`text.chat`, `text.lyrics`, `music.generate`, `image.generate`),
    never for specific models. Config binds each capability to a provider.
 4. Text goes through **LiteLLM**, an OpenAI-compatible gateway that maps aliases to Ollama
    (dev, staging) or vLLM / hosted APIs (prod).
@@ -58,16 +60,17 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | LiteLLM gateway to local Ollama (default model `gemma4:e4b`) | Working |
 | Next.js page + BFF streaming tokens end to end | Working |
 | Typed contracts: Pydantic models and generated TypeScript types | Working |
-| Database migrations (tenants, users, threads, jobs, usage events) | Working |
+| Database migrations (tenants, users, identities, threads, jobs, usage events, songs) | Working |
 | Container images and local compose stack | Working |
 | Capability layer (`litellm`, `comfyui`, `fake`), validated product config | Working |
 | Usage events: token counts written per LLM call | Working |
 | Image and audio input to the model (`Image`/`Audio` parts, files from storage) | Working; no upload endpoint yet |
 | Object storage interface (S3 API via SeaweedFS), presigned URLs | Working locally; not in the Helm chart yet |
 | RAG helpers on pgvector with embeddings (`nomic-embed-text`) | Working (library; no HTTP endpoints) |
-| Media pipeline: Redis queue, worker, ComfyUI client, live `job_progress`, queue positions | Working; real ComfyUI verified locally, GPU on k3s untested |
-| `wd-music-ai` web app: create, review lyrics, progress, player, My songs | Working locally; sign-in still a stub user |
-| Auth, per-user quotas | Not started (Phase 5) |
+| Media pipeline: Redis queue, worker, ComfyUI client, live `job_progress`, queue positions | Working; real ComfyUI verified locally (60 s song in about 77 s, 1024x1024 cover in about 25 s on an Apple Silicon Mac), GPU on k3s untested |
+| Song graph: guardrail, lyrics, approval, music, cover, daily quota | Working with real models ([ADR-0022](docs/decisions/0022-song-graph-and-guardrail.md), [ADR-0024](docs/decisions/0024-real-model-validation.md)) |
+| `wd-music-ai` web app: create, review lyrics, progress, player, My songs | Working |
+| Sign-in (Auth.js with Google, GitHub, Microsoft; signed API tokens; users table) | Working; verified with a real GitHub login. Google and Microsoft are wired but not tried ([ADR-0030](docs/decisions/0030-authentication.md)) |
 | Helm chart, local Kubernetes (kind), CI smoke test | Working |
 | k3s home lab with Argo CD | Manifests and runbook written, not yet run (Phase 2) |
 
@@ -75,7 +78,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 
 | Product | Status | Description |
 |---|---|---|
-| [`wd-music-ai`](products/wd-music-ai/README.md) | MVP in progress: backend built, UI and auth to do | Turns a song idea into lyrics, a 60-second track and cover art |
+| [`wd-music-ai`](products/wd-music-ai/README.md) | MVP working; upload endpoint and admin section to do | Turns a song idea into lyrics, a 60-second track and cover art |
 
 A product is a folder under `products/` with its `product.yaml`, graphs, prompts and ComfyUI
 workflows. Adding a product adds no API endpoints: the graph registry exposes registered
@@ -93,8 +96,13 @@ make dev        # starts the stack, waits for Postgres, runs migrations, follows
 ```
 
 Then open http://localhost:3000, describe a song, and watch it get written. You approve the lyrics, then
-the music and cover are made (placeholders unless a real ComfyUI is connected; see
-[Hardware notes](#hardware-notes)).
+the music and cover are made. By default they are placeholders; set `COMFYUI_MODE=real` in `.env`
+and run ComfyUI with the ACE-Step and FLUX.2 klein models for real ones (see
+[products/wd-music-ai](products/wd-music-ai/README.md) and [Hardware notes](#hardware-notes)).
+
+Sign-in is off by default (`AUTH_MODE=stub` in `.env.example`: everyone is the dev user). To turn it on,
+set `AUTH_MODE=jwt`, the two secrets and a provider's client id and secret: see
+[Sign-in in apps/web](apps/web/README.md#sign-in).
 
 | Create | Review the lyrics | Your song |
 |---|---|---|
@@ -230,8 +238,9 @@ API_BASE_URL=http://localhost:8000 pnpm --filter web dev      # in another termi
 
 ## Using the API
 
-All routes resolve an identity on every request (a stub user in dev until auth is wired).
-Responses for runs are `text/event-stream`.
+All routes resolve an identity on every request: a signed token from the web app (`AUTH_MODE=jwt`,
+the default) or the dev user (`AUTH_MODE=stub`, set in `.env.example` for local work).
+Without a valid token every route except `/health` answers `401`. Responses for runs are `text/event-stream`.
 
 | Method and path | Purpose |
 |---|---|
@@ -239,6 +248,7 @@ Responses for runs are `text/event-stream`.
 | `POST /products/{product_id}/runs` | Start a run; streams events. Body: `{"input": {...}, "thread_id"?: uuid}` |
 | `GET /runs/{run_id}/events` | Reconnect to a run; honours `Last-Event-ID` |
 | `POST /runs/{run_id}/resume` | Answer an `interrupt` (approve, edit); continues the stream. Body: `{"value": ...}` |
+| `GET /products/wd-music-ai/songs`, `GET /products/wd-music-ai/songs/{id}` | The signed-in user's songs, with presigned audio and cover links (product-provided routes, [ADR-0023](docs/decisions/0023-product-provided-routes.md)) |
 
 Try it without the browser, through the Next.js BFF:
 
@@ -277,13 +287,14 @@ wd-ai/
 ├─ apps/web/                 # Next.js app: song UI, BFF route handlers (see its README)
 ├─ services/
 │  ├─ api/                   # FastAPI + LangGraph runtime (graphs, runs, identity, migrations)
-│  └─ media-worker/          # Redis consumer that will drive ComfyUI (placeholder)
+│  └─ media-worker/          # Redis consumer that drives ComfyUI (stub or real mode)
 ├─ packages/
 │  ├─ contracts/             # Pydantic models: SSE events and request bodies (source of truth)
 │  ├─ contracts-ts/          # TypeScript types generated from the OpenAPI schema
 │  └─ platform-sdk/          # Capabilities, providers, product config, storage, usage, graph registry
 ├─ products/
 │  ├─ hello/                 # sample product: config only (graph lives in the API)
+│  ├─ media-demo/            # sample product: config only (one image job, used by the smoke tests)
 │  └─ wd-music-ai/           # product package: graph, guardrail, prompts, workflows, evals, tests
 ├─ deploy/
 │  ├─ compose/               # LiteLLM config for the local stack
@@ -304,7 +315,7 @@ There are three kinds of configuration, each with one home:
 
 | Kind | Examples | Where |
 |---|---|---|
-| Secrets | API keys, DB passwords, `AUTH_SECRET` | `.env` (gitignored); keys are listed in `.env.example` |
+| Secrets | API keys, DB passwords, `AUTH_SECRET`, `API_AUTH_SECRET`, OAuth client secrets | `.env` (gitignored); keys are listed in `.env.example` |
 | Environment wiring | `DATABASE_URL`, `LITELLM_BASE_URL`, `OLLAMA_BASE_URL`, `COMFYUI_BASE_URL` | `.env` locally, Helm values on Kubernetes |
 | Product config | Model bindings, workflows, quotas | `products/<id>/product.yaml` |
 
@@ -317,7 +328,7 @@ builds ignore it. More detail: [Configuration](docs/configuration.md).
 ```bash
 make test        # Python (no GPU or network needed) + TypeScript tests
 make test-integration   # real Postgres/pgvector, Redis pipeline, SeaweedFS, LiteLLM + Ollama (needs make dev)
-make test-comfyui       # opt-in: generates a real image on your local ComfyUI (slow first time)
+make test-comfyui       # opt-in: a real image, song and cover on your local ComfyUI (slow first time)
 make lint        # ruff, pyright, Biome, tsc
 make format      # ruff format + autofix
 make contracts   # regenerate TS types from the API's OpenAPI schema
@@ -352,6 +363,9 @@ make kind-up / kind-test / kind-down   # local Kubernetes (see above)
 | Empty reply with a small `max_tokens` | Gemma 4 "thinking" uses the token budget. It is off for the chat and lyrics aliases; keep budgets generous for the `moderator` ([ADR-0018](docs/decisions/0018-default-text-model-gemma4-e4b.md)) |
 | `podman compose` cannot connect | Run `podman machine start` |
 | `make dev` says "Not ready" | Run `make setup`; it fixes every item the preflight lists |
+| Sign-in page says "No sign-in provider is set up" | Set a provider's `AUTH_<PROVIDER>_ID` and `_SECRET` in `.env`, or `AUTH_MODE=stub` for local work |
+| Sign-in fails with `redirect_uri_mismatch` or "Server error: problem with the server configuration" | Set `AUTH_URL=http://localhost:3000` and register `http://localhost:3000/api/auth/callback/<provider>` with the provider. In a container the server otherwise reports `0.0.0.0` |
+| API refuses to start: "AUTH_MODE=jwt needs API_AUTH_SECRET" | Put the same 32+ byte `API_AUTH_SECRET` (`openssl rand -hex 32`) in the API and web environment, or set `AUTH_MODE=stub` |
 | `command not found` right after setup (Linux, WSL) | Tools are installed in `~/.local/bin`. Add it to your PATH (`export PATH="$HOME/.local/bin:$PATH"` in `~/.profile`) and reopen the shell |
 | `make kind-up` fails on Linux with rootless Podman | Enable cgroup delegation: [runbooks/linux-kind.md](docs/runbooks/linux-kind.md) |
 | WSL is slow or runs out of memory | Keep the repo under `~`, not `/mnt/c`, and raise the limit in `.wslconfig` ([docs/windows.md](docs/windows.md)) |
@@ -378,7 +392,7 @@ The same container images run in all three. Only infrastructure and configuratio
 | [Windows (WSL2)](docs/windows.md) | Running the project on Windows |
 | [Home lab runbook](docs/runbooks/homelab-k3s.md) | k3s, Argo CD and Tailscale setup for staging |
 | [kind on Linux](docs/runbooks/linux-kind.md) | Rootless Podman prerequisites for the local cluster |
-| [Roadmap](docs/roadmap.md) | Build phases and checklists |
+| [Roadmap](docs/roadmap.md) | Build phases, checklists and planned work |
 | [Decisions](docs/decisions/README.md) | Architecture decision records (ADRs) |
 | [`wd-music-ai`](products/wd-music-ai/README.md) | The first product's spec |
 
@@ -399,7 +413,13 @@ The same container images run in all three. Only infrastructure and configuratio
 | 2 | Skeleton on Kubernetes: Helm, `kind`, home lab k3s, Argo CD | Chart and kind done; home lab pending |
 | 3 | Platform core: capability layer, storage, usage events, RAG | Done |
 | 4 | Media pipeline: Redis queue, worker, ComfyUI, GPU sharing | Done except GPU on k3s (needs the lab) |
-| 5 | `wd-music-ai` MVP: song graph, auth, quota, UI | Song graph and quota done; UI, auth, real models to do |
+| 5 | `wd-music-ai` MVP: song graph, auth, quota, UI, real models | Done, except the upload endpoint |
 | 6 | Production on GCP | Planned |
+
+Planned next, recorded as proposed ADRs: admin-configurable model access with hosted providers
+([ADR-0025](docs/decisions/0025-model-access-configuration.md)), SEO, first-party analytics and
+Google Analytics ([0026](docs/decisions/0026-seo.md), [0027](docs/decisions/0027-first-party-analytics.md),
+[0028](docs/decisions/0028-google-analytics-and-consent.md)), and billing with Stripe
+([0029](docs/decisions/0029-billing-and-payments.md)).
 
 Details and checklists: [docs/roadmap.md](docs/roadmap.md).

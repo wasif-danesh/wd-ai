@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@wd/contracts": "workspace:*",
+    "jose": "^6.2.12",
     "next": "^15.0.0",
+    "next-auth": "5.0.0-beta.32",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
