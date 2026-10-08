@@ -8,12 +8,23 @@ import { ProductCard } from "./ProductCard";
 vi.mock("next/navigation", () => ({ usePathname: () => "/music/songs" }));
 
 describe("the studio's products", () => {
-  it("lists music, image and video as live, each with its own page", () => {
+  it("lists music, image and video as live and three more as coming soon, each with its own page", () => {
     expect(PRODUCTS.map((p) => [p.id, p.status, p.href])).toEqual([
       ["music", "live", "/music"],
       ["image", "live", "/image"],
       ["video", "live", "/video"],
+      ["text-to-speech", "soon", "/text-to-speech"],
+      ["speech-to-text", "soon", "/speech-to-text"],
+      ["lip-sync", "soon", "/lip-sync"],
     ]);
+  });
+
+  it("gives every card a title, a short description and a button label", () => {
+    for (const p of PRODUCTS) {
+      expect(p.title.length).toBeGreaterThan(2);
+      expect(p.blurb.length).toBeGreaterThan(30);
+      expect(p.action.length).toBeGreaterThan(5);
+    }
   });
 });
 
@@ -46,8 +57,25 @@ describe("ProductCard", () => {
     expect(within(link).queryByText("Create a song")).not.toBeInTheDocument();
   });
 
+  it.each([
+    ["Text to Speech", "Create speech", "/text-to-speech"],
+    ["Speech to Text", "Transcribe audio", "/speech-to-text"],
+    ["Lip Sync", "Create lip sync", "/lip-sync"],
+  ])("shows %s with a Coming soon tag, its description and a %s button", (title, action, href) => {
+    const product = PRODUCTS.find((p) => p.title === title);
+    if (!product) throw new Error(`no card for ${title}`);
+    render(<ProductCard product={product} />);
+    const link = screen.getByRole("link", { name: new RegExp(title) });
+    expect(link).toHaveAttribute("href", href);
+    expect(link).toHaveAttribute("data-status", "soon");
+    expect(within(link).getByRole("heading", { name: title })).toBeInTheDocument();
+    expect(within(link).getByText("Coming soon")).toBeInTheDocument();
+    expect(within(link).getByText(product.blurb)).toBeInTheDocument();
+    expect(within(link).getByText(action)).toBeInTheDocument();
+  });
+
   it("has a direct action for each live product", () => {
-    const names = PRODUCTS.map((p) => {
+    const names = PRODUCTS.slice(0, 3).map((p) => {
       const { unmount } = render(<ProductCard product={p} />);
       const text = screen.getByRole("link").textContent;
       unmount();

@@ -11,8 +11,15 @@ export function safeNext(value: string | null | undefined): string {
   return value;
 }
 
-/** Pages anyone may open without signing in: the home page and the sign-in page. */
-const PUBLIC_PATHS = new Set(["/", "/signin"]);
+/** Pages anyone may open without signing in: the home page, the sign-in page and the "coming soon" product pages. */
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/signin",
+  // pages for products that are not built yet (ADR-0042 to ADR-0044): public until they are real
+  "/text-to-speech",
+  "/speech-to-text",
+  "/lip-sync",
+]);
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname);

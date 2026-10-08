@@ -5,12 +5,6 @@ import { ProductArt } from "./ProductArt";
 /** One card on the home page; the whole card is the link. */
 export function ProductCard({ product }: { product: Product }) {
   const live = product.status === "live";
-  const action =
-    product.id === "music"
-      ? "Create a song"
-      : product.id === "image"
-        ? "Make an image"
-        : "Create a video";
   return (
     <Link
       href={product.href}
@@ -28,7 +22,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         <p>{product.blurb}</p>
         <span className="product-card__cta">
-          {live ? action : "On the way"}
+          {product.action}
           <span aria-hidden="true">{live ? "↗" : "···"}</span>
         </span>
       </div>
