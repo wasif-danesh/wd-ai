@@ -16,13 +16,14 @@ from wd_platform_sdk import (
     Storage,
     UsageEvent,
     UsageRecorder,
+    input_image_name,
     object_key,
 )
 from wd_platform_sdk.jobs import progress_event
 from wd_platform_sdk.usage import record_safely
 from websockets.exceptions import WebSocketException
 
-from wd_media_worker.comfy import ComfyClient, ComfyError, ProgressFn
+from wd_media_worker.comfy import ComfyClient, ComfyError, ProgressFn, use_picture
 from wd_media_worker.gpu import GpuLock, unload_llms
 from wd_media_worker.settings import WorkerSettings
 from wd_media_worker.state import JobState
@@ -47,11 +48,17 @@ class RetryJob(Exception):
         self.attempt = attempt
 
 
+# The user's input files for a job, by name ("image": the picture to edit, as PNG bytes)
+InputFiles = dict[str, bytes]
+
+
 class Runner(Protocol):
     backend: str
     local_gpu: bool  # True: runs on this machine's GPU, so the worker takes the GPU lock first
 
-    async def run(self, job: JobRequest, on_progress: ProgressFn) -> Files: ...
+    async def run(
+        self, job: JobRequest, on_progress: ProgressFn, files: InputFiles | None = None
+    ) -> Files: ...
 
 
 class Router(Protocol):
@@ -76,23 +83,31 @@ class ComfyRunner:
         self._client = client
         self._timeout = timeout_s
 
-    async def run(self, job: JobRequest, on_progress: ProgressFn) -> Files:
-        outputs = await self._client.run(job.prompt, job.job_id, on_progress, self._timeout)
-        files: Files = {}
+    async def run(
+        self, job: JobRequest, on_progress: ProgressFn, files: InputFiles | None = None
+    ) -> Files:
+        graph = job.prompt
+        if files and "image" in files:
+            name = input_image_name(job.job_id)
+            graph = use_picture(graph, name, await self._client.upload_image(name, files["image"]))
+        outputs = await self._client.run(graph, job.job_id, on_progress, self._timeout)
+        produced: Files = {}
         for name, spec in job.outputs.items():
             f = self._client.pick(outputs, str(spec["node"]), spec.get("type", "image"))
             ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else "bin"
             ctype = mimetypes.guess_type(f.filename)[0] or "application/octet-stream"
-            files[name] = (await self._client.fetch(f), ctype, ext)
+            produced[name] = (await self._client.fetch(f), ctype, ext)
         await self._client.free()
-        return files
+        return produced
 
 
 class StubRunner:
     backend = "stub"
     local_gpu = True  # keeps the GPU-sharing behaviour the same with and without real models
 
-    async def run(self, job: JobRequest, on_progress: ProgressFn) -> Files:
+    async def run(
+        self, job: JobRequest, on_progress: ProgressFn, files: InputFiles | None = None
+    ) -> Files:
         return await run_stub(job.job_id, job.outputs, on_progress)
 
 
@@ -162,6 +177,7 @@ class JobProcessor:
         runner: Runner | None = None
         try:
             runner = await self.router.resolve(job)
+            given = await self._input_files(job)  # before the GPU lock: reading is not GPU work
             # Only work on this machine's GPU takes the lock and frees it of LLMs first.
             hold = self.gpu.hold() if _local(runner) else contextlib.nullcontext()
             async with hold:
@@ -169,7 +185,12 @@ class JobProcessor:
                     await unload_llms(self.s.ollama_base_url, self._http)
                 started = time.monotonic()
                 try:
-                    files = await runner.run(job, on_progress)
+                    # a runner that takes no input files is called as it always was
+                    files = await (
+                        runner.run(job, on_progress, files=given)
+                        if given
+                        else runner.run(job, on_progress)
+                    )
                 finally:
                     elapsed = time.monotonic() - started
             outputs = await self._store(job, files)
@@ -212,6 +233,24 @@ class JobProcessor:
         await self.state.finish(job.tenant_id, job.job_id, result)
         await self.emit(job, result.status, progress=1.0 if result.status == "completed" else None)
         return result
+
+    async def _input_files(self, job: JobRequest) -> InputFiles:
+        """The user's uploaded picture for this job, read from their own prefix (ADR-0035). The key
+        must be one of their uploads: anything else fails the job, never reading another path."""
+        key = job.inputs.get("image_key")
+        if not key:
+            return {}
+        if not isinstance(key, str) or not key.startswith("uploads/") or ".." in key:
+            raise ComfyError("invalid_input", "The picture for this job is not valid.")
+        try:
+            data = await self.storage.get(
+                object_key(job.tenant_id, job.product_id, job.user_id, key)
+            )
+        except (FileNotFoundError, ValueError):
+            raise ComfyError(
+                "invalid_input", "The picture for this job could not be found."
+            ) from None
+        return {"image": data}
 
     def _failed(
         self, job: JobRequest, code: str, message: str, gpu_seconds: float, retryable: bool

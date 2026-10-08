@@ -63,6 +63,9 @@ settings:
   audio_format: mp3
 ```
 
+A product that accepts user pictures opts in with `uploads: { image: { max_bytes: 10485760 } }` (ADR-0035) and
+binds `image.edit` (image to image) like any other capability; see `products/wd-image-ai/product.yaml`.
+
 ```python
 # graph code: no model names, no node IDs
 async for delta in caps.text.stream("lyrics", system, prompt):

@@ -19,7 +19,11 @@ export function badRequest(message: string): Response {
   return Response.json({ detail: message }, { status: 400 });
 }
 
-type ProxyOptions = { method?: string; body?: string; headers?: Record<string, string> };
+type ProxyOptions = {
+  method?: string;
+  body?: string | ReadableStream<Uint8Array> | null;
+  headers?: Record<string, string>;
+};
 
 export async function proxy(
   req: Request,
@@ -28,13 +32,16 @@ export async function proxy(
 ): Promise<Response> {
   const identity = await apiAuthHeaders();
   if (!identity) return Response.json({ detail: "sign in required" }, { status: 401 });
-  const upstream = await fetch(`${API_BASE_URL}${path}`, {
+  const init: RequestInit & { duplex?: "half" } = {
     method: opts.method ?? req.method,
     headers: { ...opts.headers, ...identity },
     body: opts.body,
     signal: req.signal,
     cache: "no-store",
-  });
+  };
+  // an upload is passed through as a stream, never held in memory here
+  if (opts.body && typeof opts.body !== "string") init.duplex = "half";
+  const upstream = await fetch(`${API_BASE_URL}${path}`, init);
   const type = upstream.headers.get("content-type") ?? "application/json";
   const headers: Record<string, string> = { "content-type": type };
   // what a file download needs to arrive as a download

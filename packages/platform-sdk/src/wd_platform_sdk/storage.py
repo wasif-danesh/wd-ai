@@ -107,6 +107,18 @@ class ScopedStorage:
     async def url(self, rel: str, expires: timedelta = timedelta(hours=1)) -> str:
         return await self._storage.url(self._key(rel), expires)
 
+    # For code that acts for a named owner without a run context (an upload request, a clean-up
+    # task). The owner's prefix is still added here, so a key outside it cannot be built.
+    async def put_for(
+        self, owner: tuple[str, str, str], rel: str, data: bytes, content_type: str | None = None
+    ) -> str:
+        key = object_key(*owner, rel)
+        await self._storage.put(key, data, content_type)
+        return key
+
+    async def delete_for(self, owner: tuple[str, str, str], rel: str) -> None:
+        await self._storage.delete(object_key(*owner, rel))
+
 
 def memory_storage() -> Storage:
     return Storage(MemoryStore())

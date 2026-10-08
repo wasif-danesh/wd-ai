@@ -7,6 +7,7 @@ members = [
     "wd-ai",
     "wd-api",
     "wd-contracts",
+    "wd-image-ai",
     "wd-media-worker",
     "wd-music-ai",
     "wd-platform-sdk",
@@ -2078,6 +2079,29 @@ dependencies = [
 requires-dist = [{ name = "pydantic", specifier = ">=2.9" }]
 
 [[package]]
+name = "wd-image-ai"
+version = "0.0.0"
+source = { editable = "products/wd-image-ai" }
+dependencies = [
+    { name = "langgraph" },
+    { name = "pillow" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "wd-platform-sdk" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "langgraph", specifier = ">=0.6" },
+    { name = "pillow", specifier = ">=10" },
+    { name = "pydantic", specifier = ">=2.9" },
+    { name = "pyyaml", specifier = ">=6" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
+    { name = "wd-platform-sdk", editable = "packages/platform-sdk" },
+]
+
+[[package]]
 name = "wd-media-worker"
 version = "0.0.0"
 source = { editable = "services/media-worker" }
@@ -2134,6 +2158,7 @@ dependencies = [
     { name = "langgraph" },
     { name = "obstore" },
     { name = "openai" },
+    { name = "pillow" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "redis" },
@@ -2149,6 +2174,7 @@ requires-dist = [
     { name = "langgraph", specifier = ">=1.2.14" },
     { name = "obstore", specifier = ">=0.11.1" },
     { name = "openai", specifier = ">=3.26.0" },
+    { name = "pillow", specifier = ">=10" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pyyaml", specifier = ">=6" },
     { name = "redis", specifier = ">=8.1.0" },

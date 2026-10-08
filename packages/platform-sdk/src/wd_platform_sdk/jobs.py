@@ -25,6 +25,12 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def input_image_name(job_id: str) -> str:
+    """The file name an input picture goes by on the backend for this job. The API puts it in the
+    workflow before the job exists; the worker uploads the user's picture under it."""
+    return f"wd-{job_id}.png"
+
+
 class JobRequest(BaseModel):
     job_id: str = Field(default_factory=lambda: str(uuid4()))
     tenant_id: str

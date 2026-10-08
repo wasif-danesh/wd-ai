@@ -242,6 +242,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/wd-image-ai/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Images */
+        get: operations["list_images_products_wd_image_ai_images_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-image-ai/images/{image_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Image */
+        get: operations["get_image_products_wd_image_ai_images__image_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Image
+         * @description Delete an image: its files first, then the record.
+         */
+        delete: operations["delete_image_products_wd_image_ai_images__image_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-image-ai/images/{image_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download
+         * @description The image as a file the browser saves (browsers ignore `download` on links to the
+         *     storage host, ADR-0034).
+         */
+        get: operations["download_products_wd_image_ai_images__image_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/products/wd-music-ai/songs": {
         parameters: {
             query?: never;
@@ -313,6 +372,23 @@ export interface paths {
         put?: never;
         /** Start Run */
         post: operations["start_run_products__product_id__runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{product_id}/uploads/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Image */
+        post: operations["upload_image_products__product_id__uploads_images_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -541,6 +617,35 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** ImagePage */
+        ImagePage: {
+            /** Images */
+            images: components["schemas"]["ImageSummary"][];
+            /** Next Before */
+            next_before: string | null;
+        };
+        /** ImageSummary */
+        ImageSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Height */
+            height: number;
+            /** Id */
+            id: string;
+            /** Image Url */
+            image_url: string;
+            /** Mode */
+            mode: string;
+            /** Prompt */
+            prompt: string;
+            /** Thumb Url */
+            thumb_url: string;
+            /** Width */
+            width: number;
         };
         /** InterruptEvent */
         InterruptEvent: {
@@ -873,6 +978,19 @@ export interface components {
             thread_id: string;
             /** Ts */
             ts?: string;
+        };
+        /** UploadResult */
+        UploadResult: {
+            /** Bytes */
+            bytes: number;
+            /** Height */
+            height: number;
+            /** Key */
+            key: string;
+            /** Upload Id */
+            upload_id: string;
+            /** Width */
+            width: number;
         };
         /** UsageDay */
         UsageDay: {
@@ -1341,6 +1459,129 @@ export interface operations {
             };
         };
     };
+    list_images_products_wd_image_ai_images_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImagePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_image_products_wd_image_ai_images__image_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_image_products_wd_image_ai_images__image_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_products_wd_image_ai_images__image_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_songs_products_wd_music_ai_songs_get: {
         parameters: {
             query?: {
@@ -1458,6 +1699,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_image_products__product_id__uploads_images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResult"];
                 };
             };
             /** @description Validation Error */

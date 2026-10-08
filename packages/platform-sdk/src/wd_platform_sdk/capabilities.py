@@ -103,9 +103,16 @@ class MediaCapabilities:
         self._product = product
 
     async def generate(self, **inputs: Any) -> JobHandle:
-        name = f"{self._family}.generate"
+        return await self._run("generate", inputs)
+
+    async def edit(self, **inputs: Any) -> JobHandle:
+        """Change a picture the user uploaded: pass its storage key as `image_key`."""
+        return await self._run("edit", inputs)
+
+    async def _run(self, verb: str, inputs: dict[str, Any]) -> JobHandle:
+        name = f"{self._family}.{verb}"
         try:
-            binding, provider = self._bound["generate"]
+            binding, provider = self._bound[verb]
         except KeyError:
             raise CapabilityNotConfigured(
                 f"capability {name!r} is not configured for product {self._product!r}"

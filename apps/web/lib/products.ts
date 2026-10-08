@@ -20,9 +20,10 @@ export const PRODUCTS: Product[] = [
   {
     id: "image",
     title: "Generate Image",
-    blurb: "Turn a description into an image.",
+    blurb:
+      "Describe a picture, or upload one and say what to change. Your upload is deleted as soon as the image is made.",
     href: "/image",
-    status: "soon",
+    status: "live",
   },
   {
     id: "video",

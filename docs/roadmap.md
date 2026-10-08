@@ -79,9 +79,10 @@ See [product spec](../products/wd-music-ai/README.md).
       video of the cover with the song playing
 - [x] Studio home "WD AI Studio" with a card per product, `/music` area, "Coming soon" pages for image and
       video, sign-in asked when a visitor opens music (ADR-0033)
-- [ ] Secured upload endpoint for user files (images, audio): identity required, size and type
-      limits (images 10 MB, audio 25 MB), writes to `ScopedStorage` and returns the storage key
-      that runs take as `image_key` / `audio_key`. A public API addition, so it needs an ADR first
+- [x] Secured upload endpoint for images (ADR-0035): identity required, size/type/pixel limits,
+      re-encoded without metadata, hourly limit, swept after 24 hours. Audio uploads are not designed yet
+- [x] Image product `wd-image-ai` (ADR-0036): text to image and image to image on FLUX.2 klein 4B, guardrail
+      on prompt and picture, My images, downloads, delete. Output screening is not in the first version
 
 ## Phase 6: Production
 
@@ -92,8 +93,8 @@ See [product spec](../products/wd-music-ai/README.md).
 
 ## Backlog (not yet scheduled)
 
-- [ ] Upload endpoint ADR and design (see Phase 5): the multimodal inputs from ADR-0020 only
-      work for files already in storage until this exists
+- [ ] Audio uploads (the image upload endpoint exists; ADR-0035)
+- [ ] Screen finished images before showing them; measure the picture guardrail on unsafe pictures
 - [ ] Evaluate audio input on real recordings, not only synthetic speech (ADR-0020)
 - [ ] Pin the SeaweedFS image to a version instead of `:latest`
 - [ ] Roll out new staging images automatically (pinned tags or Image Updater)

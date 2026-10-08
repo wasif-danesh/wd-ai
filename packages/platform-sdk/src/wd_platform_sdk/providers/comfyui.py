@@ -6,11 +6,14 @@ It never calls ComfyUI. Phase 4 swaps the sink for a Redis queue and adds the wo
 
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from wd_platform_sdk.config import CapabilityBinding
 from wd_platform_sdk.context import require_context
-from wd_platform_sdk.jobs import JobHandle, JobRequest, JobSink
+from wd_platform_sdk.jobs import JobHandle, JobRequest, JobSink, input_image_name
 from wd_platform_sdk.workflows import Workflow
+
+RESERVED_INPUTS = {"image_key"}  # for the job, not for the workflow
 
 
 class ComfyUIProvider:
@@ -29,9 +32,18 @@ class ComfyUIProvider:
     ) -> JobHandle:
         ctx = require_context()
         wf = self._workflow(binding.workflow or "")
+        job_id = str(uuid4())
         merged = {**binding.defaults, **inputs}
-        graph = wf.fill(merged)
+        # `image_key` names the user's uploaded picture. It goes to the worker, which uploads the
+        # picture under a per-job name; the workflow's picture input gets that name here.
+        workflow_inputs = {k: v for k, v in merged.items() if k not in RESERVED_INPUTS}
+        if merged.get("image_key"):
+            if "image" not in wf.map.inputs:
+                raise ValueError(f"workflow {wf.name!r} has no picture input")
+            workflow_inputs["image"] = input_image_name(job_id)
+        graph = wf.fill(workflow_inputs)
         request = JobRequest(
+            job_id=job_id,
             tenant_id=ctx.tenant_id,
             product_id=ctx.product_id,
             user_id=ctx.user_id,

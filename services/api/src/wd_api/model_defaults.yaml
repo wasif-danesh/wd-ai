@@ -47,8 +47,9 @@ aliases:
   # OpenAI). Unlike `ollama_chat/` it accepts audio input parts, so use this alias for
   # capabilities that take image or audio input (ADR-0020).
   multimodal:
-    purpose: Image and audio input to the model
+    purpose: Image and audio input to the model (also checks uploaded pictures for the image guardrail)
     kind: chat
+    protected: true   # a change must pass the image guardrail's canary checks first
     litellm_params:
       model: openai/gemma4:e4b
       api_base: "{OLLAMA_OPENAI_BASE_URL}"

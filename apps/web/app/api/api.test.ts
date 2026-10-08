@@ -1,9 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RUN, sse } from "../../test-utils";
+import { GET as imageDownloadGET } from "./products/[productId]/images/[imageId]/download/route";
+import {
+  DELETE as imageDELETE,
+  GET as imageGET,
+} from "./products/[productId]/images/[imageId]/route";
 import { POST as runsPOST } from "./products/[productId]/runs/route";
 import { GET as downloadGET } from "./products/[productId]/songs/[songId]/download/[kind]/route";
 import { GET as songGET } from "./products/[productId]/songs/[songId]/route";
 import { GET as songsGET } from "./products/[productId]/songs/route";
+import { POST as uploadPOST } from "./products/[productId]/uploads/images/route";
 import { GET as eventsGET } from "./runs/[runId]/events/route";
 import { POST as resumePOST } from "./runs/[runId]/resume/route";
 
@@ -202,5 +208,69 @@ describe("songs", () => {
       params({ productId: "wd-music-ai", songId: "../runs" }),
     );
     expect(bad.status).toBe(400);
+  });
+});
+
+describe("images and uploads", () => {
+  it("streams an upload to the API with its content type", async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ key: "k", id: "1" }));
+    const res = await uploadPOST(
+      new Request("http://web/x", {
+        method: "POST",
+        headers: { "content-type": "image/png" },
+        body: new Uint8Array([1, 2, 3]),
+      }),
+      params({ productId: "wd-image-ai" }),
+    );
+    expect(res.status).toBe(200);
+    expect(upstreamUrl()).toMatch(/\/products\/wd-image-ai\/uploads\/images$/);
+    expect(new Headers(upstreamInit().headers).get("content-type")).toBe("image/png");
+  });
+
+  it("refuses an obviously huge upload before calling the API", async () => {
+    const res = await uploadPOST(
+      new Request("http://web/x", {
+        method: "POST",
+        headers: { "content-length": String(100 * 1024 * 1024) },
+        body: "x",
+      }),
+      params({ productId: "wd-image-ai" }),
+    );
+    expect(res.status).toBe(413);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("gets and deletes an image by id and refuses ids that are not UUIDs", async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ id: RUN }));
+    await imageGET(new Request("http://web/x"), params({ productId: "wd-image-ai", imageId: RUN }));
+    expect(upstreamUrl()).toMatch(new RegExp(`/images/${RUN}$`));
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await imageDELETE(
+      new Request("http://web/x", { method: "DELETE" }),
+      params({ productId: "wd-image-ai", imageId: RUN }),
+    );
+    expect(upstreamInit().method).toBe("DELETE");
+    const bad = await imageGET(
+      new Request("http://web/x"),
+      params({ productId: "wd-image-ai", imageId: "../x" }),
+    );
+    expect(bad.status).toBe(400);
+  });
+
+  it("passes the image download through as an attachment", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response("PNG", {
+        headers: {
+          "content-type": "image/png",
+          "content-disposition": 'attachment; filename="a.png"',
+        },
+      }),
+    );
+    const res = await imageDownloadGET(
+      new Request("http://web/x"),
+      params({ productId: "wd-image-ai", imageId: RUN }),
+    );
+    expect(res.headers.get("content-disposition")).toBe('attachment; filename="a.png"');
+    expect(await res.text()).toBe("PNG");
   });
 });

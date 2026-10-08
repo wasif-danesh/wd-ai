@@ -25,6 +25,7 @@ from wd_platform_sdk.jobs import (
     JobResult,
     JobSink,
     await_job,
+    input_image_name,
 )
 from wd_platform_sdk.media_backends import (
     BACKENDS,
@@ -57,11 +58,38 @@ from wd_platform_sdk.routes import RouteDeps, RouteFactory
 from wd_platform_sdk.runstore import InMemoryRunStore, RedisRunStore, RunRecord, RunStore
 from wd_platform_sdk.secretbox import SecretBox, SecretsUnavailable
 from wd_platform_sdk.storage import ScopedStorage, Storage, memory_storage, object_key, s3_storage
+from wd_platform_sdk.uploads import (
+    UPLOAD_CREATED,
+    InMemoryUploadLimiter,
+    InMemoryUploadStore,
+    PostgresUploadStore,
+    ProcessedImage,
+    RedisUploadLimiter,
+    UploadError,
+    UploadLimiter,
+    UploadRecord,
+    UploadStore,
+    new_upload,
+    process_image,
+)
 from wd_platform_sdk.usage import InMemoryUsageRecorder, UsageEvent, UsageRecorder
 from wd_platform_sdk.usage_postgres import PostgresUsageRecorder
 from wd_platform_sdk.usage_queries import start_of_day_utc, sum_usage
 
 __all__ = [
+    "input_image_name",
+    "UPLOAD_CREATED",
+    "InMemoryUploadLimiter",
+    "InMemoryUploadStore",
+    "PostgresUploadStore",
+    "ProcessedImage",
+    "RedisUploadLimiter",
+    "UploadError",
+    "UploadLimiter",
+    "UploadRecord",
+    "UploadStore",
+    "new_upload",
+    "process_image",
     "BACKENDS",
     "BackendSpec",
     "CheckOutcome",

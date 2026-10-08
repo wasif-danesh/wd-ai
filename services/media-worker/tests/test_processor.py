@@ -208,3 +208,73 @@ async def test_unload_is_best_effort_when_ollama_is_down():
         transport=httpx.MockTransport(lambda r: (_ for _ in ()).throw(httpx.ConnectError("down")))
     )
     assert await unload_llms("http://ollama:11434", http) == []  # logged, never raised
+
+
+# ---- input pictures -----------------------------------------------------------------------
+
+PICTURE = b"\x89PNG\r\n\x1a\n" + b"the-users-picture"
+
+
+def edit_job2(**over) -> JobRequest:
+    graph = {
+        "5": {"class_type": "LoadImage", "inputs": {"image": "wd-JOB1.png"}},
+        "10": {"class_type": "SaveImage", "inputs": {}},
+    }
+    return job(graph).model_copy(
+        update={
+            "job_id": "JOB1",
+            "capability": "image.edit",
+            "inputs": {"prompt": "x", "image_key": "uploads/abc.png"},
+            **over,
+        }
+    )
+
+
+async def test_the_users_picture_is_read_from_their_prefix_and_uploaded_to_temp(comfy):
+    base, fake = comfy
+    rig = Rig(ComfyRunner(ComfyClient(base), 10))
+    await rig.storage.put(object_key("t1", "p1", "u1", "uploads/abc.png"), PICTURE)
+    result = await rig.p.process(edit_job2())
+    assert result.status == "completed"
+    content_type, body = fake.uploads[0]
+    assert PICTURE in body and b'filename="wd-JOB1.png"' in body
+    assert b'name="type"\r\n\r\ntemp' in body  # ComfyUI's temp folder, cleared on its restart
+    # the workflow loads it by the temp reference
+    graph = fake.submitted[0]["prompt"]
+    assert graph["5"]["inputs"]["image"] == "wd-uploaded.png [temp]"
+
+
+async def test_another_users_picture_is_never_read(comfy):
+    base, fake = comfy
+    rig = Rig(ComfyRunner(ComfyClient(base), 10))
+    await rig.storage.put(object_key("t1", "p1", "someone-else", "uploads/abc.png"), PICTURE)
+    result = await rig.p.process(edit_job2())  # job.user_id is u1: that key is not there for u1
+    assert result.status == "failed" and result.error and result.error.code == "invalid_input"
+    assert not fake.uploads and not fake.submitted
+
+
+@pytest.mark.parametrize(
+    "key", ["../u2/uploads/abc.png", "jobs/x/image.png", "uploads/../x.png", "", 5]
+)
+async def test_only_keys_under_uploads_are_accepted(comfy, key):
+    base, fake = comfy
+    rig = Rig(ComfyRunner(ComfyClient(base), 10))
+    result = await rig.p.process(edit_job2(inputs={"prompt": "x", "image_key": key}))
+    if key == "":  # no picture asked for: an ordinary job
+        assert result.status == "completed"
+    else:
+        assert result.status == "failed" and result.error and result.error.code == "invalid_input"
+        assert not fake.uploads
+
+
+async def test_a_runner_that_takes_no_files_is_still_called_the_old_way():
+    class Plain:
+        backend = "plain"
+        local_gpu = True
+
+        async def run(self, job, on_progress):
+            return {"image": (b"\x89PNGx", "image/png", "png")}
+
+    rig = Rig(Plain())
+    result = await rig.p.process(job())  # no picture: no files argument
+    assert result.status == "completed"

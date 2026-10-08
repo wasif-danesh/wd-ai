@@ -28,6 +28,7 @@ class FakeComfy:
         self.sockets: dict[str, WebSocket] = {}
         self.history: dict[str, dict] = {}
         self.submitted: list[dict] = []
+        self.uploads: list[tuple[str, bytes]] = []  # (content type, raw multipart body)
         self.freed = 0
         self.interrupted = 0
         self.app = Starlette(
@@ -35,6 +36,7 @@ class FakeComfy:
                 Route("/prompt", self.prompt, methods=["POST"]),
                 Route("/history/{pid}", self.get_history),
                 Route("/view", self.view),
+                Route("/upload/image", self.upload, methods=["POST"]),
                 Route("/free", self.free, methods=["POST"]),
                 Route("/interrupt", self.interrupt, methods=["POST"]),
                 WebSocketRoute("/ws", self.ws),
@@ -128,6 +130,10 @@ class FakeComfy:
         return Response(
             WAV if name.endswith(".wav") else PNG, media_type="application/octet-stream"
         )
+
+    async def upload(self, request: Request) -> Response:
+        self.uploads.append((request.headers.get("content-type", ""), await request.body()))
+        return JSONResponse({"name": "wd-uploaded.png", "subfolder": "", "type": "temp"})
 
     async def free(self, request: Request) -> Response:
         self.freed += 1

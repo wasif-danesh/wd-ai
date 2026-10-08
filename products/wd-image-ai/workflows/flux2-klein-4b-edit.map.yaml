@@ -1,0 +1,19 @@
+workflow: flux2-klein-4b-edit.json
+licence: "Apache-2.0 per the FLUX.2 [klein] 4B model card (ADR-0019). The 9B variant is licensed differently and is not used"
+notes: >
+  Image to image: one reference picture and an instruction. Built from ComfyUI's official template
+  image_flux2_klein_image_edit_4b_distilled (single reference): the picture is scaled to about one
+  megapixel (in multiples of 16), encoded, and fed to both the positive and the negative conditioning
+  as a reference latent; the result has the picture's shape, so there is no size input. The worker
+  uploads the user's picture under a per-job name and the API writes that name into the LoadImage node.
+models:
+  - diffusion_models/flux-2-klein-4b.safetensors
+  - text_encoders/qwen_3_4b.safetensors
+  - vae/flux2-vae.safetensors
+inputs:
+  prompt: { node: "4", field: text }
+  seed: { node: "15", field: noise_seed }
+  steps: { node: "10", field: steps }
+  image: { node: "6", field: image }
+outputs:
+  image: { node: "19", type: image }

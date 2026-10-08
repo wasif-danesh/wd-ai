@@ -12,7 +12,7 @@ export function safeNext(value: string | null | undefined): string {
 }
 
 /** Pages anyone may open without signing in: the home page and the "coming soon" product pages. */
-const PUBLIC_PATHS = new Set(["/", "/image", "/video", "/signin"]);
+const PUBLIC_PATHS = new Set(["/", "/video", "/signin"]);
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname);
@@ -20,7 +20,11 @@ export function isPublicPath(pathname: string): boolean {
 
 /** Why the sign-in page is showing, in words, from where the visitor was headed. */
 export function signInReason(next: string): string {
-  return next === "/music" || next.startsWith("/music/")
-    ? "Sign in to create music and keep your songs."
-    : "Sign in to continue.";
+  if (next === "/music" || next.startsWith("/music/")) {
+    return "Sign in to create music and keep your songs.";
+  }
+  if (next === "/image" || next.startsWith("/image/")) {
+    return "Sign in to create images and keep them.";
+  }
+  return "Sign in to continue.";
 }

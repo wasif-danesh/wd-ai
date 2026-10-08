@@ -51,12 +51,22 @@ class CapabilityBinding(BaseModel):
         return self
 
 
+class UploadRule(BaseModel):
+    """What a product accepts from a user's browser (ADR-0035). Absent: nothing is accepted."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    max_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=25 * 1024 * 1024)
+
+
 class ProductConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str
     capabilities: dict[str, CapabilityBinding] = Field(default_factory=dict)
     quotas: dict[str, int] = Field(default_factory=dict)
+    # Kinds of file a user may upload to this product: `uploads: { image: { max_bytes: ... } }`.
+    uploads: dict[Literal["image"], UploadRule] = Field(default_factory=dict)
     settings: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")

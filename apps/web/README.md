@@ -1,7 +1,7 @@
 # web
 
 The Next.js app (App Router, React 19, strict TypeScript) that users see, and the backend-for-frontend (BFF)
-in front of the API. One app serves every product (ADR-0014); today that is `wd-music-ai`.
+in front of the API. One app serves every product (ADR-0014); today `wd-music-ai` (`/music`) and `wd-image-ai` (`/image`: create, `/image/creations` My images, `/image/creations/{id}`; image to image uploads the picture first through `/api/products/wd-image-ai/uploads/images`).
 
 | Page | What it is |
 |---|---|

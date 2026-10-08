@@ -40,3 +40,8 @@ export type MediaView = components["schemas"]["MediaView"];
 export type MediaBackend = components["schemas"]["BackendView"];
 export type MediaField = components["schemas"]["FieldView"];
 export type MediaTestOutcome = components["schemas"]["MediaTestOutcome"];
+
+// wd-image-ai's read API and the upload endpoint
+export type ImageSummary = components["schemas"]["ImageSummary"];
+export type ImagePage = components["schemas"]["ImagePage"];
+export type UploadResult = components["schemas"]["UploadResult"];

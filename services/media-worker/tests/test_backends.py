@@ -423,3 +423,90 @@ async def test_a_misconfigured_backend_fails_the_job_without_retrying():
         result.status == "failed" and result.error and result.error.code == "backend_misconfigured"
     )
     assert result.error.retryable is False
+
+
+# ---- input pictures (image to image, ADR-0035/0036) ---------------------------------------
+
+PICTURE = b"\x89PNG\r\n\x1a\n" + b"the-users-picture"
+
+
+def edit_job(**over) -> JobRequest:
+    graph = {
+        "5": {"class_type": "LoadImage", "inputs": {"image": "wd-JOB.png"}},
+        "10": {"class_type": "SaveImage", "inputs": {}},
+    }
+    base = {
+        "job_id": "JOB", "capability": "image.edit", "prompt": graph,
+        "inputs": {"prompt": "make it dusk", "image_key": "uploads/abc.png"},
+    }  # fmt: skip
+    return job().model_copy(update={**base, **over})
+
+
+async def test_comfy_api_uploads_the_picture_and_points_the_workflow_at_it():
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.path == "/api/upload/image":
+            return httpx.Response(200, json={"name": "wd-JOB.png", "subfolder": ""})
+        return comfy_api([{"status": "succeeded"}])[0](request)
+
+    files = await runner(handler).run(edit_job(), Progress(), files={"image": PICTURE})
+    assert files["image"][0] == PNG
+    upload = next(r for r in seen if r.url.path == "/api/upload/image")
+    assert PICTURE in upload.content and b'name="type"' in upload.content
+    assert upload.headers["authorization"] == f"Bearer {KEY}" and upload.headers["x-api-key"] == KEY
+    submitted = next(r for r in seen if r.url.path == "/api/v2/jobs" and r.method == "POST")
+    assert json.loads(submitted.content)["workflow"]["5"]["inputs"]["image"] == "wd-JOB.png"
+
+
+async def test_a_job_without_a_picture_makes_no_upload():
+    seen: list[httpx.Request] = []
+    handler, _ = comfy_api([{"status": "succeeded"}])
+
+    def spy(request):
+        seen.append(request)
+        return handler(request)
+
+    await runner(spy).run(job(), Progress())
+    assert not [r for r in seen if r.url.path == "/api/upload/image"]
+
+
+async def test_openai_images_edit_sends_the_picture_as_a_form():
+    r, seen = images()
+    files = await r.run(
+        edit_job(
+            inputs={
+                "prompt": "make it dusk",
+                "image_key": "uploads/a.png",
+                "width": 640,
+                "height": 480,
+            }
+        ),
+        Progress(),
+        files={"image": PICTURE},
+    )
+    assert files["image"][0] == PNG
+    request = seen[0]
+    assert request.url.path == "/v1/images/edits" and request.headers["content-type"].startswith(
+        "multipart/form-data"
+    )
+    assert (
+        PICTURE in request.content
+        and b"make it dusk" in request.content
+        and b"gpt-image-1" in request.content
+    )
+    assert b'name="size"' not in request.content  # the size follows the picture
+
+
+async def test_openai_images_edit_keeps_an_admin_chosen_size():
+    r, seen = images({"size": "1024x1024"})
+    await r.run(edit_job(), Progress(), files={"image": PICTURE})
+    assert b"1024x1024" in seen[0].content
+
+
+async def test_openai_images_edit_without_a_picture_is_refused():
+    r, seen = images()
+    with pytest.raises(ComfyError) as caught:
+        await r.run(edit_job(), Progress())
+    assert caught.value.code == "invalid_input" and not seen

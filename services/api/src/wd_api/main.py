@@ -18,17 +18,23 @@ from wd_platform_sdk import (
     GraphRegistry,
     InMemoryJobSink,
     InMemoryMediaBindingStore,
+    InMemoryUploadLimiter,
+    InMemoryUploadStore,
     JobSink,
     PostgresMediaBindingStore,
+    PostgresUploadStore,
     PostgresUsageRecorder,
     ProviderDeps,
     RedisEventLog,
     RedisJobSink,
     RedisRunStore,
+    RedisUploadLimiter,
     RouteDeps,
     RunStore,
     ScopedStorage,
     SecretBox,
+    UploadLimiter,
+    UploadStore,
     UsageRecorder,
     build_capabilities,
     load_product_config,
@@ -53,6 +59,8 @@ from wd_api.model_checks import RegistryCheckRunner
 from wd_api.rag import DIMENSIONS, RagService
 from wd_api.routes import HEARTBEAT_S, router
 from wd_api.runs import RunManager
+from wd_api.uploads import router as uploads_router
+from wd_api.uploads import sweep_forever
 from wd_api.users import CachedUsers, PostgresUserStore, UserStore
 
 # redis-py defaults to 5 s; stream reads block for the heartbeat interval, so allow well over it.
@@ -89,6 +97,8 @@ def create_app(
     admin_store: AdminStore | None = None,
     model_access: ModelAccess | None = None,
     media_access: MediaAccess | None = None,
+    uploads: UploadStore | None = None,
+    upload_limiter: UploadLimiter | None = None,
 ) -> FastAPI:
     """App factory. Tests inject a registry, products dir (with `provider: fake` bindings),
     checkpointer, usage recorder, event log, run store and job sink, so no GPU, network, database
@@ -171,11 +181,18 @@ def create_app(
             settings.comfyui_base_url,
         )
 
+        configs: dict[str, Any] = {}
+        # what each product accepts as an upload (ADR-0035): None for a product that accepts none
+        app.state.upload_rules = lambda pid: (
+            configs[pid].uploads.get("image") if pid in configs else None
+        )
+
         def build_graphs(saver: Any) -> dict[str, Any]:
             graphs: dict[str, Any] = {}
             for product_id in reg.products():
                 # Fails at startup, with every problem listed, if the product config is bad.
                 config = load_product_config(pdir, product_id, env=settings.product_env)
+                configs[product_id] = config
                 caps = build_capabilities(config, deps)
                 if "text.embed" in config.capabilities:
                     caps.rag = RagService(db, lambda texts, c=caps: c.text.embed("embed", texts))
@@ -186,6 +203,18 @@ def create_app(
         app.state.admin = admin_store or PostgresAdminStore(db)
         seeder: asyncio.Task | None = None
         app.state.registry = reg
+        app.state.usage = recorder
+        app.state.uploads = uploads or (
+            InMemoryUploadStore() if injected else PostgresUploadStore(db)
+        )
+        app.state.upload_limiter = upload_limiter or (
+            RedisUploadLimiter(conn) if conn is not None else InMemoryUploadLimiter()
+        )
+        sweeper = (
+            asyncio.create_task(sweep_forever(app.state.uploads, store))
+            if store is not None and not injected
+            else None
+        )
         app.state.engine = db
         app.state.storage = store
         app.state.heartbeat_s = heartbeat_s
@@ -207,6 +236,8 @@ def create_app(
         finally:
             if seeder:
                 seeder.cancel()
+            if sweeper:
+                sweeper.cancel()
             if consumer:
                 await consumer.stop()
             if getattr(app.state, "runs", None):
@@ -235,6 +266,7 @@ def create_app(
     app.include_router(admin_router)
     app.include_router(admin_models_router)
     app.include_router(admin_media_router)
+    app.include_router(uploads_router)
 
     # Product-provided routes (ADR-0023): mounted now so the OpenAPI schema (and the TypeScript
     # types generated from it) include them; the database and storage they use are read from

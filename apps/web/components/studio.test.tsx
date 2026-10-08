@@ -8,10 +8,10 @@ import { ProductCard } from "./ProductCard";
 vi.mock("next/navigation", () => ({ usePathname: () => "/music/songs" }));
 
 describe("the studio's products", () => {
-  it("lists music as live and image and video as coming soon, each with its own page", () => {
+  it("lists music and image as live and video as coming soon, each with its own page", () => {
     expect(PRODUCTS.map((p) => [p.id, p.status, p.href])).toEqual([
       ["music", "live", "/music"],
-      ["image", "soon", "/image"],
+      ["image", "live", "/image"],
       ["video", "soon", "/video"],
     ]);
   });
@@ -27,9 +27,9 @@ describe("ProductCard", () => {
   });
 
   it("says plainly that a product is not ready, and still links to its page", () => {
-    render(<ProductCard product={PRODUCTS[1]} />);
-    const link = screen.getByRole("link", { name: /Generate Image/ });
-    expect(link).toHaveAttribute("href", "/image");
+    render(<ProductCard product={PRODUCTS[2]} />);
+    const link = screen.getByRole("link", { name: /Generate Video/ });
+    expect(link).toHaveAttribute("href", "/video");
     expect(within(link).getByText("Coming soon")).toBeInTheDocument();
     expect(within(link).queryByText(/Start creating/)).not.toBeInTheDocument();
   });

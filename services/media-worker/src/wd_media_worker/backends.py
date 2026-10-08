@@ -17,14 +17,16 @@ from wd_platform_sdk import (
     MediaBindingStore,
     SecretBox,
     SecretsUnavailable,
+    input_image_name,
 )
 
-from wd_media_worker.comfy import ComfyClient, ComfyError, ProgressFn
+from wd_media_worker.comfy import ComfyClient, ComfyError, ProgressFn, use_picture
 from wd_media_worker.settings import WorkerSettings
 
 log = logging.getLogger(__name__)
 
 Files = dict[str, tuple[bytes, str, str]]
+InputFiles = dict[str, bytes]
 CACHE_TTL_S = 3.0
 _EXT = {
     "image/png": "png",
@@ -79,9 +81,15 @@ class ComfyApiRunner:
         self._http = http
         self._poll = poll_s
 
-    async def run(self, job: JobRequest, on_progress: ProgressFn) -> Files:
+    async def run(
+        self, job: JobRequest, on_progress: ProgressFn, files: InputFiles | None = None
+    ) -> Files:
+        graph = job.prompt
+        if files and "image" in files:
+            name = input_image_name(job.job_id)
+            graph = use_picture(graph, name, await self._upload(name, files["image"]))
         r = await self._http.post(
-            f"{self._base}/api/v2/jobs", json={"workflow": job.prompt}, headers=self._headers
+            f"{self._base}/api/v2/jobs", json={"workflow": graph}, headers=self._headers
         )
         raise_for_backend(r)
         remote_id = r.json()["id"]
@@ -92,6 +100,23 @@ class ComfyApiRunner:
             await self._cancel(remote_id)
             raise
         return await self._download(job, data.get("outputs") or [])
+
+    async def _upload(self, name: str, data: bytes) -> str:
+        """The user's picture, sent to the backend's input storage. Comfy Cloud documents this
+        upload route; it is not verified against the real service."""
+        r = await self._http.post(
+            f"{self._base}/api/upload/image",
+            headers={
+                **self._headers,
+                "x-api-key": self._headers["authorization"].removeprefix("Bearer "),
+            }
+            if self._headers
+            else {},
+            data={"type": "input", "overwrite": "true"},
+            files={"image": (name, data, "image/png")},
+        )
+        raise_for_backend(r)
+        return str(r.json().get("name", name))
 
     async def _wait(self, remote_id: str, on_progress: ProgressFn) -> dict[str, Any]:
         while True:
@@ -183,7 +208,9 @@ class OpenAIImagesRunner:
         w, h = job.inputs.get("width"), job.inputs.get("height")
         return f"{w}x{h}" if isinstance(w, int) and isinstance(h, int) else None
 
-    async def run(self, job: JobRequest, on_progress: ProgressFn) -> Files:
+    async def run(
+        self, job: JobRequest, on_progress: ProgressFn, files: InputFiles | None = None
+    ) -> Files:
         prompt = job.inputs.get("prompt")
         if not isinstance(prompt, str) or not prompt.strip():
             raise ComfyError("invalid_workflow", "The request has no image description.")
@@ -194,10 +221,25 @@ class OpenAIImagesRunner:
         if size := self._size_for(job):
             body["size"] = size
         await on_progress(0.1)
-        r = await self._http.post(
-            f"{self._base}/images/generations", json=body, headers=self._headers,
-            timeout=self._timeout,
-        )  # fmt: skip
+        if job.capability.endswith(".edit"):
+            if not files or "image" not in files:
+                raise ComfyError("invalid_input", "The picture for this job is missing.")
+            # an edit is a multipart form with the picture; its size follows the picture unless
+            # the admin set one
+            if not self._size:
+                body.pop("size", None)
+            r = await self._http.post(
+                f"{self._base}/images/edits",
+                data={k: str(v) for k, v in body.items()},
+                files={"image": ("image.png", files["image"], "image/png")},
+                headers=self._headers,
+                timeout=self._timeout,
+            )
+        else:
+            r = await self._http.post(
+                f"{self._base}/images/generations", json=body, headers=self._headers,
+                timeout=self._timeout,
+            )  # fmt: skip
         raise_for_backend(r)
         item = ((r.json().get("data")) or [{}])[0]
         if item.get("b64_json"):

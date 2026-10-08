@@ -121,6 +121,18 @@ class ComfyClient:
         r.raise_for_status()
         return r.content
 
+    async def upload_image(self, name: str, data: bytes) -> str:
+        """Put the user's picture where `LoadImage` can read it, and return the reference to use in
+        the graph. It goes to ComfyUI's temp folder, which ComfyUI empties when it restarts, not the
+        permanent input folder: ComfyUI has no way to delete a file from there."""
+        r = await self._http.post(
+            f"{self._base}/upload/image",
+            data={"type": "temp", "overwrite": "true"},
+            files={"image": (name, data, "image/png")},
+        )
+        r.raise_for_status()
+        return f"{r.json().get('name', name)} [temp]"
+
     async def free(self) -> None:
         """Release ComfyUI's cached models so the GPU is free for whatever runs next."""
         try:
@@ -135,6 +147,17 @@ class ComfyClient:
             await self._http.post(f"{self._base}/interrupt")
         except httpx.HTTPError:
             log.warning("could not interrupt ComfyUI", exc_info=True)
+
+
+def use_picture(graph: dict[str, Any], placeholder: str, reference: str) -> dict[str, Any]:
+    """The graph with the per-job picture name replaced by the backend's own reference to it."""
+    out = json.loads(json.dumps(graph))
+    for node in out.values():
+        inputs = node.get("inputs", {})
+        for key, value in inputs.items():
+            if value == placeholder:
+                inputs[key] = reference
+    return out
 
 
 def _validation_message(r: httpx.Response) -> str:

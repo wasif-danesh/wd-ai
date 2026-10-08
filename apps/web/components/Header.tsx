@@ -21,6 +21,10 @@ export async function Header() {
             Music
           </NavLink>
           {signedIn && <NavLink href="/music/songs">My songs</NavLink>}
+          <NavLink href="/image" exact>
+            Image
+          </NavLink>
+          {signedIn && <NavLink href="/image/creations">My images</NavLink>}
           {isAdmin && <NavLink href="/admin">Admin</NavLink>}
         </nav>
         {who ? (
