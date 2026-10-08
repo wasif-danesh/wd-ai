@@ -37,6 +37,46 @@ describe("SongView", () => {
     coverUrl: "http://s/a/cover.png?sig=1",
   };
 
+  it("downloads from the app's own origin when the song has an id, so browsers save the file", () => {
+    render(<SongView song={{ ...song, songId: "3f2b8c1e-0000-4000-8000-000000000001" }} />);
+    expect(screen.getByRole("link", { name: "Download audio" })).toHaveAttribute(
+      "href",
+      "/api/products/wd-music-ai/songs/3f2b8c1e-0000-4000-8000-000000000001/download/audio",
+    );
+    expect(screen.getByRole("link", { name: "Download cover" })).toHaveAttribute(
+      "href",
+      "/api/products/wd-music-ai/songs/3f2b8c1e-0000-4000-8000-000000000001/download/cover",
+    );
+    // playing and showing still use the storage links
+    expect(screen.getByRole("img", { name: /Cover art/ })).toHaveAttribute("src", song.coverUrl);
+  });
+
+  it("offers the video download next to audio and cover, when there is a cover and an id", () => {
+    render(<SongView song={{ ...song, songId: "3f2b8c1e-0000-4000-8000-000000000001" }} />);
+    const video = screen.getByRole("link", { name: "Download video" });
+    expect(video).toHaveAttribute(
+      "href",
+      "/api/products/wd-music-ai/songs/3f2b8c1e-0000-4000-8000-000000000001/download/video",
+    );
+    expect(video).toHaveAttribute("download", "neon-rain.mp4");
+  });
+
+  it("offers no video without a cover or without an id", () => {
+    const withId = { ...song, songId: "3f2b8c1e-0000-4000-8000-000000000001" };
+    const { rerender } = render(<SongView song={{ ...withId, coverUrl: null }} />);
+    expect(screen.queryByRole("link", { name: "Download video" })).not.toBeInTheDocument();
+    rerender(<SongView song={song} />);
+    expect(screen.queryByRole("link", { name: "Download video" })).not.toBeInTheDocument();
+  });
+
+  it("falls back to the storage link when there is no song id", () => {
+    render(<SongView song={song} />);
+    expect(screen.getByRole("link", { name: "Download audio" })).toHaveAttribute(
+      "href",
+      song.audioUrl,
+    );
+  });
+
   it("shows the cover, tags, player and downloads with readable file names", () => {
     render(<SongView song={song} />);
     expect(screen.getByRole("img", { name: "Cover art for Neon Rain!" })).toHaveAttribute(

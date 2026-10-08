@@ -41,6 +41,7 @@ export default async function SongPage({ params }: Props) {
       <SongView
         heading="h1"
         song={{
+          songId: song.id,
           title: song.title,
           style: song.style,
           lyrics: song.lyrics,

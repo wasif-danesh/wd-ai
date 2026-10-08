@@ -19,7 +19,7 @@ with vocals, and creates cover art.
 - 60-second music track (ACE-Step 1.5 via ComfyUI)
 - Cover image (FLUX.2 [klein] 4B via ComfyUI)
 - Live progress, including queue position
-- Song page: title, lyrics, audio player, cover, download
+- Song page: title, lyrics, audio player, cover, downloads saved as files: the MP3 with its cover and lyrics inside, the cover, and an MP4 video of the cover with the song playing
 - "My songs" history
 - Per-user daily quota
 - Content guardrails

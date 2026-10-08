@@ -1,7 +1,9 @@
 import { styleTags } from "@/lib/format";
+import { PRODUCT } from "@/lib/run-client";
 import { LyricSheet } from "./LyricSheet";
 
 export type SongViewData = {
+  songId?: string; // with an id, downloads come from this app's own origin and really download
   title: string;
   style: string;
   lyrics: string;
@@ -17,6 +19,13 @@ function filename(title: string, url: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
   return `${slug || "song"}.${ext}`;
+}
+
+/** The link a download button uses: the same-origin download route when the song has an id (browsers
+ * ignore `download` on links to another origin), else the storage link as it is. */
+function downloadHref(song: SongViewData, kind: "audio" | "cover" | "video"): string {
+  if (song.songId) return `/api/products/${PRODUCT}/songs/${song.songId}/download/${kind}`;
+  return kind === "audio" ? song.audioUrl : (song.coverUrl ?? ""); // (no video without an id)
 }
 
 /** A finished song: cover, title, player, downloads and lyrics. Used after creating and on the song page. */
@@ -52,7 +61,7 @@ export function SongView({
           <div className="actions">
             <a
               className="btn btn--ghost"
-              href={song.audioUrl}
+              href={downloadHref(song, "audio")}
               download={filename(song.title, song.audioUrl)}
             >
               Download audio
@@ -60,10 +69,20 @@ export function SongView({
             {song.coverUrl ? (
               <a
                 className="btn btn--ghost"
-                href={song.coverUrl}
+                href={downloadHref(song, "cover")}
                 download={filename(song.title, song.coverUrl)}
               >
                 Download cover
+              </a>
+            ) : null}
+            {song.coverUrl && song.songId ? (
+              <a
+                className="btn btn--ghost"
+                href={downloadHref(song, "video")}
+                download={filename(song.title, "x.mp4")}
+                title="The cover with your song playing, as a video you can share"
+              >
+                Download video
               </a>
             ) : null}
           </div>

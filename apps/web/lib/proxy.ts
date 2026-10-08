@@ -37,6 +37,16 @@ export async function proxy(
   });
   const type = upstream.headers.get("content-type") ?? "application/json";
   const headers: Record<string, string> = { "content-type": type };
+  // what a file download needs to arrive as a download
+  for (const name of [
+    "content-disposition",
+    "content-length",
+    "cache-control",
+    "x-content-type-options",
+  ]) {
+    const value = upstream.headers.get(name);
+    if (value) headers[name] = value;
+  }
   if (type.startsWith("text/event-stream")) {
     // no compression or buffering anywhere on the way to the browser
     headers["cache-control"] = "no-cache, no-transform";

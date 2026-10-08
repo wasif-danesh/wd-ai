@@ -2181,6 +2181,61 @@
         ]
       }
     },
+    "/products/wd-music-ai/songs/{song_id}/download/{kind}": {
+      "get": {
+        "description": "A file the browser saves. Browsers ignore `download` on links to another origin (the\nstorage host), so files are served from here with a Content-Disposition. The song is looked\nup for this user only, like every other route.\n\n`audio` is the MP3 with the title, lyrics and cover art written into its tag, so a music\nplayer shows the cover. `video` is the cover as a picture with the song playing, made on the\nfirst request and kept in storage.",
+        "operationId": "download_products_wd_music_ai_songs__song_id__download__kind__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "song_id",
+            "required": true,
+            "schema": {
+              "title": "Song Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "audio",
+                "cover",
+                "video"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download",
+        "tags": [
+          "wd-music-ai"
+        ]
+      }
+    },
     "/products/{product_id}/runs": {
       "post": {
         "operationId": "start_run_products__product_id__runs_post",

@@ -276,6 +276,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/wd-music-ai/songs/{song_id}/download/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download
+         * @description A file the browser saves. Browsers ignore `download` on links to another origin (the
+         *     storage host), so files are served from here with a Content-Disposition. The song is looked
+         *     up for this user only, like every other route.
+         *
+         *     `audio` is the MP3 with the title, lyrics and cover art written into its tag, so a music
+         *     player shows the cover. `video` is the cover as a picture with the song playing, made on the
+         *     first request and kept in storage.
+         */
+        get: operations["download_products_wd_music_ai_songs__song_id__download__kind__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/products/{product_id}/runs": {
         parameters: {
             query?: never;
@@ -1365,6 +1391,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SongDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_products_wd_music_ai_songs__song_id__download__kind__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                song_id: string;
+                kind: "audio" | "cover" | "video";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

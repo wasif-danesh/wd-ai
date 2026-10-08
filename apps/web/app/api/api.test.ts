@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RUN, sse } from "../../test-utils";
 import { POST as runsPOST } from "./products/[productId]/runs/route";
+import { GET as downloadGET } from "./products/[productId]/songs/[songId]/download/[kind]/route";
 import { GET as songGET } from "./products/[productId]/songs/[songId]/route";
 import { GET as songsGET } from "./products/[productId]/songs/route";
 import { GET as eventsGET } from "./runs/[runId]/events/route";
@@ -16,6 +17,62 @@ afterEach(() => vi.unstubAllGlobals());
 const params = <T extends object>(p: T) => ({ params: Promise.resolve(p) });
 const upstreamUrl = () => fetchMock.mock.calls.at(-1)?.[0] as string;
 const upstreamInit = () => fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
+
+describe("song downloads", () => {
+  it("accepts the video kind too", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response("MP4", { headers: { "content-type": "video/mp4" } }),
+    );
+    const res = await downloadGET(
+      new Request("http://web/x"),
+      params({
+        productId: "wd-music-ai",
+        songId: "3f2b8c1e-0000-4000-8000-000000000001",
+        kind: "video",
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(upstreamUrl()).toMatch(/\/download\/video$/);
+  });
+
+  const id = "3f2b8c1e-0000-4000-8000-000000000001";
+
+  it("passes the file through with the headers that make the browser save it", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response("MP3BYTES", {
+        headers: {
+          "content-type": "audio/mpeg",
+          "content-disposition": 'attachment; filename="neon-rain.mp3"',
+          "content-length": "8",
+          "cache-control": "private, no-store",
+        },
+      }),
+    );
+    const res = await downloadGET(
+      new Request(`http://web/api/products/wd-music-ai/songs/${id}/download/audio`),
+      params({ productId: "wd-music-ai", songId: id, kind: "audio" }),
+    );
+    expect(upstreamUrl()).toMatch(new RegExp(`/products/wd-music-ai/songs/${id}/download/audio$`));
+    expect(res.headers.get("content-disposition")).toBe('attachment; filename="neon-rain.mp3"');
+    expect(res.headers.get("content-type")).toBe("audio/mpeg");
+    expect(res.headers.get("cache-control")).toBe("private, no-store");
+    expect(await res.text()).toBe("MP3BYTES");
+  });
+
+  it.each([
+    ["lyrics", id],
+    ["gif", id],
+    ["audio", "not-a-uuid"],
+    ["../audio", id],
+  ])("rejects kind %j for song %j before calling the API", async (kind, songId) => {
+    const res = await downloadGET(
+      new Request("http://web/x"),
+      params({ productId: "wd-music-ai", songId, kind }),
+    );
+    expect(res.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
 
 describe("without a session", () => {
   afterEach(() => {

@@ -75,6 +75,8 @@ See [product spec](../products/wd-music-ai/README.md).
       cover, downloads, "My songs", song page (see `apps/web/README.md`); verified in a browser against
       the real model; reload and reconnect recovery
 - [x] Read API for "My songs" as product-provided routes (ADR-0023)
+- [x] Song downloads (ADR-0034): real file downloads, the MP3 with cover art and lyrics in its tag, an MP4
+      video of the cover with the song playing
 - [x] Studio home "WD AI Studio" with a card per product, `/music` area, "Coming soon" pages for image and
       video, sign-in asked when a visitor opens music (ADR-0033)
 - [ ] Secured upload endpoint for user files (images, audio): identity required, size and type

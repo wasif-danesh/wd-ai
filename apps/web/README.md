@@ -88,6 +88,20 @@ Redirect URI: `<web origin>/api/auth/callback/<id>`, e.g. `http://localhost:3000
 Only configured providers appear on `/signin`. Set `ADMIN_EMAILS` (API) to make a verified address an
 admin (Google's verified email, or the primary verified address on your GitHub account). Pages redirect to `/signin` without a session; `/api` routes answer 401.
 
+## Downloads
+
+The Download buttons point at `/api/products/wd-music-ai/songs/{id}/download/{audio|cover|video}`, not at the
+storage link. Browsers ignore the `download` attribute on a link to another origin (the storage host), so
+the file would open in a tab. The route is served from the app's own origin with `Content-Disposition:
+attachment` and a readable name (`neon-rain.mp3`); the API looks the song up for the signed-in user only
+([ADR-0034](../../docs/decisions/0034-song-downloads.md)).
+
+- **Audio** is the MP3 with the title, lyrics and cover art written into its tag, so a music player shows the cover.
+- **Cover** is the stored PNG as it is.
+- **Video** is the cover as a picture with the song playing (MP4), made on the first click and kept in storage.
+
+Playing and showing on the page still use the signed storage links.
+
 ## Admin
 
 `/admin` (Overview with usage, Users, Songs, Audit log) is for users whose role is `admin`; everyone else
@@ -114,5 +128,3 @@ backend, and is never shown. Needs `MEDIA_SECRETS_KEY` (`make setup` creates it)
 
 - Only GitHub sign-in has been tried with a real login; Google and Microsoft are wired the same way.
 - Sharing links for songs and a public gallery are out of scope for the MVP.
-- Downloads: browsers ignore the `download` attribute for other-origin links, so files open in a tab
-  instead of saving directly. A same-origin download route would fix it.
