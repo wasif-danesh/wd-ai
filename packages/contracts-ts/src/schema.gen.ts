@@ -301,6 +301,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/wd-image-ai/prompt/enhance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enhance */
+        post: operations["enhance_products_wd_image_ai_prompt_enhance_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-music-ai/prompt/enhance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enhance */
+        post: operations["enhance_products_wd_music_ai_prompt_enhance_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/products/wd-music-ai/songs": {
         parameters: {
             query?: never;
@@ -361,6 +395,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/wd-video-ai/prompt/enhance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enhance */
+        post: operations["enhance_products_wd_video_ai_prompt_enhance_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-video-ai/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Videos */
+        get: operations["list_videos_products_wd_video_ai_videos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-video-ai/videos/{video_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Video */
+        get: operations["get_video_products_wd_video_ai_videos__video_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Video
+         * @description Delete a clip (or dismiss a failed one): its files first, then the record. A clip still
+         *     being made cannot be deleted: its job is running.
+         */
+        delete: operations["delete_video_products_wd_video_ai_videos__video_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-video-ai/videos/{video_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download
+         * @description The clip as a file the browser saves (browsers ignore `download` on links to the
+         *     storage host, ADR-0034).
+         */
+        get: operations["download_products_wd_video_ai_videos__video_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/products/{product_id}/runs": {
         parameters: {
             query?: never;
@@ -390,6 +501,26 @@ export interface paths {
         /** Upload Image */
         post: operations["upload_image_products__product_id__uploads_images_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{product_id}/uploads/images/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Upload
+         * @description Remove the caller's own unused upload (the user took the picture back, ADR-0039).
+         */
+        delete: operations["delete_upload_products__product_id__uploads_images__upload_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -561,6 +692,22 @@ export interface components {
             thread_id: string;
             /** Ts */
             ts?: string;
+        };
+        /** EnhanceIn */
+        EnhanceIn: {
+            /** Kind */
+            kind: string;
+            /** Prompt */
+            prompt: string;
+            /** Upload Id */
+            upload_id?: string | null;
+        };
+        /** EnhanceOut */
+        EnhanceOut: {
+            /** Changed */
+            changed: boolean;
+            /** Prompt */
+            prompt: string;
         };
         /** ErrorEvent */
         ErrorEvent: {
@@ -1036,6 +1183,44 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VideoPage */
+        VideoPage: {
+            /** Next Before */
+            next_before: string | null;
+            /** Videos */
+            videos: components["schemas"]["VideoSummary"][];
+        };
+        /** VideoSummary */
+        VideoSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error?: string | null;
+            /** Height */
+            height?: number | null;
+            /** Id */
+            id: string;
+            /** Mode */
+            mode: string;
+            /** Poster Url */
+            poster_url?: string | null;
+            /** Prompt */
+            prompt: string;
+            /** Seconds */
+            seconds: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "working" | "done" | "failed";
+            /** Video Url */
+            video_url?: string | null;
+            /** Width */
+            width?: number | null;
         };
     };
     responses: never;
@@ -1582,6 +1767,72 @@ export interface operations {
             };
         };
     };
+    enhance_products_wd_image_ai_prompt_enhance_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnhanceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnhanceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enhance_products_wd_music_ai_prompt_enhance_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnhanceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnhanceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_songs_products_wd_music_ai_songs_get: {
         parameters: {
             query?: {
@@ -1677,6 +1928,163 @@ export interface operations {
             };
         };
     };
+    enhance_products_wd_video_ai_prompt_enhance_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnhanceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnhanceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_videos_products_wd_video_ai_videos_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: string | null;
+                status?: ("working" | "done" | "failed") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_video_products_wd_video_ai_videos__video_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                video_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_video_products_wd_video_ai_videos__video_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                video_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_products_wd_video_ai_videos__video_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                video_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     start_run_products__product_id__runs_post: {
         parameters: {
             query?: never;
@@ -1731,6 +2139,36 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UploadResult"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_upload_products__product_id__uploads_images__upload_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

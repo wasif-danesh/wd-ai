@@ -21,9 +21,13 @@ check "My images page renders (server-side read of the API)" "curl -fsS -m 20 ht
 check "images API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-image-ai/images | grep -q '\"images\"'"
 check "uploading something that is not a picture is refused" "test \"\$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: image/png' --data-binary 'not a picture' http://localhost:3000/api/products/wd-image-ai/uploads/images)\" = 422"
 
+check "videos API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-video-ai/videos?status=working | grep -q '\"videos\"'"
+check "My creations lists songs, images and videos" "curl -fsS -m 20 http://localhost:3000/creations | grep -q 'My creations'"
+check "prompt enhancing needs a known kind" "test \"\$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{\"kind\":\"nope\",\"prompt\":\"x\"}' http://localhost:3000/api/products/wd-video-ai/prompt/enhance)\" = 422"
+
 # Model aliases live in LiteLLM's database and are seeded by the API (ADR-0025). The local overlay runs
 # with AUTH_MODE=stub, where the dev user is an admin, so ask the API from inside its own pod.
-check "default model aliases are seeded in the gateway" "kubectl -n $NS exec deploy/wd-ai-api -c api -- python -c \"import urllib.request,json,sys; m=json.load(urllib.request.urlopen('http://localhost:8000/admin/models',timeout=20))['models']; sys.exit(0 if len(m)==6 and all(x['source']=='default' for x in m) else 1)\""
+check "default model aliases are seeded in the gateway" "kubectl -n $NS exec deploy/wd-ai-api -c api -- python -c \"import urllib.request,json,sys; m=json.load(urllib.request.urlopen('http://localhost:8000/admin/models',timeout=20))['models']; sys.exit(0 if len(m)==7 and all(x['source']=='default' for x in m) else 1)\""
 
 # Media pipeline: queue -> worker (stub mode) -> object storage -> completion -> graph resumes.
 # Needs no LLM or GPU, so it also runs in CI.

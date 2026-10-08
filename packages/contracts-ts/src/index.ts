@@ -45,3 +45,8 @@ export type MediaTestOutcome = components["schemas"]["MediaTestOutcome"];
 export type ImageSummary = components["schemas"]["ImageSummary"];
 export type ImagePage = components["schemas"]["ImagePage"];
 export type UploadResult = components["schemas"]["UploadResult"];
+
+// wd-video-ai's read API and the prompt enhancer every product shares
+export type VideoSummary = components["schemas"]["VideoSummary"];
+export type VideoPage = components["schemas"]["VideoPage"];
+export type EnhanceResult = components["schemas"]["EnhanceOut"];

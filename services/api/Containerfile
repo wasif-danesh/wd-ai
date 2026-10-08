@@ -5,6 +5,6 @@ COPY pyproject.toml uv.lock* ./
 COPY services ./services
 COPY packages ./packages
 COPY products ./products
-RUN uv sync --frozen --no-dev --package wd-api --package wd-music-ai --package wd-image-ai || uv sync --no-dev --package wd-api --package wd-music-ai --package wd-image-ai
+RUN uv sync --frozen --no-dev --package wd-api --package wd-music-ai --package wd-image-ai --package wd-video-ai || uv sync --no-dev --package wd-api --package wd-music-ai --package wd-image-ai --package wd-video-ai
 ENV PATH="/app/.venv/bin:$PATH"
 CMD ["uvicorn", "wd_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
