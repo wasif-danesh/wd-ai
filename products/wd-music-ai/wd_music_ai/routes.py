@@ -12,7 +12,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
-from wd_platform_sdk import Identity, RouteDeps, build_enhance_router
+from wd_platform_sdk import Identity, RouteDeps, build_enhance_router, parse_ids
 
 from wd_music_ai import prompts
 from wd_music_ai.guardrail import enhance_guard
@@ -73,8 +73,15 @@ def build_routes(
     async def list_songs(
         limit: int = Query(20, ge=1, le=50),
         before: datetime | None = None,
+        ids: str | None = Query(None, max_length=2000),
         identity: Identity = Depends(deps.identity),
     ) -> SongPage:
+        wanted = parse_ids(ids)  # "these songs, in this order": the cards for search results
+        if wanted is not None:
+            found = [await songs().get(identity.tenant_id, identity.user_id, i) for i in wanted]
+            with deps.acting_as(identity, PRODUCT_ID):
+                got = [SongSummary(**await summary(s)) for s in found if s is not None]
+            return SongPage(songs=got, next_before=None)
         rows = await songs().list(identity.tenant_id, identity.user_id, limit + 1, before)
         page, more = rows[:limit], len(rows) > limit
         with deps.acting_as(identity, PRODUCT_ID):

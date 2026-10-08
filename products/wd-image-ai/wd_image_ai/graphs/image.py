@@ -47,6 +47,7 @@ from wd_image_ai.images import (
     UsageQuota,
     thumbnail_of,
 )
+from wd_image_ai.index import index_text
 from wd_image_ai.schemas import DEFAULT_SIZE, MAX_PROMPT_CHARS, SIZES
 
 log = logging.getLogger(__name__)
@@ -255,6 +256,7 @@ def build_image_graph(
             )
         )
         await discard_upload(state.get("image_key"))  # the user's original is not kept
+        await caps.index_creation("image", image_id, index_text(state["prompt"]))  # ADR-0041
         await caps.record_usage(IMAGE_CREATED, 1, "images", image_id=image_id, mode=state["mode"])
         return {
             "image_id": image_id,

@@ -10,7 +10,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
-from wd_platform_sdk import Identity, RouteDeps, build_enhance_router
+from wd_platform_sdk import Identity, RouteDeps, build_enhance_router, parse_ids
 
 from wd_video_ai import prompts
 from wd_video_ai.guardrail import enhance_guard
@@ -71,8 +71,15 @@ def build_routes(deps: RouteDeps, store: VideoStore | None = None) -> APIRouter:
         limit: int = Query(20, ge=1, le=50),
         before: datetime | None = None,
         status: Literal["working", "done", "failed"] | None = None,
+        ids: str | None = Query(None, max_length=2000),
         identity: Identity = Depends(deps.identity),
     ) -> VideoPage:
+        wanted = parse_ids(ids)  # "these clips, in this order": the cards for search results
+        if wanted is not None:
+            found = [await videos().get(identity.tenant_id, identity.user_id, i) for i in wanted]
+            with deps.acting_as(identity, PRODUCT_ID):
+                got = [await summary(v) for v in found if v is not None]
+            return VideoPage(videos=got, next_before=None)
         rows = await videos().list(identity.tenant_id, identity.user_id, limit + 1, before, status)
         page, more = rows[:limit], len(rows) > limit
         with deps.acting_as(identity, PRODUCT_ID):
@@ -129,6 +136,7 @@ def build_routes(deps: RouteDeps, store: VideoStore | None = None) -> APIRouter:
                 except FileNotFoundError:
                     pass
         await videos().delete(identity.tenant_id, identity.user_id, video_id)
+        await deps.unindex(identity, PRODUCT_ID, video_id)  # out of search too (ADR-0041)
         return Response(status_code=204)
 
     return router

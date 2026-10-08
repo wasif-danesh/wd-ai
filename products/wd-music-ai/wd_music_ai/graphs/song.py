@@ -33,6 +33,7 @@ from wd_platform_sdk import (
 )
 
 from wd_music_ai import guardrail, prompts
+from wd_music_ai.index import index_text
 from wd_music_ai.lyrics import (
     DraftInvalid,
     LyricsStreamer,
@@ -374,6 +375,9 @@ def build_song_graph(caps: Capabilities, checkpointer: Any, songs: SongStore, qu
                 cover_key=cover_key,
             )
         )
+        await caps.index_creation(
+            "song", song_id, index_text(state["title"], state["style"], state["lyrics"])
+        )  # searchable at once (ADR-0041); never fails the run
         await caps.record_usage(SONG_CREATED, 1, "songs", song_id=song_id)
         return {
             "song_id": song_id,

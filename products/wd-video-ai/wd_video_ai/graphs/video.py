@@ -37,6 +37,7 @@ from wd_platform_sdk import (
 )
 
 from wd_video_ai import guardrail
+from wd_video_ai.index import index_text
 from wd_video_ai.schemas import (
     DEFAULT_SECONDS,
     DEFAULT_SHAPE,
@@ -303,6 +304,7 @@ def build_video_graph(
             await fail_clip(state)
             raise RunError("video_failed", FAILED, retryable=True) from None
         await discard_upload(state.get("image_key"))  # the user's original is not kept
+        await caps.index_creation("video", video_id, index_text(state["prompt"]))  # ADR-0041
         await caps.record_usage(
             VIDEO_CREATED,
             1,
