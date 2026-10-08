@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "wd·music: turn an idea into a song", template: "%s · wd·music" },
-  description: "Describe a song. Approve the lyrics. We make the music and the cover art.",
+  title: { default: "WD AI Studio", template: "%s · WD AI Studio" },
+  description: "Turn your ideas into music, images and video.",
 };
 
 export const viewport: Viewport = {

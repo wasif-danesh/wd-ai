@@ -1,7 +1,7 @@
 import { jwtVerify } from "jose";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { apiAuthHeaders, mintApiToken } from "./api-token";
-import { authEnabled, safeNext } from "./auth-mode";
+import { authEnabled, isPublicPath, safeNext, signInReason } from "./auth-mode";
 
 const SECRET = "s".repeat(40);
 const key = new TextEncoder().encode(SECRET);
@@ -86,5 +86,32 @@ describe("auth mode and redirects", () => {
     [undefined, "/"],
   ])("sends %j to %j after sign-in", (input, expected) => {
     expect(safeNext(input)).toBe(expected);
+  });
+});
+
+describe("which pages need a session", () => {
+  it.each(["/", "/image", "/video", "/signin", "/image/", "/video/"])("%s is public", (path) => {
+    expect(isPublicPath(path)).toBe(true);
+  });
+
+  it.each([
+    "/music",
+    "/music/songs",
+    "/music/songs/1",
+    "/songs",
+    "/admin",
+    "/admin/models",
+    "/somewhere-else",
+    "/image/secret",
+    "/signin/x",
+  ])("%s needs a session", (path) => {
+    expect(isPublicPath(path)).toBe(false);
+  });
+
+  it("explains the sign-in in terms of where the visitor was going", () => {
+    expect(signInReason("/music")).toMatch(/create music/);
+    expect(signInReason("/music/songs/abc")).toMatch(/create music/);
+    expect(signInReason("/admin")).toBe("Sign in to continue.");
+    expect(signInReason("/")).toBe("Sign in to continue.");
   });
 });

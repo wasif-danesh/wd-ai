@@ -1,5 +1,5 @@
 import { configuredProviders, signIn } from "@/auth";
-import { authEnabled, safeNext } from "@/lib/auth-mode";
+import { authEnabled, safeNext, signInReason } from "@/lib/auth-mode";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -17,7 +17,7 @@ export default async function SignInPage({
   return (
     <section className="signin card">
       <h1>Sign in</h1>
-      <p className="muted">Sign in to make songs and keep them in "My songs".</p>
+      <p className="muted">{signInReason(next)}</p>
       {providers.length === 0 ? (
         <p role="alert" className="notice" data-tone="warn">
           No sign-in provider is set up. Add a client id and secret for Google, GitHub or Microsoft

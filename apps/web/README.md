@@ -1,14 +1,16 @@
 # web
 
 The Next.js app (App Router, React 19, strict TypeScript) that users see, and the backend-for-frontend (BFF)
-in front of the API. One app serves every product (ADR-0014); today that is `wd-music-ai` plus a `/hello` demo.
+in front of the API. One app serves every product (ADR-0014); today that is `wd-music-ai`.
 
 | Page | What it is |
 |---|---|
-| `/` | Create a song: idea form, live progress, lyric review, result |
-| `/songs` | My songs: a grid of finished songs, newest first, "Load more" |
-| `/songs/[id]` | One song: cover, player, downloads, lyrics (links are signed fresh on every visit) |
-| `/hello` | The platform's sample graph, a streaming smoke test |
+| `/` | The studio home, "WD AI Studio": a card per product (public) |
+| `/music` | Create a song: idea form, live progress, lyric review, result (sign-in required) |
+| `/music/songs` | My songs: a grid of finished songs, newest first, "Load more" |
+| `/music/songs/[id]` | One song: cover, player, downloads, lyrics (links are signed fresh on every visit) |
+| `/image`, `/video` | "Coming soon" pages (public, `noindex`) |
+| `/admin/...` | The admin area (admins only) |
 
 ## How it fits together
 
@@ -21,7 +23,7 @@ Browser ── fetch ──► app/api/* (BFF route handlers) ──► FastAPI 
 - **The browser never calls FastAPI.** `app/api/**/route.ts` forward to it through `lib/proxy.ts`,
   which validates path segments (UUIDs and product ids, not just URL-encoding them), forwards only
   `Last-Event-ID` when it is a plain number, and passes event streams through unbuffered.
-- **Pages that read data are server components** (`/songs`, `/songs/[id]`): the first paint has the
+- **Pages that read data are server components** (`/music/songs`, `/music/songs/[id]`): the first paint has the
   data, and an unknown song is a real 404.
 - **Interaction is client components** under `components/create/`, driven by one hook.
 
@@ -35,7 +37,7 @@ around it:
 - **reconnects** if the stream drops mid-run, asking only for what it missed (`Last-Event-ID`);
 - **re-attaches after a reload** while a run is in progress or waiting for approval (the run id is
   kept in `sessionStorage`; the server replays the events). A *finished* run is not restored: the song
-  lives in My songs, and Create opens on an empty form;
+  lives in My songs, and the create page opens on an empty form;
 - shows an unreachable server or an API error in plain words, with Try again where retrying can help.
 
 The event contract the UI builds against is in `products/wd-music-ai/README.md`.

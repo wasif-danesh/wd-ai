@@ -13,9 +13,9 @@ check "all deployments available" "kubectl -n $NS wait --for=condition=available
 check "usage_events table exists" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select to_regclass('public.usage_events')\" | grep -q usage_events"
 check "rag_chunks table + pgvector extension exist" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select to_regclass('public.rag_chunks'), (select count(*) from pg_extension where extname='vector')\" | grep -q 'rag_chunks|1'"
 check "web serves / (HTTP 200)" "curl -fsS -m 10 -o /dev/null http://localhost:3000/"
-check "My songs page renders (server-side read of the API)" "curl -fsS -m 20 http://localhost:3000/songs | grep -q 'My songs'"
+check "My songs page renders (server-side read of the API)" "curl -fsS -m 20 http://localhost:3000/music/songs | grep -q 'My songs'"
 check "songs API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-music-ai/songs | grep -q '\"songs\"'"
-check "an unknown song is a real 404" "test \"\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/songs/00000000-0000-0000-0000-000000000000)\" = 404"
+check "an unknown song is a real 404" "test \"\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/music/songs/00000000-0000-0000-0000-000000000000)\" = 404"
 
 # Model aliases live in LiteLLM's database and are seeded by the API (ADR-0025). The local overlay runs
 # with AUTH_MODE=stub, where the dev user is an admin, so ask the API from inside its own pod.

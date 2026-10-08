@@ -69,7 +69,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | RAG helpers on pgvector with embeddings (`nomic-embed-text`) | Working (library; no HTTP endpoints) |
 | Media pipeline: Redis queue, worker, ComfyUI client, live `job_progress`, queue positions | Working; real ComfyUI verified locally (60 s song in about 77 s, 1024x1024 cover in about 25 s on an Apple Silicon Mac), GPU on k3s untested |
 | Song graph: guardrail, lyrics, approval, music, cover, daily quota | Working with real models ([ADR-0022](docs/decisions/0022-song-graph-and-guardrail.md), [ADR-0024](docs/decisions/0024-real-model-validation.md)) |
-| `wd-music-ai` web app: create, review lyrics, progress, player, My songs | Working |
+| Studio home ("WD AI Studio") with a card per product; `wd-music-ai` web app under `/music`: create, review lyrics, progress, player, My songs | Working; image and video are "Coming soon" pages ([ADR-0033](docs/decisions/0033-studio-home-and-product-urls.md)) |
 | Sign-in (Auth.js with Google, GitHub, Microsoft; signed API tokens; users table) | Working; verified with a real GitHub login. Google and Microsoft are wired but not tried ([ADR-0030](docs/decisions/0030-authentication.md)) |
 | Admin area (`/admin`): users, songs, usage, audit log, model access | Working; LLM providers (Gemini, Groq, Cerebras, OpenRouter, any OpenAI-compatible or LiteLLM model, or local) are changed at run time, the guardrail model is vetted first. Media backends (local ComfyUI, Comfy Cloud / Comfy API v2, OpenAI-compatible image APIs) are chosen per product capability at `/admin/media` ([ADR-0032](docs/decisions/0032-media-backends.md); tested against stand-in servers, not yet the real Comfy Cloud) |
 | Helm chart, local Kubernetes (kind), CI smoke test | Working |
@@ -96,7 +96,7 @@ make setup      # installs missing tools, starts Podman + Ollama, pulls the mode
 make dev        # starts the stack, waits for Postgres, runs migrations, follows logs
 ```
 
-Then open http://localhost:3000, describe a song, and watch it get written. You approve the lyrics, then
+Then open http://localhost:3000, choose **Generate Music**, describe a song, and watch it get written. You approve the lyrics, then
 the music and cover are made. By default they are placeholders; set `COMFYUI_MODE=real` in `.env`
 and run ComfyUI with the ACE-Step and FLUX.2 klein models for real ones (see
 [products/wd-music-ai](products/wd-music-ai/README.md) and [Hardware notes](#hardware-notes)).
@@ -104,6 +104,8 @@ and run ComfyUI with the ACE-Step and FLUX.2 klein models for real ones (see
 Sign-in is off by default (`AUTH_MODE=stub` in `.env.example`: everyone is the dev user). To turn it on,
 set `AUTH_MODE=jwt`, the two secrets and a provider's client id and secret: see
 [Sign-in in apps/web](apps/web/README.md#sign-in).
+
+![The WD AI Studio home page: a card each for music, image and video](docs/images/home.jpg)
 
 | Create | Review the lyrics | Your song |
 |---|---|---|

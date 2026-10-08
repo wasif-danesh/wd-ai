@@ -10,3 +10,17 @@ export function safeNext(value: string | null | undefined): string {
     return "/";
   return value;
 }
+
+/** Pages anyone may open without signing in: the home page and the "coming soon" product pages. */
+const PUBLIC_PATHS = new Set(["/", "/image", "/video", "/signin"]);
+
+export function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.has(pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname);
+}
+
+/** Why the sign-in page is showing, in words, from where the visitor was headed. */
+export function signInReason(next: string): string {
+  return next === "/music" || next.startsWith("/music/")
+    ? "Sign in to create music and keep your songs."
+    : "Sign in to continue.";
+}

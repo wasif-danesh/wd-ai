@@ -1,6 +1,7 @@
 import { auth, signOut } from "@/auth";
 import { authEnabled } from "@/lib/auth-mode";
 import { getMe } from "@/lib/me";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Logo } from "./Logo";
 import { NavLink } from "./NavLink";
@@ -16,11 +17,13 @@ export async function Header() {
       <div className="header__inner">
         <Logo />
         <nav className="nav" aria-label="Main">
-          <NavLink href="/">Create</NavLink>
-          <NavLink href="/songs">My songs</NavLink>
+          <NavLink href="/music" exact>
+            Music
+          </NavLink>
+          {signedIn && <NavLink href="/music/songs">My songs</NavLink>}
           {isAdmin && <NavLink href="/admin">Admin</NavLink>}
         </nav>
-        {who && (
+        {who ? (
           <form
             className="account"
             action={async () => {
@@ -35,7 +38,13 @@ export async function Header() {
               Sign out
             </button>
           </form>
-        )}
+        ) : !signedIn ? (
+          <span className="account">
+            <Link href="/signin" className="btn btn--primary">
+              Sign in
+            </Link>
+          </span>
+        ) : null}
       </div>
     </header>
   );

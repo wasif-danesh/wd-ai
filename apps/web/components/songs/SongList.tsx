@@ -40,7 +40,7 @@ export function SongList({ initial }: { initial: SongPage }) {
         <Equaliser still />
         <h2>No songs yet</h2>
         <p>Your finished songs will show up here.</p>
-        <Link href="/" className="btn btn--primary">
+        <Link href="/music" className="btn btn--primary">
           Make your first song
         </Link>
       </div>

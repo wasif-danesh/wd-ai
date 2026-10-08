@@ -106,7 +106,7 @@ export function CreateSong() {
                   Make another song
                 </button>
                 {state.result.songId ? (
-                  <Link className="btn btn--ghost" href={`/songs/${state.result.songId}`}>
+                  <Link className="btn btn--ghost" href={`/music/songs/${state.result.songId}`}>
                     Open song page
                   </Link>
                 ) : null}
