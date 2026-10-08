@@ -12,8 +12,10 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
-from wd_platform_sdk import Identity, RouteDeps
+from wd_platform_sdk import Identity, RouteDeps, build_enhance_router
 
+from wd_music_ai import prompts
+from wd_music_ai.guardrail import enhance_guard
 from wd_music_ai.id3 import small_cover_jpeg, tag_mp3
 from wd_music_ai.songs import PostgresSongStore, SongRecord, SongStore
 from wd_music_ai.video import VideoError, VideoUnavailable, encode_video
@@ -51,6 +53,7 @@ def build_routes(
     """`store` and `encoder` are injectable for tests; production reads the shared database and
     runs ffmpeg."""
     router = APIRouter(tags=[PRODUCT_ID])
+    router.include_router(build_enhance_router(deps, PRODUCT_ID, prompts.load, enhance_guard))
 
     def songs() -> SongStore:
         return store or PostgresSongStore(deps.engine)

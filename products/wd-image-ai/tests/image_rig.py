@@ -52,7 +52,9 @@ class Rig:
         return [p for p in self.asked() if not isinstance(p, str)]
 
 
-def make_rig(tmp_path: Path, moderate=None, moderate_image=None, quotas=None):
+def make_rig(
+    tmp_path: Path, moderate=None, moderate_image=None, quotas=None, enhance=None, describe=None
+):
     """Capabilities for a throwaway `wd-image-ai` product with scripted replies."""
     d = tmp_path / "wd-image-ai"
     d.mkdir(parents=True, exist_ok=True)
@@ -70,11 +72,28 @@ def make_rig(tmp_path: Path, moderate=None, moderate_image=None, quotas=None):
                         "defaults": {"replies": moderate_image or [verdict()]},
                         "inputs": ["text", "image"],
                     },
+                    "text.enhance": {
+                        "provider": "fake",
+                        "defaults": {"replies": enhance or ["A tidy prompt."]},
+                    },
+                    "text.describe_image": {
+                        "provider": "fake",
+                        "defaults": {"replies": describe or ["A blue square."]},
+                        "inputs": ["text", "image"],
+                    },
                     "image.generate": {"provider": "fake"},
                     "image.edit": {"provider": "fake"},
                 },
                 "quotas": quotas if quotas is not None else {"images_per_user_per_day": 20},
                 "uploads": {"image": {}},
+                "enhance": {
+                    "text_to_image": {"prompt": "enhance_text_to_image", "max_chars": 500},
+                    "edit_image": {
+                        "prompt": "enhance_edit_image",
+                        "max_chars": 500,
+                        "needs_picture": True,
+                    },
+                },
             }
         )
     )

@@ -7,7 +7,7 @@ import json
 import logging
 
 from pydantic import ValidationError
-from wd_platform_sdk import Capabilities, RunError
+from wd_platform_sdk import Capabilities, EnhanceRefused, RunError
 
 from wd_music_ai import prompts
 from wd_music_ai.schemas import MODERATION_SCHEMA, Moderation
@@ -57,3 +57,10 @@ async def judge(caps: Capabilities, kind: str, text: str) -> Moderation:
         "We couldn't check your request right now. Please try again.",
         retryable=True,
     )
+
+
+async def enhance_guard(caps: Capabilities, kind: str, text: str, picture: bytes | None) -> None:
+    """The Enhance button's guardrail (ADR-0038): the idea must pass before it is rewritten."""
+    verdict = await judge(caps, "song request", text)
+    if not verdict.allowed:
+        raise EnhanceRefused(refusal_message(verdict.category))

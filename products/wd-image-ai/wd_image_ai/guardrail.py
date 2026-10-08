@@ -11,7 +11,7 @@ import logging
 
 from PIL import Image as PILImage
 from pydantic import ValidationError
-from wd_platform_sdk import Capabilities, Image, RunError
+from wd_platform_sdk import Capabilities, EnhanceRefused, Image, RunError
 
 from wd_image_ai import prompts
 from wd_image_ai.schemas import MODERATION_SCHEMA, Moderation
@@ -94,3 +94,14 @@ async def judge_picture(caps: Capabilities, instruction: str, picture: bytes) ->
         Image.from_bytes(small, "image/jpeg"),
     ]
     return await _ask(caps, "moderate_image", prompts.load("moderation_picture"), user)
+
+
+async def enhance_guard(caps: Capabilities, kind: str, text: str, picture: bytes | None) -> None:
+    """The guardrail for the Enhance button (ADR-0038): the user's words, and their picture if the
+    kind has one, must pass before the model writes anything."""
+    what = "image description" if kind == "text_to_image" else "edit instruction"
+    verdict = await judge_text(caps, what, text)
+    if verdict.allowed and picture is not None:
+        verdict = await judge_picture(caps, text, picture)
+    if not verdict.allowed:
+        raise EnhanceRefused(refusal_message(verdict.category))

@@ -8,8 +8,10 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
-from wd_platform_sdk import Identity, RouteDeps
+from wd_platform_sdk import Identity, RouteDeps, build_enhance_router
 
+from wd_image_ai import prompts
+from wd_image_ai.guardrail import enhance_guard
 from wd_image_ai.images import ImageRecord, ImageStore, PostgresImageStore
 
 PRODUCT_ID = "wd-image-ai"
@@ -46,6 +48,7 @@ def file_name(prompt: str, ext: str) -> str:
 def build_routes(deps: RouteDeps, store: ImageStore | None = None) -> APIRouter:
     """`store` is injectable for tests; production reads the shared database."""
     router = APIRouter(tags=[PRODUCT_ID])
+    router.include_router(build_enhance_router(deps, PRODUCT_ID, prompts.load, enhance_guard))
 
     def images() -> ImageStore:
         return store or PostgresImageStore(deps.engine)
