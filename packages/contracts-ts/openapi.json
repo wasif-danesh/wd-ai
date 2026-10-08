@@ -1,6 +1,290 @@
 {
   "components": {
     "schemas": {
+      "AdminSong": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "user_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Email"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "product_id",
+          "title",
+          "user_id",
+          "user_email",
+          "created_at"
+        ],
+        "title": "AdminSong",
+        "type": "object"
+      },
+      "AdminSongPage": {
+        "properties": {
+          "next_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          },
+          "songs": {
+            "items": {
+              "$ref": "#/components/schemas/AdminSong"
+            },
+            "title": "Songs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "songs",
+          "next_before"
+        ],
+        "title": "AdminSongPage",
+        "type": "object"
+      },
+      "AdminUser": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "email_verified": {
+            "title": "Email Verified",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "providers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Providers",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "email_verified",
+          "name",
+          "role",
+          "providers",
+          "created_at"
+        ],
+        "title": "AdminUser",
+        "type": "object"
+      },
+      "AdminUserPage": {
+        "properties": {
+          "next_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUser"
+            },
+            "title": "Users",
+            "type": "array"
+          }
+        },
+        "required": [
+          "users",
+          "next_before"
+        ],
+        "title": "AdminUserPage",
+        "type": "object"
+      },
+      "AuditEntry": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor_user_id": {
+            "title": "Actor User Id",
+            "type": "string"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "detail": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Detail",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "target_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Type"
+          }
+        },
+        "required": [
+          "id",
+          "actor_user_id",
+          "action"
+        ],
+        "title": "AuditEntry",
+        "type": "object"
+      },
+      "AuditPage": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEntry"
+            },
+            "title": "Entries",
+            "type": "array"
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "title": "AuditPage",
+        "type": "object"
+      },
+      "Binding": {
+        "properties": {
+          "api_base": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Base"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "model"
+        ],
+        "title": "Binding",
+        "type": "object"
+      },
       "DoneEvent": {
         "properties": {
           "event": {
@@ -260,6 +544,169 @@
         "title": "JobProgressEvent",
         "type": "object"
       },
+      "Me": {
+        "properties": {
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "tenant_id": {
+            "title": "Tenant Id",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "tenant_id",
+          "role"
+        ],
+        "title": "Me",
+        "type": "object"
+      },
+      "ModelList": {
+        "properties": {
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelView"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderView"
+            },
+            "title": "Providers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "models",
+          "providers"
+        ],
+        "title": "ModelList",
+        "type": "object"
+      },
+      "ModelUpdated": {
+        "properties": {
+          "checks": {
+            "title": "Checks",
+            "type": "string"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelView"
+          }
+        },
+        "required": [
+          "model",
+          "checks"
+        ],
+        "title": "ModelUpdated",
+        "type": "object"
+      },
+      "ModelView": {
+        "properties": {
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "api_base": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Base"
+          },
+          "key_set": {
+            "title": "Key Set",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "protected": {
+            "title": "Protected",
+            "type": "boolean"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "required": [
+          "alias",
+          "purpose",
+          "kind",
+          "protected",
+          "source",
+          "provider",
+          "model",
+          "api_base",
+          "key_set",
+          "updated_by",
+          "updated_at"
+        ],
+        "title": "ModelView",
+        "type": "object"
+      },
       "NodeEvent": {
         "properties": {
           "event": {
@@ -312,6 +759,39 @@
           "status"
         ],
         "title": "NodeEvent",
+        "type": "object"
+      },
+      "ProviderView": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "model_hint": {
+            "title": "Model Hint",
+            "type": "string"
+          },
+          "needs_base": {
+            "title": "Needs Base",
+            "type": "boolean"
+          },
+          "needs_key": {
+            "title": "Needs Key",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "needs_key",
+          "needs_base",
+          "model_hint"
+        ],
+        "title": "ProviderView",
         "type": "object"
       },
       "ResumeRequest": {
@@ -516,6 +996,34 @@
           }
         ]
       },
+      "TestOutcome": {
+        "properties": {
+          "error": {
+            "default": "",
+            "title": "Error",
+            "type": "string"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "sample": {
+            "default": "",
+            "title": "Sample",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "latency_ms"
+        ],
+        "title": "TestOutcome",
+        "type": "object"
+      },
       "TokenEvent": {
         "properties": {
           "event": {
@@ -559,6 +1067,87 @@
           "text"
         ],
         "title": "TokenEvent",
+        "type": "object"
+      },
+      "UsageDay": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "events": {
+            "title": "Events",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "day",
+          "kind",
+          "events"
+        ],
+        "title": "UsageDay",
+        "type": "object"
+      },
+      "UsageReport": {
+        "properties": {
+          "daily": {
+            "items": {
+              "$ref": "#/components/schemas/UsageDay"
+            },
+            "title": "Daily",
+            "type": "array"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/UsageTotal"
+            },
+            "title": "Totals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "days",
+          "totals",
+          "daily"
+        ],
+        "title": "UsageReport",
+        "type": "object"
+      },
+      "UsageTotal": {
+        "properties": {
+          "events": {
+            "title": "Events",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "number"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "unit",
+          "events",
+          "quantity"
+        ],
+        "title": "UsageTotal",
         "type": "object"
       },
       "ValidationError": {
@@ -609,6 +1198,394 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/admin/audit": {
+      "get": {
+        "operationId": "audit_log_admin_audit_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Audit Log",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/models": {
+      "get": {
+        "operationId": "list_models_admin_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Models",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/models/{alias}": {
+      "put": {
+        "operationId": "set_model_admin_models__alias__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alias",
+            "required": true,
+            "schema": {
+              "title": "Alias",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Binding"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelUpdated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Model",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/models/{alias}/reset": {
+      "post": {
+        "operationId": "reset_model_admin_models__alias__reset_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alias",
+            "required": true,
+            "schema": {
+              "title": "Alias",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Model",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/models/{alias}/test": {
+      "post": {
+        "operationId": "test_model_admin_models__alias__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alias",
+            "required": true,
+            "schema": {
+              "title": "Alias",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Binding"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Binding"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestOutcome"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Model",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/songs": {
+      "get": {
+        "operationId": "list_songs_admin_songs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminSongPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Songs",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/usage": {
+      "get": {
+        "operationId": "usage_report_admin_usage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Usage Report",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "operationId": "list_users_admin_users_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Users",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "health_health_get",
@@ -629,6 +1606,27 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/me": {
+      "get": {
+        "operationId": "me_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Me",
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/products/wd-music-ai/songs": {

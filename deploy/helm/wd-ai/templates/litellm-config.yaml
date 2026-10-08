@@ -4,21 +4,7 @@ metadata:
   name: {{ .Release.Name }}-litellm
   labels: {{- include "wd.labels" . | nindent 4 }}
 data:
+  # Settings only: the model aliases live in LiteLLM's database and are managed by the API (ADR-0025).
   config.yaml: |
-    model_list:
-    {{- range .Values.litellm.models }}
-      - model_name: {{ .alias }}
-        litellm_params:
-          model: {{ .model }}
-          {{- if eq (default "" .backend) "ollama-openai" }}
-          api_base: os.environ/OLLAMA_OPENAI_BASE_URL
-          api_key: none
-          {{- else }}
-          api_base: os.environ/OLLAMA_BASE_URL
-          {{- end }}
-          {{- with .params }}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
-    {{- end }}
     litellm_settings:
       drop_params: true

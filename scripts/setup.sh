@@ -182,7 +182,7 @@ if [ "$TOOLS_ONLY" != "1" ]; then
   if [ "$PLATFORM" = "darwin" ]; then mem_gb=$(( $(sysctl -n hw.memsize) / 1073741824 ))
   else mem_gb=$(( $(awk '/MemTotal/{print $2}' /proc/meminfo) / 1048576 )); fi
   free_gb=$(df -Pk "$HOME" | awk 'NR==2{print int($4/1048576)}')
-  [ "$mem_gb" -ge 8 ] || warn "Only ${mem_gb} GB RAM: the default model (gemma4:e4b) needs about 8 GB and may be very slow or fail. Edit deploy/compose/litellm.yaml to use a smaller model."
+  [ "$mem_gb" -ge 8 ] || warn "Only ${mem_gb} GB RAM: the default model (gemma4:e4b) needs about 8 GB and may be very slow or fail. Change the model in services/api/src/wd_api/model_defaults.yaml (or in the admin area once running) to use a smaller one."
   [ "$PLATFORM" = "darwin" ] && [ "$ARCH" = "x86_64" ] && warn "Intel Mac: Ollama runs CPU-only, so replies will be slow."
 
   for m in $(required_models); do
@@ -212,6 +212,8 @@ set_secret() { # set_secret KEY PLACEHOLDER PREFIX: replace a placeholder with a
 }
 set_secret LITELLM_API_KEY sk-dev-change-me sk-
 set_secret AUTH_SECRET change-me ""
+set_secret API_AUTH_SECRET change-me-with-at-least-32-characters ""
+set_secret LITELLM_SALT_KEY change-me ""
 set_secret STORAGE_SECRET_KEY change-me ""
 
 # ---- 5. Dependencies ---------------------------------------------------------------------

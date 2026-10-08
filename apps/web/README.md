@@ -84,7 +84,21 @@ from `0.0.0.0` and the provider rejects it). Register one OAuth app per environm
 
 Redirect URI: `<web origin>/api/auth/callback/<id>`, e.g. `http://localhost:3000/api/auth/callback/google`.
 Only configured providers appear on `/signin`. Set `ADMIN_EMAILS` (API) to make a verified address an
-admin. Pages redirect to `/signin` without a session; `/api` routes answer 401.
+admin (Google's verified email, or the primary verified address on your GitHub account). Pages redirect to `/signin` without a session; `/api` routes answer 401.
+
+## Admin
+
+`/admin` (Overview with usage, Users, Songs, Audit log) is for users whose role is `admin`; everyone else
+sees "Admins only", and the API answers `403` to the same calls. To become admin, list your verified email in
+`ADMIN_EMAILS` for the API (Google's verified address, or the primary verified address of your GitHub account) and
+sign in again. With `AUTH_MODE=stub` the dev user is an admin. The Admin link in the header appears only for admins.
+
+### Models
+
+`/admin/models` lists the model aliases the products use and what serves each. Pick a provider, a model and (for hosted
+providers) an API key, then **Test connection** (nothing is saved) or **Save**. The key box is write-only and always starts
+empty. Saving a new model for the guardrail's `moderator` first runs the guardrail test cases on it and refuses the change if it
+lets a must-refuse request through; this takes about half a minute. **Reset to default** undoes a change.
 
 ## Not done yet
 

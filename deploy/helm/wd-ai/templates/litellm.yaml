@@ -13,6 +13,12 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/litellm-config.yaml") . | sha256sum | trunc 16 | quote }}
     spec:
+      {{- if .Values.postgres.enabled }}
+      initContainers:
+        - name: wait-for-db
+          image: {{ .Values.postgres.image }}
+          command: ["sh", "-c", "until pg_isready -h {{ .Release.Name }}-postgres -U {{ .Values.postgres.user }}; do sleep 2; done"]
+      {{- end }}
       containers:
         - name: litellm
           image: {{ .Values.litellm.image }}
@@ -22,11 +28,24 @@ spec:
             - name: LITELLM_MASTER_KEY
               valueFrom:
                 secretKeyRef: { name: {{ .Values.secrets.existingSecret }}, key: LITELLM_API_KEY }
-            - { name: OLLAMA_BASE_URL, value: {{ include "wd.ollamaUrl" . | quote }} }
-            - { name: OLLAMA_OPENAI_BASE_URL, value: "{{ include "wd.ollamaUrl" . }}/v1" }
+            - name: LITELLM_SALT_KEY
+              valueFrom:
+                secretKeyRef: { name: {{ .Values.secrets.existingSecret }}, key: LITELLM_SALT_KEY }
+            - { name: STORE_MODEL_IN_DB, value: "True" }
+            {{- if .Values.postgres.enabled }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: {{ .Values.secrets.existingSecret }}, key: POSTGRES_PASSWORD }
+            - name: DATABASE_URL
+              value: "postgresql://{{ .Values.postgres.user }}:$(POSTGRES_PASSWORD)@{{ .Release.Name }}-postgres:5432/{{ .Values.postgres.database }}?schema=litellm"
+            {{- else }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: {{ .Values.secrets.existingSecret }}, key: LITELLM_DATABASE_URL }
+            {{- end }}
           readinessProbe:
             httpGet: { path: /health/readiness, port: http }
-            initialDelaySeconds: 15
+            initialDelaySeconds: 30
             periodSeconds: 10
           volumeMounts:
             - { name: config, mountPath: /app/config.yaml, subPath: config.yaml, readOnly: true }

@@ -26,11 +26,12 @@
 | [0022](0022-song-graph-and-guardrail.md) | The song graph and its guardrail | Accepted |
 | [0023](0023-product-provided-routes.md) | Product-provided API routes | Accepted |
 | [0024](0024-real-model-validation.md) | Real-model validation of the music and cover workflows | Accepted |
-| [0025](0025-model-access-configuration.md) | Model access configuration (local by default, admin-configurable) | Proposed |
+| [0025](0025-model-access-configuration.md) | Model access configuration (local by default, admin-configurable) | Accepted |
 | [0026](0026-seo.md) | SEO and discoverability | Proposed |
 | [0027](0027-first-party-analytics.md) | First-party analytics | Proposed |
 | [0028](0028-google-analytics-and-consent.md) | Google Analytics and consent | Proposed |
 | [0029](0029-billing-and-payments.md) | Billing and payments (Stripe, prepaid credits) | Proposed |
-| [0030](0030-authentication.md) | Authentication (Auth.js sign-in, signed API tokens) | Proposed |
+| [0030](0030-authentication.md) | Authentication (Auth.js sign-in, signed API tokens) | Accepted |
+| [0031](0031-model-access-implementation.md) | Model access: what building it taught us about LiteLLM | Accepted |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.

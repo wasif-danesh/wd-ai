@@ -1,0 +1,54 @@
+import { Notice } from "@/components/Notice";
+import { ModelForm } from "@/components/admin/ModelForm";
+import { apiGet } from "@/lib/api";
+import type { ModelList } from "@wd/contracts";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
+type Params = { params: Promise<{ alias: string }> };
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  return { title: `Model ${(await params).alias}` };
+}
+
+export default async function EditModel({ params }: Params) {
+  const { alias } = await params;
+  let list: ModelList | null = null;
+  try {
+    list = await apiGet<ModelList>("/admin/models");
+  } catch {
+    // shown below
+  }
+  if (!list) {
+    return (
+      <Notice tone="error" title="Couldn't load the model">
+        The model gateway isn't answering right now.
+      </Notice>
+    );
+  }
+  const model = list.models.find((m) => m.alias === alias);
+  if (!model) notFound();
+  const current = list.providers.find((p) => p.id === model.provider)?.label ?? model.provider;
+  return (
+    <>
+      <p className="pager">
+        <Link href="/admin/models">← Models</Link>
+      </p>
+      <header className="stack">
+        <h2>{model.alias}</h2>
+        <p className="muted">{model.purpose}</p>
+        <p>
+          Now served by{" "}
+          <strong>
+            {model.provider ? `${current} · ${model.model}` : "nothing (not set up yet)"}
+          </strong>{" "}
+          ({model.source}).
+        </p>
+      </header>
+      <ModelForm model={model} providers={list.providers} />
+    </>
+  );
+}

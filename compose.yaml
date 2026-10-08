@@ -4,6 +4,10 @@ services:
     environment: { POSTGRES_USER: wd, POSTGRES_PASSWORD: wd, POSTGRES_DB: wd }
     ports: ["5432:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wd -d wd"]
+      interval: 3s
+      retries: 30
   redis:
     image: redis:7
     ports: ["6379:6379"]
@@ -43,10 +47,16 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-stable
     command: ["--config", "/app/config.yaml", "--port", "4000"]
+    # The model aliases live in LiteLLM's database (its own schema in our Postgres) and are seeded
+    # and managed by the API (ADR-0025). The salt key encrypts provider API keys stored there:
+    # set it once and never change it.
+    depends_on:
+      postgres: { condition: service_healthy }
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_API_KEY:?set LITELLM_API_KEY in .env}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.containers.internal:11434}
-      OLLAMA_OPENAI_BASE_URL: ${OLLAMA_BASE_URL:-http://host.containers.internal:11434}/v1
+      LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:?run make setup}
+      DATABASE_URL: postgresql://wd:wd@postgres:5432/wd?schema=litellm
+      STORE_MODEL_IN_DB: "True"
     volumes: ["./deploy/compose/litellm.yaml:/app/config.yaml:ro"]
     ports: ["4000:4000"]
   api:

@@ -4,6 +4,142 @@
  */
 
 export interface paths {
+    "/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Audit Log */
+        get: operations["audit_log_admin_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Models */
+        get: operations["list_models_admin_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/models/{alias}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Model */
+        put: operations["set_model_admin_models__alias__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/models/{alias}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Model */
+        post: operations["reset_model_admin_models__alias__reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/models/{alias}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test Model */
+        post: operations["test_model_admin_models__alias__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/songs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Songs */
+        get: operations["list_songs_admin_songs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Usage Report */
+        get: operations["usage_report_admin_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Users */
+        get: operations["list_users_admin_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -13,6 +149,23 @@ export interface paths {
         };
         /** Health */
         get: operations["health_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me */
+        get: operations["me_me_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -110,6 +263,96 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AdminSong */
+        AdminSong: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Product Id */
+            product_id: string;
+            /** Title */
+            title: string;
+            /** User Email */
+            user_email: string | null;
+            /** User Id */
+            user_id: string;
+        };
+        /** AdminSongPage */
+        AdminSongPage: {
+            /** Next Before */
+            next_before: string | null;
+            /** Songs */
+            songs: components["schemas"]["AdminSong"][];
+        };
+        /** AdminUser */
+        AdminUser: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Email */
+            email: string | null;
+            /** Email Verified */
+            email_verified: boolean;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /** Providers */
+            providers: string[];
+            /** Role */
+            role: string;
+        };
+        /** AdminUserPage */
+        AdminUserPage: {
+            /** Next Before */
+            next_before: string | null;
+            /** Users */
+            users: components["schemas"]["AdminUser"][];
+        };
+        /** AuditEntry */
+        AuditEntry: {
+            /** Action */
+            action: string;
+            /** Actor User Id */
+            actor_user_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Detail
+             * @default {}
+             */
+            detail: {
+                [key: string]: unknown;
+            };
+            /** Id */
+            id: string;
+            /** Target Id */
+            target_id?: string | null;
+            /** Target Type */
+            target_type?: string | null;
+        };
+        /** AuditPage */
+        AuditPage: {
+            /** Entries */
+            entries: components["schemas"]["AuditEntry"][];
+        };
+        /** Binding */
+        Binding: {
+            /** Api Base */
+            api_base?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+            /** Model */
+            model: string;
+            /** Provider */
+            provider: string;
+        };
         /** DoneEvent */
         DoneEvent: {
             /**
@@ -253,6 +496,53 @@ export interface components {
             /** Ts */
             ts?: string;
         };
+        /** Me */
+        Me: {
+            /** Role */
+            role: string;
+            /** Tenant Id */
+            tenant_id: string;
+            /** User Id */
+            user_id: string;
+        };
+        /** ModelList */
+        ModelList: {
+            /** Models */
+            models: components["schemas"]["ModelView"][];
+            /** Providers */
+            providers: components["schemas"]["ProviderView"][];
+        };
+        /** ModelUpdated */
+        ModelUpdated: {
+            /** Checks */
+            checks: string;
+            model: components["schemas"]["ModelView"];
+        };
+        /** ModelView */
+        ModelView: {
+            /** Alias */
+            alias: string;
+            /** Api Base */
+            api_base: string | null;
+            /** Key Set */
+            key_set: boolean;
+            /** Kind */
+            kind: string;
+            /** Model */
+            model: string | null;
+            /** Protected */
+            protected: boolean;
+            /** Provider */
+            provider: string | null;
+            /** Purpose */
+            purpose: string;
+            /** Source */
+            source: string;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By */
+            updated_by: string | null;
+        };
         /** NodeEvent */
         NodeEvent: {
             /**
@@ -286,6 +576,19 @@ export interface components {
             thread_id: string;
             /** Ts */
             ts?: string;
+        };
+        /** ProviderView */
+        ProviderView: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Model Hint */
+            model_hint: string;
+            /** Needs Base */
+            needs_base: boolean;
+            /** Needs Key */
+            needs_key: boolean;
         };
         /** ResumeRequest */
         ResumeRequest: {
@@ -349,6 +652,23 @@ export interface components {
             title: string;
         };
         SseEvent: components["schemas"]["NodeEvent"] | components["schemas"]["TokenEvent"] | components["schemas"]["InterruptEvent"] | components["schemas"]["JobProgressEvent"] | components["schemas"]["ErrorEvent"] | components["schemas"]["DoneEvent"];
+        /** TestOutcome */
+        TestOutcome: {
+            /**
+             * Error
+             * @default
+             */
+            error: string;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Ok */
+            ok: boolean;
+            /**
+             * Sample
+             * @default
+             */
+            sample: string;
+        };
         /** TokenEvent */
         TokenEvent: {
             /**
@@ -375,6 +695,38 @@ export interface components {
             /** Ts */
             ts?: string;
         };
+        /** UsageDay */
+        UsageDay: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Events */
+            events: number;
+            /** Kind */
+            kind: string;
+        };
+        /** UsageReport */
+        UsageReport: {
+            /** Daily */
+            daily: components["schemas"]["UsageDay"][];
+            /** Days */
+            days: number;
+            /** Totals */
+            totals: components["schemas"]["UsageTotal"][];
+        };
+        /** UsageTotal */
+        UsageTotal: {
+            /** Events */
+            events: number;
+            /** Kind */
+            kind: string;
+            /** Quantity */
+            quantity: number;
+            /** Unit */
+            unit: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -397,6 +749,253 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    audit_log_admin_audit_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_models_admin_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelList"];
+                };
+            };
+        };
+    };
+    set_model_admin_models__alias__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alias: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Binding"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelUpdated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_model_admin_models__alias__reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alias: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_model_admin_models__alias__test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alias: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Binding"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestOutcome"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_songs_admin_songs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSongPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    usage_report_admin_usage_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_users_admin_users_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;
@@ -415,6 +1014,26 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    me_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
                 };
             };
         };

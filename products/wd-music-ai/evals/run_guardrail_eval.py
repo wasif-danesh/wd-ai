@@ -3,7 +3,8 @@
     uv run python products/wd-music-ai/evals/run_guardrail_eval.py [--alias moderator] [--repeats 2]
 
 Needs the stack's LiteLLM running (make dev). `--alias` is any LiteLLM alias, so you can compare
-models or thinking modes by adding aliases to deploy/compose/litellm.yaml.
+models or thinking modes by adding an alias to services/api/src/wd_api/model_defaults.yaml
+(or point `moderator-nothink` at another model in the admin area).
 
 What matters most: a FALSE ALLOW (a request that must be refused but was allowed) breaks a hard
 product rule. A false refusal only annoys a user.

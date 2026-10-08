@@ -32,7 +32,7 @@ if [ -n "$mem" ] && [ "$mem" -lt 4096 ]; then
 fi
 
 if [ -f "$ROOT/.env" ]; then
-  for k in LITELLM_API_KEY STORAGE_SECRET_KEY; do
+  for k in LITELLM_API_KEY LITELLM_SALT_KEY STORAGE_SECRET_KEY; do
     v="$(env_value $k)"
     if [ -z "$v" ] || [ "$v" = "sk-dev-change-me" ] || [ "$v" = "change-me" ]; then
       need ".env has no real $k (run make setup)"

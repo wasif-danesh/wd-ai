@@ -19,3 +19,27 @@ export async function apiGet<T>(path: string): Promise<T> {
   if (!res.ok) throw new ApiError(res.status, `API ${path} answered ${res.status}`);
   return (await res.json()) as T;
 }
+
+/** A write to the API (POST or PUT with a JSON body). Returns the status and parsed body instead of
+ * throwing, because the admin forms show the API's own reasons (a rejected model, a bad field). */
+export async function apiSend(
+  method: "POST" | "PUT",
+  path: string,
+  body?: unknown,
+): Promise<{ status: number; data: unknown }> {
+  const identity = await apiAuthHeaders();
+  if (!identity) return { status: 401, data: { detail: "sign in required" } };
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    cache: "no-store",
+    headers: { ...identity, "content-type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  let data: unknown = null;
+  try {
+    data = await res.json();
+  } catch {
+    // no body
+  }
+  return { status: res.status, data };
+}

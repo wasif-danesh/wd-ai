@@ -2,13 +2,13 @@
 
 import logging
 
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from wd_platform_sdk import Identity
 
 from wd_api.auth import AuthError, verify_token
 from wd_api.config import get_settings
 
-__all__ = ["Identity", "get_identity"]
+__all__ = ["Identity", "get_identity", "require_admin"]
 
 log = logging.getLogger("wd_api.identity")
 
@@ -20,7 +20,10 @@ def _unauthorized(detail: str) -> HTTPException:
 async def get_identity(request: Request) -> Identity:
     settings = get_settings()
     if settings.auth_mode == "stub":
-        return Identity(tenant_id=settings.default_tenant_id, user_id=settings.dev_user_id)
+        # the dev user may use everything, the admin area included (stub mode is local only)
+        return Identity(
+            tenant_id=settings.default_tenant_id, user_id=settings.dev_user_id, role="admin"
+        )
     scheme, _, token = request.headers.get("authorization", "").partition(" ")
     if scheme.lower() != "bearer" or not token:
         raise _unauthorized("sign in required")
@@ -33,3 +36,9 @@ async def get_identity(request: Request) -> Identity:
         settings.default_tenant_id, claims, settings.admin_email_set
     )
     return Identity(tenant_id=settings.default_tenant_id, user_id=user.id, role=user.role)
+
+
+async def require_admin(identity: Identity = Depends(get_identity)) -> Identity:
+    if identity.role != "admin":
+        raise HTTPException(403, "admin only")
+    return identity

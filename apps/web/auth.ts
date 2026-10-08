@@ -1,6 +1,7 @@
 // Sign-in with Auth.js (ADR-0030): a JWT session cookie, no database. A provider is offered only
 // when its client id and secret are set. The API never sees this cookie: the BFF turns the
 // session into a short-lived API token (lib/api-token.ts).
+import { verifiedPrimaryEmail } from "@/lib/github-email";
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
@@ -43,12 +44,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   pages: { signIn: "/signin" },
   callbacks: {
-    jwt({ token, account, profile }) {
+    async jwt({ token, account, profile }) {
       if (account) {
         token.provider = account.provider;
         token.accountId = account.providerAccountId;
-        // Only Google vouches for the address; the others never link accounts by email.
+        // Google vouches for the address itself; GitHub only on request (its primary, verified
+        // address). Microsoft never counts, so it never links accounts by email.
         token.emailVerified = account.provider === "google" && profile?.email_verified === true;
+        if (account.provider === "github") {
+          const email = await verifiedPrimaryEmail(account.access_token);
+          if (email) {
+            token.email = email;
+            token.emailVerified = true;
+          }
+        }
       }
       return token;
     },

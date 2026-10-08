@@ -74,8 +74,9 @@ kubectl -n wd-ai logs deploy/wd-ai-ollama -f
 kubectl -n wd-ai get pods
 ```
 
-To use a smaller model, change the `ollama_chat/...` entries under `litellm.models` in values,
-and lower `ollama.resources`.
+To use a smaller model, change it in the admin area (`/admin/models`) or in
+`services/api/src/wd_api/model_defaults.yaml`, update `ollama.models` in values to match, and lower
+`ollama.resources`.
 
 ## 5b. GPU and real media generation (Phase 4)
 

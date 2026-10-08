@@ -1,44 +1,5 @@
-model_list:
-  # Gemma 4 "thinks" by default: reasoning tokens count against max_tokens, double the latency and
-  # did not improve lyric quality in our test. Off for creative/chat aliases (ADR-0018).
-  - model_name: default-chat
-    litellm_params:
-      model: ollama_chat/gemma4:e4b
-      api_base: os.environ/OLLAMA_BASE_URL
-      think: false
-  - model_name: lyrics-writer
-    litellm_params:
-      model: ollama_chat/gemma4:e4b
-      api_base: os.environ/OLLAMA_BASE_URL
-      think: false
-  # A classifier must give the same answer every time: no sampling randomness. It keeps thinking
-  # on; see products/wd-music-ai/evals for the measurements behind both settings (ADR-0022).
-  - model_name: moderator
-    litellm_params:
-      model: ollama_chat/gemma4:e4b
-      api_base: os.environ/OLLAMA_BASE_URL
-      temperature: 0
-  # Evaluation only: the same classifier without thinking, to compare speed and accuracy.
-  - model_name: moderator-nothink
-    litellm_params:
-      model: ollama_chat/gemma4:e4b
-      api_base: os.environ/OLLAMA_BASE_URL
-      temperature: 0
-      think: false
-  # Same model through Ollama's OpenAI-compatible API (`openai/` here means Ollama's /v1, not
-  # OpenAI). Unlike `ollama_chat/` it accepts audio input parts, so use this alias for
-  # capabilities that take image or audio input (ADR-0020).
-  - model_name: multimodal
-    litellm_params:
-      model: openai/gemma4:e4b
-      api_base: os.environ/OLLAMA_OPENAI_BASE_URL
-      api_key: none
-      reasoning_effort: none  # this route ignores `think`; reasoning_effort is honoured
-  - model_name: embedder
-    litellm_params:
-      model: ollama/nomic-embed-text
-      api_base: os.environ/OLLAMA_BASE_URL
-
+# LiteLLM settings only. The model aliases live in LiteLLM's database and are seeded and managed by
+# the API (ADR-0025); their defaults are in services/api/src/wd_api/model_defaults.yaml.
 litellm_settings:
   # Backends differ in what they accept (e.g. Ollama rejects `encoding_format`); the gateway drops
   # parameters a backend does not support so callers can use one OpenAI-compatible API.

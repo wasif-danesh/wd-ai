@@ -17,6 +17,10 @@ check "My songs page renders (server-side read of the API)" "curl -fsS -m 20 htt
 check "songs API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-music-ai/songs | grep -q '\"songs\"'"
 check "an unknown song is a real 404" "test \"\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/songs/00000000-0000-0000-0000-000000000000)\" = 404"
 
+# Model aliases live in LiteLLM's database and are seeded by the API (ADR-0025). The local overlay runs
+# with AUTH_MODE=stub, where the dev user is an admin, so ask the API from inside its own pod.
+check "default model aliases are seeded in the gateway" "kubectl -n $NS exec deploy/wd-ai-api -c api -- python -c \"import urllib.request,json,sys; m=json.load(urllib.request.urlopen('http://localhost:8000/admin/models',timeout=20))['models']; sys.exit(0 if len(m)==6 and all(x['source']=='default' for x in m) else 1)\""
+
 # Media pipeline: queue -> worker (stub mode) -> object storage -> completion -> graph resumes.
 # Needs no LLM or GPU, so it also runs in CI.
 media="$(curl -sN -m 120 -X POST http://localhost:3000/api/products/media-demo/runs \

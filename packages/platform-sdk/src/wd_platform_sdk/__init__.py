@@ -36,7 +36,7 @@ from wd_platform_sdk.parts import (
     part_from_file,
 )
 from wd_platform_sdk.providers import ProviderDeps, build_capabilities, register_provider
-from wd_platform_sdk.registry import GraphRegistry
+from wd_platform_sdk.registry import CheckResult, GraphRegistry, ModelCheck
 from wd_platform_sdk.routes import RouteDeps, RouteFactory
 from wd_platform_sdk.runstore import InMemoryRunStore, RedisRunStore, RunRecord, RunStore
 from wd_platform_sdk.storage import ScopedStorage, Storage, memory_storage, object_key, s3_storage
@@ -45,6 +45,8 @@ from wd_platform_sdk.usage_postgres import PostgresUsageRecorder
 from wd_platform_sdk.usage_queries import start_of_day_utc, sum_usage
 
 __all__ = [
+    "CheckResult",
+    "ModelCheck",
     "Identity",
     "RouteDeps",
     "RouteFactory",

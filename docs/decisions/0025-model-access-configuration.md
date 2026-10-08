@@ -1,6 +1,6 @@
 # ADR-0025: Model access configuration (local by default, admin-configurable)
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-10-08). The LiteLLM mechanism in decision 2 is subject to a spike; see Follow-ups
 - **Date:** 2026-10-08
 - **Replaces:** the earlier draft "Hosted inference: no GPU in the cloud or home lab" (never accepted)
 
@@ -48,15 +48,44 @@ should not change.
 7. **Provider metadata** on each binding: whether the provider trains on data (the UI warns about
    free tiers and blocks them in production), price per token or job (feeds `cost_usd` on usage
    events and billing), fallback order, and a budget limit with a circuit breaker.
-8. **Admin access** needs authentication and an admin role first, an audit log of every change
-   (who, what, when; no secrets), and a "test connection" action per binding.
+8. **Admin access** uses the role from ADR-0030, an audit log of every change (who, what, when; no
+   secrets), and a "test connection" action per binding. Every admin API route sits under `/admin`
+   behind one `require_admin` dependency (403 for other users); the web app's `/admin` pages call
+   it server-side and show an "Admins only" notice to non-admins. A `GET /me` route reports the caller's id,
+   email, name and role so the UI can show or hide the admin link.
+8a. **First admin release** (two steps): (1) foundation: the guard, the audit log, `/admin` shell,
+   a read-only users list, and recent runs and usage; (2) model access: LLM and media provider
+   configuration. Billing, Stripe and the credits ledger (ADR-0029) come last.
+8b. **Becoming admin with GitHub.** Sign-in now asks GitHub for the primary email and its verified
+   flag (`/user/emails`, scope already requested). Only a primary, verified address counts as
+   verified, so `ADMIN_EMAILS` and account linking work for GitHub as well as Google. Any failure
+   leaves the email unverified.
+2a. **LLM runtime config** goes through LiteLLM's model-management API (`store_model_in_db`), so
+   any LiteLLM-supported provider works without code. LiteLLM then needs its own database, a
+   separate database on the existing Postgres. The alias names stay fixed in `litellm.yaml`
+   defaults; the admin overrides which provider and model each alias routes to.
 9. **Provider approval** (rule 12): Comfy Cloud and hosted LLM providers are proprietary services;
    this ADR records the approval once accepted.
 10. **GPU on k3s (Phase 4)** stays valid for the home lab; it is no longer required for the cloud.
 
-## Open questions
+## Follow-ups
 
-- Do Comfy Cloud's models match our workflows? Test with a paid key before accepting.
+- **Spike result (decision 2a), 2026-10-08, LiteLLM `main-stable` with `STORE_MODEL_IN_DB`, a
+  separate database on the existing Postgres:** it starts cleanly and applies its own migrations.
+  `POST /model/new` adds a model that works at once and survives a restart; `/model/update` changes
+  it live; `/model/delete` removes it; `/model/info` returns the cost per token. Stored provider
+  keys are encrypted by LiteLLM (so we do not add our own key vault for LLM keys; set
+  `LITELLM_SALT_KEY` once and never change it) and `/model/info` never returns them. Two things
+  differ from the plan:
+  1. A DB model with the same alias as one in `litellm.yaml` **joins the pool** (calls are shared
+     and fall back between both); it does not replace it, and models defined in `litellm.yaml`
+     cannot be edited or deleted through the API. So **the default aliases move out of
+     `litellm.yaml` into the database**: a seed step creates them idempotently (fixed model ids such
+     as `default:moderator`) from a defaults file in the repo, and the admin edits those entries.
+     `litellm.yaml` keeps only settings (`drop_params`, and so on).
+  2. LiteLLM must be seeded before the API serves requests, so the seed runs at API start (with
+     retry) and in the Helm post-install job.
+- Do Comfy Cloud's models match our workflows? Test with a paid key.
 - Which hosted LLM first, after the guardrail evaluation (suggested: paid Gemini)?
 
 ## Consequences

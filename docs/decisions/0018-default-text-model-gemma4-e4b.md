@@ -18,7 +18,8 @@ prototype. Around 8 GB of RAM is enough, so every supported platform can run the
 
 Models stay behind LiteLLM aliases (ADR-0005, ADR-0010), so moving an alias to a larger model,
 for example `gemma4:12b` for `moderator` and `lyrics-writer` in staging, is a one-line change in
-`deploy/compose/litellm.yaml` or the Helm values `litellm.models`. Embeddings are unchanged
+`services/api/src/wd_api/model_defaults.yaml`, or a few clicks in the admin area
+(ADR-0025). Embeddings are unchanged
 (`nomic-embed-text`, ADR-0017).
 
 ## Measured on the prototype (Apple Silicon, 2026-10-08; small samples, treat as indicative)
@@ -37,7 +38,7 @@ for example `gemma4:12b` for `moderator` and `lyrics-writer` in staging, is a on
   | Thinking off | 8/8 | 7/8 | 4.2 s | 447 |
 
   So thinking did not help this task. It is switched off per alias in config
-  (`think: false` in `deploy/compose/litellm.yaml`, `params` in the Helm `litellm.models`) for
+  (`think: false` in `services/api/src/wd_api/model_defaults.yaml`) for
   `default-chat` and `lyrics-writer`. The `moderator` keeps thinking until a refusal evaluation
   exists. Tag compliance is not perfect, so the lyrics node needs validation and a retry.
 

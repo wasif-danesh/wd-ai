@@ -4,7 +4,7 @@ There are three kinds of configuration. Each has one home.
 
 | Kind | Examples | Local | Kubernetes |
 |---|---|---|---|
-| **Secrets** | OAuth client secrets, DB passwords, API keys, `AUTH_SECRET` | `.env` (gitignored); keys listed in `.env.example` | Kubernetes Secret from External Secrets or SOPS |
+| **Secrets** | OAuth client secrets, DB passwords, API keys, `AUTH_SECRET`, `LITELLM_SALT_KEY` | `.env` (gitignored); keys listed in `.env.example` | Kubernetes Secret from External Secrets or SOPS |
 | **Environment wiring** | `OLLAMA_BASE_URL`, `COMFYUI_BASE_URL`, `LITELLM_BASE_URL`, `DATABASE_URL`, bucket name | `.env` + `compose.yaml` | Helm values → ConfigMap |
 | **Product config** | Model bindings, workflow choice, prompts, quotas | `products/<id>/product.yaml` (in Git) | Same file, baked into the image |
 
@@ -125,9 +125,22 @@ interface applies (`obstore`); the adapter for each is a constructor in
 
 ### LiteLLM aliases
 
-LiteLLM's own config maps aliases to real backends per environment, e.g. `lyrics-writer` →
-`ollama/qwen3:14b` in dev and staging, a vLLM endpoint or hosted model in prod. Changing the
-underlying LLM never touches product config.
+An alias (`default-chat`, `lyrics-writer`, `moderator`, `moderator-nothink`, `multimodal`,
+`embedder`) maps to a real model. Changing the underlying LLM never touches product config
+([ADR-0025](decisions/0025-model-access-configuration.md)).
+
+- **Defaults** are in `services/api/src/wd_api/model_defaults.yaml` (Gemma 4 E4B and nomic-embed-text
+  on Ollama). The API seeds them into LiteLLM's database at start, once. `make setup` pulls the
+  Ollama models named there, and Helm's `ollama.models` must list the same ones (a test checks it).
+- **Overrides** are made in the admin area (`/admin/models`): pick a provider (Ollama, Gemini, Groq,
+  Cerebras, OpenRouter, any OpenAI-compatible server, or any LiteLLM model string), a model and, for
+  hosted providers, an API key. They apply to new requests at once. "Reset" returns to the default.
+- **Keys** are write-only: the model gateway stores them encrypted with `LITELLM_SALT_KEY` (set it once
+  and never change it, or the saved keys become unreadable). They are never shown, logged or audited.
+- **The moderator is protected.** Saving a new model for it first runs the product's guardrail test
+  cases on the candidate (about half a minute) and only changes it if every must-refuse case is refused.
+- LiteLLM keeps its tables in the `litellm` schema of the platform Postgres; `litellm.yaml` /
+  the Helm ConfigMap hold settings only.
 
 ### ComfyUI workflows and map files
 

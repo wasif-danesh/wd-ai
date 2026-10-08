@@ -71,6 +71,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | Song graph: guardrail, lyrics, approval, music, cover, daily quota | Working with real models ([ADR-0022](docs/decisions/0022-song-graph-and-guardrail.md), [ADR-0024](docs/decisions/0024-real-model-validation.md)) |
 | `wd-music-ai` web app: create, review lyrics, progress, player, My songs | Working |
 | Sign-in (Auth.js with Google, GitHub, Microsoft; signed API tokens; users table) | Working; verified with a real GitHub login. Google and Microsoft are wired but not tried ([ADR-0030](docs/decisions/0030-authentication.md)) |
+| Admin area (`/admin`): users, songs, usage, audit log, model access | Working; LLM providers (Gemini, Groq, Cerebras, OpenRouter, any OpenAI-compatible or LiteLLM model, or local) are changed at run time, the guardrail model is vetted first. Media providers (Comfy Cloud and others) are next ([ADR-0025](docs/decisions/0025-model-access-configuration.md)) |
 | Helm chart, local Kubernetes (kind), CI smoke test | Working |
 | k3s home lab with Argo CD | Manifests and runbook written, not yet run (Phase 2) |
 
@@ -172,7 +173,7 @@ and also installs `kind`, `helm` and `kubectl`.
      Node 22, `kind`, `helm` and `kubectl` are downloaded as binaries and **checksum-verified**
      into `~/.local/bin`. pnpm comes from Corepack. No Homebrew or sudo is needed for those.
 2. Creates and starts the Podman VM on macOS, and checks it has enough memory (offers to resize).
-3. Starts Ollama and pulls every model named in `deploy/compose/litellm.yaml`
+3. Starts Ollama and pulls every model named in `services/api/src/wd_api/model_defaults.yaml`
    (`gemma4:e4b`, about 10 GB, plus `nomic-embed-text`). On Linux it also checks that containers can reach Ollama and
    offers a fix if not.
 4. Creates `.env` from `.env.example` and generates random secrets. Nothing is printed.
@@ -189,7 +190,8 @@ missing and points back to `make setup`.
 
 - `gemma4:e4b` needs about 8 GB of RAM and 15 GB of free disk. Setup warns when a machine is
   short. To use a smaller or faster model, change the `ollama_chat/...` entries in
-  `deploy/compose/litellm.yaml`; setup and preflight read the model names from there.
+  `services/api/src/wd_api/model_defaults.yaml` (or switch a model at run time in `/admin/models`); setup and
+  preflight read the model names from that file.
 - Ollama runs natively on the host so it can use the GPU. On Apple Silicon it uses Metal. On
   Intel Macs and machines without a supported GPU it runs on CPU, so replies are slow.
 - Linux and WSL: Ollama listens on `127.0.0.1` by default, which containers may not reach.
@@ -248,6 +250,9 @@ Without a valid token every route except `/health` answers `401`. Responses for 
 | `POST /products/{product_id}/runs` | Start a run; streams events. Body: `{"input": {...}, "thread_id"?: uuid}` |
 | `GET /runs/{run_id}/events` | Reconnect to a run; honours `Last-Event-ID` |
 | `POST /runs/{run_id}/resume` | Answer an `interrupt` (approve, edit); continues the stream. Body: `{"value": ...}` |
+| `GET /me` | The caller's user id, tenant and role |
+| `GET /admin/models`, `PUT /admin/models/{alias}`, `POST /admin/models/{alias}/test`, `/reset` | Admin only: see and change which provider and model serve each LiteLLM alias; keys are write-only |
+| `GET /admin/users`, `/admin/songs`, `/admin/usage?days=`, `/admin/audit` | Admin only (`403` for others): users, songs from all users, usage totals, the audit log. Listing users is itself audited |
 | `GET /products/wd-music-ai/songs`, `GET /products/wd-music-ai/songs/{id}` | The signed-in user's songs, with presigned audio and cover links (product-provided routes, [ADR-0023](docs/decisions/0023-product-provided-routes.md)) |
 
 Try it without the browser, through the Next.js BFF:
@@ -361,6 +366,8 @@ make kind-up / kind-test / kind-down   # local Kubernetes (see above)
 | Port already in use | `make down`, then try again |
 | Slow first reply | The model loads into memory on first use. CPU-only machines are slower; try `gemma4:e2b` |
 | Empty reply with a small `max_tokens` | Gemma 4 "thinking" uses the token budget. It is off for the chat and lyrics aliases; keep budgets generous for the `moderator` ([ADR-0018](docs/decisions/0018-default-text-model-gemma4-e4b.md)) |
+| Every model call fails with "model not found" right after start | The API seeds the model aliases into LiteLLM when it starts; give it a minute and check `podman logs wd-ai-api-1`. `LITELLM_API_KEY` must match between the API and LiteLLM |
+| `make dev` fails with "LITELLM_SALT_KEY" | Run `make setup`; it generates the key. Never change it afterwards: saved provider keys are encrypted with it |
 | `podman compose` cannot connect | Run `podman machine start` |
 | `make dev` says "Not ready" | Run `make setup`; it fixes every item the preflight lists |
 | Sign-in page says "No sign-in provider is set up" | Set a provider's `AUTH_<PROVIDER>_ID` and `_SECRET` in `.env`, or `AUTH_MODE=stub` for local work |

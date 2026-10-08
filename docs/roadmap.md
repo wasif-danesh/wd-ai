@@ -96,8 +96,12 @@ See [product spec](../products/wd-music-ai/README.md).
 
 ## Planned and recorded (ADRs proposed, not scheduled)
 
-- [ ] Model access configuration: admin UI, config store, media adapters, moderator canary (ADR-0025;
-      needs authentication and an admin role first)
+- [x] Admin foundation (ADR-0025 step 1): `/me`, `require_admin`, audit log (migration 0006), `/admin`
+      with users, songs, usage and audit log
+- [x] Model access, LLM part (ADR-0025 step 2): aliases seeded into LiteLLM's database, `/admin/models`
+      with test connection, save, reset and the moderator canary; keys write-only
+- [ ] Model access, media part: provider adapters for the media worker (local ComfyUI, Comfy Cloud,
+      OpenAI-compatible images) and their admin screens
 - [ ] Billing and pricing: credits ledger, payment provider, cost on usage events (ADR-0029: Stripe, prepaid credits)
 - [ ] SEO and shareable song pages (ADR-0026)
 - [ ] First-party analytics: page views, logins, privacy-safe IP handling (ADR-0027)

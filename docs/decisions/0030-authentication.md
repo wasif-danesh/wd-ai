@@ -1,6 +1,6 @@
 # ADR-0030: Authentication (Auth.js sign-in, signed API tokens)
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-10-08; sign-in verified with a real GitHub login)
 - **Date:** 2026-10-08
 - **Builds on:** ADR-0011 (identity seam)
 
@@ -29,9 +29,9 @@ directly (BFF), and the API must not trust anything the browser can forge.
   our own UUID, stable across providers; tenant stays the default tenant for now. No endpoint
   changes, so every existing route is protected by the same dependency.
 - **Account linking is conservative.** A new provider identity joins an existing user only when
-  **both** emails are verified and equal. Only Google reports `email_verified`; GitHub and
-  Microsoft emails are treated as unverified (so they never link automatically, which prevents
-  account takeover through an unverified address). Linking by an explicit "connect account" flow
+  **both** emails are verified and equal. Google reports `email_verified`; for GitHub the web app asks
+  `/user/emails` at sign-in and counts only a primary, verified address (ADR-0025); Microsoft emails are
+  treated as unverified. An unverified address never links, which prevents account takeover. Linking by an explicit "connect account" flow
   is future work.
 - **Roles.** `users.role` is `user` or `admin`. Admin comes only from a verified email listed in
   `ADMIN_EMAILS` (a bootstrap, until the admin UI can manage roles). Removing an email does not

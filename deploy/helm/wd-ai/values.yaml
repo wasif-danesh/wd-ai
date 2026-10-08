@@ -1,7 +1,7 @@
 # Base values. Overlay order (later wins):
 #   values.yaml  ->  values/<env>.yaml  ->  values/cloud/<cloud>.yaml
 # Secrets never live here. They come from the Secret named by `secrets.existingSecret`
-# (keys: LITELLM_API_KEY, POSTGRES_PASSWORD, and DATABASE_URL when postgres.enabled=false;
+# (keys: LITELLM_API_KEY, LITELLM_SALT_KEY, POSTGRES_PASSWORD, and DATABASE_URL + LITELLM_DATABASE_URL when postgres.enabled=false;
 # AUTH_SECRET and API_AUTH_SECRET unless auth.mode=stub; optional AUTH_<PROVIDER>_ID / _SECRET).
 
 image:
@@ -52,20 +52,9 @@ mediaWorker:
 
 litellm:
   image: ghcr.io/berriai/litellm:main-stable
-  # alias -> backend. `ollama_chat/<model>` and `ollama/<model>` entries also tell the Ollama
-  # pod what to pull.
-  models:
-    # `params` become extra litellm_params. Gemma 4 thinks by default; off for chat and lyrics
-    # (ADR-0018). The moderator keeps thinking until a refusal evaluation says otherwise.
-    - { alias: default-chat, model: "ollama_chat/gemma4:e4b", params: { think: false } }
-    - { alias: lyrics-writer, model: "ollama_chat/gemma4:e4b", params: { think: false } }
-    # The moderator keeps thinking on; its accuracy was measured in products/wd-music-ai/evals.
-    # A classifier must answer the same way every time, so no sampling randomness (ADR-0022).
-    - { alias: moderator, model: "ollama_chat/gemma4:e4b", params: { temperature: 0 } }
-    # Image and audio input: same model via Ollama's OpenAI-compatible API (ADR-0020).
-    # `backend: ollama-openai` makes the chart point it at Ollama's /v1 and pull the model.
-    - { alias: multimodal, model: "openai/gemma4:e4b", backend: ollama-openai, params: { reasoning_effort: none } }
-    - { alias: embedder, model: "ollama/nomic-embed-text" }   # 768 dims; see ADR-0017
+  # The model aliases live in LiteLLM's database (its own schema in the platform Postgres) and are
+  # seeded and managed by the API (ADR-0025); defaults: services/api/src/wd_api/model_defaults.yaml.
+  # With postgres.enabled=false the Secret needs LITELLM_DATABASE_URL (postgresql://...?schema=litellm).
   resources:
     requests: { cpu: 100m, memory: 512Mi }
     limits: { memory: 2Gi }
@@ -73,6 +62,9 @@ litellm:
 ollama:
   enabled: true
   externalUrl: ""                        # set to use an Ollama outside the cluster
+  # What the pod pulls. Keep in step with the `ollama_chat/` and `ollama/` models in
+  # services/api/src/wd_api/model_defaults.yaml (a test checks this).
+  models: ["gemma4:e4b", "nomic-embed-text"]
   image: ollama/ollama:latest
   storage: 20Gi
   storageClass: ""

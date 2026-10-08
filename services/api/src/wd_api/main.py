@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from collections.abc import AsyncIterator
@@ -31,12 +32,19 @@ from wd_platform_sdk import (
     s3_storage,
 )
 
+from wd_api.admin import AdminStore, PostgresAdminStore
+from wd_api.admin import me_router as me_router
+from wd_api.admin import router as admin_router
+from wd_api.admin_models import router as admin_models_router
 from wd_api.auth import MIN_SECRET_BYTES
 from wd_api.config import get_settings
 from wd_api.graphs import default_registry
 from wd_api.identity import get_identity
 from wd_api.jobs_consumer import JobCompletionConsumer
+from wd_api.litellm_admin import BackendError, InMemoryModelBackend, LiteLLMBackend
 from wd_api.logging import configure_logging, request_id
+from wd_api.model_access import ModelAccess, load_defaults
+from wd_api.model_checks import RegistryCheckRunner
 from wd_api.rag import DIMENSIONS, RagService
 from wd_api.routes import HEARTBEAT_S, router
 from wd_api.runs import RunManager
@@ -44,6 +52,20 @@ from wd_api.users import CachedUsers, PostgresUserStore, UserStore
 
 # redis-py defaults to 5 s; stream reads block for the heartbeat interval, so allow well over it.
 REDIS_SOCKET_TIMEOUT_S = 60
+
+
+async def _seed_models(models: ModelAccess) -> None:
+    """Give LiteLLM its default aliases; it may still be starting, so keep trying for a while."""
+    log = logging.getLogger("wd_api")
+    for attempt in range(1, 151):
+        try:
+            await models.seed()
+            return
+        except BackendError as exc:
+            if attempt in (1, 30, 90):
+                log.warning("model gateway not ready for seeding (attempt %d): %s", attempt, exc)
+            await asyncio.sleep(2)
+    log.error("could not seed the default model aliases; check LiteLLM and LITELLM_API_KEY")
 
 
 def create_app(
@@ -59,6 +81,8 @@ def create_app(
     job_sink: JobSink | None = None,
     redis: Redis | None = None,
     users: UserStore | None = None,
+    admin_store: AdminStore | None = None,
+    model_access: ModelAccess | None = None,
 ) -> FastAPI:
     """App factory. Tests inject a registry, products dir (with `provider: fake` bindings),
     checkpointer, usage recorder, event log, run store and job sink, so no GPU, network, database
@@ -118,6 +142,23 @@ def create_app(
             embedding_dims=DIMENSIONS,
         )
 
+        models = model_access
+        if models is None:
+            base = settings.ollama_base_url.rstrip("/")
+            defaults = load_defaults(
+                {"OLLAMA_BASE_URL": base, "OLLAMA_OPENAI_BASE_URL": f"{base}/v1"}
+            )
+            if injected:  # tests: no gateway, nothing to seed
+                models = ModelAccess(InMemoryModelBackend(), defaults)
+            else:
+                models = ModelAccess(
+                    LiteLLMBackend(settings.litellm_base_url, settings.litellm_api_key),
+                    defaults,
+                    RegistryCheckRunner(reg, pdir, deps, settings.product_env),
+                )
+                seeder = asyncio.create_task(_seed_models(models))
+        app.state.models = models
+
         def build_graphs(saver: Any) -> dict[str, Any]:
             graphs: dict[str, Any] = {}
             for product_id in reg.products():
@@ -130,6 +171,8 @@ def create_app(
             return graphs
 
         app.state.users = users or CachedUsers(PostgresUserStore(db))
+        app.state.admin = admin_store or PostgresAdminStore(db)
+        seeder: asyncio.Task | None = None
         app.state.registry = reg
         app.state.engine = db
         app.state.storage = store
@@ -150,6 +193,8 @@ def create_app(
                     await consumer.start()
                 yield
         finally:
+            if seeder:
+                seeder.cancel()
             if consumer:
                 await consumer.stop()
             if getattr(app.state, "runs", None):
@@ -174,6 +219,9 @@ def create_app(
         return {"status": "ok"}
 
     app.include_router(router)
+    app.include_router(me_router)
+    app.include_router(admin_router)
+    app.include_router(admin_models_router)
 
     # Product-provided routes (ADR-0023): mounted now so the OpenAPI schema (and the TypeScript
     # types generated from it) include them; the database and storage they use are read from

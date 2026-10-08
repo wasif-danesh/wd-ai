@@ -1,5 +1,6 @@
 import { auth, signOut } from "@/auth";
 import { authEnabled } from "@/lib/auth-mode";
+import { getMe } from "@/lib/me";
 import { connection } from "next/server";
 import { Logo } from "./Logo";
 import { NavLink } from "./NavLink";
@@ -7,6 +8,8 @@ import { NavLink } from "./NavLink";
 export async function Header() {
   await connection(); // per request: the session is not known at build time
   const session = authEnabled() ? await auth() : null;
+  const signedIn = !authEnabled() || Boolean(session);
+  const isAdmin = signedIn && (await getMe())?.role === "admin";
   const who = session?.user?.name ?? session?.user?.email;
   return (
     <header className="header">
@@ -15,6 +18,7 @@ export async function Header() {
         <nav className="nav" aria-label="Main">
           <NavLink href="/">Create</NavLink>
           <NavLink href="/songs">My songs</NavLink>
+          {isAdmin && <NavLink href="/admin">Admin</NavLink>}
         </nav>
         {who && (
           <form

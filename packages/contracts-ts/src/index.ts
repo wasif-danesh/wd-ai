@@ -15,3 +15,21 @@ export type ResumeRequest = components["schemas"]["ResumeRequest"];
 export type SongSummary = components["schemas"]["SongSummary"];
 export type SongDetail = components["schemas"]["SongDetail"];
 export type SongPage = components["schemas"]["SongPage"];
+
+// The admin area and the caller's identity
+export type Me = components["schemas"]["Me"];
+export type AdminUser = components["schemas"]["AdminUser"];
+export type AdminUserPage = components["schemas"]["AdminUserPage"];
+export type AdminSong = components["schemas"]["AdminSong"];
+export type AdminSongPage = components["schemas"]["AdminSongPage"];
+export type UsageReport = components["schemas"]["UsageReport"];
+export type AuditEntry = components["schemas"]["AuditEntry"];
+export type AuditPage = components["schemas"]["AuditPage"];
+
+// Model access (admin)
+export type ModelView = components["schemas"]["ModelView"];
+export type ProviderView = components["schemas"]["ProviderView"];
+export type ModelList = components["schemas"]["ModelList"];
+export type ModelBinding = components["schemas"]["Binding"];
+export type ModelUpdated = components["schemas"]["ModelUpdated"];
+export type TestOutcome = components["schemas"]["TestOutcome"];
