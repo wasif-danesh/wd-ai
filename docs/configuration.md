@@ -66,6 +66,18 @@ settings:
 A product that accepts user pictures opts in with `uploads: { image: { max_bytes: 10485760 } }` (ADR-0035) and
 binds `image.edit` (image to image) like any other capability; see `products/wd-image-ai/product.yaml`.
 
+A product that offers the Enhance button (ADR-0038) binds `text.enhance` (alias `prompt-enhancer`) and, if a kind
+needs the user's picture, `text.describe_image` (alias `multimodal`), and lists its kinds:
+
+```yaml
+enhance:
+  text_to_video:  { prompt: enhance_text_to_video, max_chars: 500 }       # prompt = file in prompts/
+  image_to_video: { prompt: enhance_image_to_video, max_chars: 500, needs_picture: true }
+```
+
+The product mounts the route with `build_enhance_router(deps, product_id, load_prompt, guard)` from its own routes
+(ADR-0023); `guard` is its guardrail for the user's text and picture.
+
 ```python
 # graph code: no model names, no node IDs
 async for delta in caps.text.stream("lyrics", system, prompt):
@@ -128,7 +140,7 @@ interface applies (`obstore`); the adapter for each is a constructor in
 
 ### LiteLLM aliases
 
-An alias (`default-chat`, `lyrics-writer`, `moderator`, `moderator-nothink`, `multimodal`,
+An alias (`default-chat`, `lyrics-writer`, `prompt-enhancer`, `moderator`, `moderator-nothink`, `multimodal`,
 `embedder`) maps to a real model. Changing the underlying LLM never touches product config
 ([ADR-0025](decisions/0025-model-access-configuration.md)).
 
@@ -161,6 +173,14 @@ The worker looks the binding up for every job, so a change applies to the next j
 encrypted with `MEDIA_SECRETS_KEY` (set once by `make setup`; changing it makes saved keys unreadable) and are
 never shown, logged or audited. Remote backends take no GPU lock; their time is recorded as
 `media.remote_seconds`.
+
+### A separate ComfyUI for video
+
+`COMFYUI_VIDEO_BASE_URL` (worker and API; empty by default) is the ComfyUI that `video.*` jobs go to when the
+product's capability has no saved address of its own. On Apple silicon LTX-Video needs `--fp32-unet`, a
+process-wide flag, so video runs on its own ComfyUI (ADR-0037), started with `scripts/comfyui-video.sh` (port
+8189). Both ComfyUIs share one GPU and one `GPU_ID`, so jobs still run one at a time. `JOB_TIMEOUT_S` (default 1200)
+is the longest a job may run; a 5 second clip takes about 8 minutes on a Mac.
 
 ### ComfyUI workflows and map files
 

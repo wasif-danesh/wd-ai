@@ -1,6 +1,6 @@
 # ADR-0037: The video product: text to video and image to video
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-08
 
 ## Context
@@ -29,7 +29,7 @@ keeps walking, the framing drifts a little at 8 s):
 | 8 s | 193 | 15 min (902 s) |
 | 10 s | 241 | 21.6 min (1297 s) |
 
-Cost grows faster than length (attention), and the worker's `job_timeout_s` is 900 s, so 8 and 10 seconds do not
+Cost grows faster than length (attention), and the worker's job limit is 900 s (raised to 1200 s for 5 second clips), so 8 and 10 seconds do not
 fit. They are left for faster hardware. Image to video was timed at 2 s only.
 
 Findings that shape the decision:
@@ -65,13 +65,14 @@ Findings that shape the decision:
   strength is fixed at 1.0 in the i2v workflow, not a user setting.
 - **The video runs on its own ComfyUI.** Our test needed ComfyUI started with `--fp32-unet`, a process-wide flag,
   and fp32 would slow and enlarge the image and music models if they shared it. So `video.generate` and
-  `video.animate` are bound to a second local ComfyUI (default `http://localhost:8189`, set by the capability's
-  `base_url` binding, ADR-0032). Both instances share one GPU and one `gpu_id`, so the worker still runs one job at
+  `video.animate` go to a second local ComfyUI, set by `COMFYUI_VIDEO_BASE_URL` (default port 8189, started with
+  `scripts/comfyui-video.sh`). It is used when the capability has no saved address of its own; an admin can still
+  point a capability elsewhere at `/admin/media` (ADR-0032). Both instances share one GPU and one `gpu_id`, so the worker still runs one job at
   a time and the LLM-unload rule still applies. The dedicated instance's start command goes in
   `docs/configuration.md` and the setup script. If half precision is later shown to work for LTX on this hardware,
   the second instance can be dropped.
 - **Jobs take minutes.** About 3 minutes for 2 s and 8 minutes for 5 s on the Mac, within the worker's
-  `job_timeout_s` (900 s). Queue position and progress use the existing `job_progress` events (ADR-0021). Quota:
+  `job_timeout_s` (raised from 900 s to 1200 s for margin). Queue position and progress use the existing `job_progress` events (ADR-0021). Quota:
   `videos_per_user_per_day: 5`, counted in clips (to be tuned), and **one working clip per user at a time**, because
   the GPU does one job at a time.
 - **The user does not have to wait on the page.** A run is server-side and survives the browser (ADR-0021), but its
@@ -114,8 +115,8 @@ Findings that shape the decision:
   guardrail evaluation and tests; the web area and the Videos filter; docs.
 - About 16 GB of model files for LTX (the Wan files we downloaded for the test, about 18 GB, can be removed).
 - A second ComfyUI process on the Mac, with its own memory use (about 8 GB for the fp32 model plus the text
-  encoder). Production images and Helm values need the same "video ComfyUI" option; the chart's `comfyui.*` values
-  already allow more than one.
+  encoder). The Helm chart passes `COMFYUI_VIDEO_BASE_URL` through (`env.COMFYUI_VIDEO_BASE_URL`); running a second
+  ComfyUI pod is not part of this change.
 - The Open RAIL-M restrictions must reach users through the terms of service, which do not exist yet
   ("Legal basics" in the roadmap). That must be done before the video product is opened to the public.
 - A `status` column and a stuck-run sweep are new; the image product does not need them because its wait is short.

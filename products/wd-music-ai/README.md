@@ -20,7 +20,7 @@ with vocals, and creates cover art.
 - Cover image (FLUX.2 [klein] 4B via ComfyUI)
 - Live progress, including queue position
 - Song page: title, lyrics, audio player, cover, downloads saved as files: the MP3 with its cover and lyrics inside, the cover, and an MP4 video of the cover with the song playing
-- "My songs" history
+- Songs appear in "My creations", the one library for every product
 - Per-user daily quota
 - Content guardrails
 

@@ -23,7 +23,7 @@ input and often personal photos, so the endpoint decides what we accept, keep an
   of all metadata** (GPS, camera, software), scaled so its longest side is at most 2048 px (the model works
   at about one megapixel) and saved as a PNG. The client's file name is ignored and never echoed.
 - **Where.** `{tenant}/{product}/{user}/uploads/{upload_id}.png`, like everything else the user owns. The
-  response is `{"id", "key", "width", "height", "bytes"}`; `key` is relative to the user's prefix
+  response is `{"upload_id", "key", "width", "height", "bytes"}`; `key` is relative to the user's prefix
   and is what a run passes as `image_key`. A run may only use keys under the caller's own `uploads/`.
 - **Lifetime.** A table `uploads` (id, tenant, product, user, key, bytes, created_at, consumed_at) tracks
   every upload. The graph that uses a file deletes it when its job finishes; an API background task

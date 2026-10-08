@@ -1,6 +1,6 @@
 # ADR-0038: Prompt enhancement for every product
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-08
 
 ## Context
@@ -49,8 +49,8 @@ and could make this worse.
 - **Limits and usage.** 40 enhancements per user per hour (the Redis counter used for uploads, in-memory fallback), a
   20 second timeout and `503` with a friendly message if the model does not answer. Every call writes a usage
   event `prompt.enhanced` with the tokens, so billing can see it (rule 9).
-- **UI.** An "Enhance" button with a small sparkle icon under every prompt box (`PromptBox` component shared by the
-  products). It shows a spinner, replaces the text, and an "Undo" link restores the user's original. It is disabled
+- **UI.** An "Enhance" button with a small sparkle icon beside every prompt box's character count (the
+  `EnhanceButton` component shared by the products). It shows a spinner, replaces the text, and an "Undo" link restores the user's original. It is disabled
   while the box is empty, and in picture modes until a picture is chosen. A failure shows a short message and
   leaves the text alone.
 

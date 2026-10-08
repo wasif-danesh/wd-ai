@@ -84,6 +84,11 @@ See [product spec](../products/wd-music-ai/README.md).
 - [x] Image product `wd-image-ai` (ADR-0036): text to image and image to image on FLUX.2 klein 4B, guardrail
       on prompt and picture, My images, downloads, delete. Output screening is not in the first version
 
+- [x] Video product `wd-video-ai` (ADR-0037): text to video and image to video on LTX-Video 2B, 2 or 5
+      second clips made in the background, with a header badge and a notice when a clip is ready
+- [x] Prompt enhancement on every product (ADR-0038) and a shared picture input: choose, drag and drop, paste
+      (ADR-0039)
+
 ## Phase 6: Production
 
 - [x] Choose the primary cloud: GCP
@@ -94,9 +99,7 @@ See [product spec](../products/wd-music-ai/README.md).
 ## Backlog (not yet scheduled)
 
 - [ ] Audio uploads (the image upload endpoint exists; ADR-0035)
-- [ ] Video product `wd-video-ai`: text to video and image to video on LTX-Video 2B (ADR-0037, proposed)
-- [ ] Prompt enhancement button on every product (ADR-0038, proposed) and a shared picture input with drag and drop and paste (ADR-0039, proposed)
-- [ ] Screen finished images before showing them; measure the picture guardrail on unsafe pictures
+- [ ] Screen finished images and clips before showing them; measure the picture guardrail on unsafe pictures
 - [ ] Evaluate audio input on real recordings, not only synthetic speech (ADR-0020)
 - [ ] Pin the SeaweedFS image to a version instead of `:latest`
 - [ ] Roll out new staging images automatically (pinned tags or Image Updater)

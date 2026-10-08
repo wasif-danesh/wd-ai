@@ -14,7 +14,7 @@ instruction (**image to image**), on FLUX.2 klein 4B through ComfyUI.
 3. Graph: `check_request` (quota, prompt guardrail, picture guardrail) → `generate_image` job → finalise.
    The uploaded picture is deleted once the image is made; abandoned uploads are swept after 24 hours.
 4. The image is saved with a thumbnail. `GET/DELETE /images/{id}`, `GET /images`, and a download route serve
-   "My images" (`/image/creations`).
+   My creations (`/creations`; one image is at `/image/creations/{id}`).
 
 ## Guardrail
 

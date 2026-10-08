@@ -1,6 +1,6 @@
 # ADR-0039: Picture input: choose, drag and drop, paste
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-08
 
 ## Context
@@ -25,7 +25,7 @@ as a shared component, keeps every product the same and keeps the rules in one p
 - **Checks before upload,** the same limits the server enforces (ADR-0035): PNG, JPEG or WebP, up to 10 MB, not
   empty. A rejected file shows a plain message next to the zone and is not uploaded. One picture at a time; a
   second one replaces the first.
-- **Upload at once, not at submit.** The picture goes up as soon as it is accepted, with a progress bar and a Cancel,
+- **Upload at once, not at submit.** The picture goes up as soon as it is accepted, with a busy bar (a browser cannot report upload progress through `fetch`) and a Cancel,
   so the enhancer can use it and the main button starts the run immediately. The form keeps the returned upload id.
   The page shows a preview built from the local file (no round trip), with Replace and Remove.
 - **Removing deletes it.** A new route `DELETE /products/{product_id}/uploads/images/{upload_id}` removes the file

@@ -70,7 +70,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | Media pipeline: Redis queue, worker, ComfyUI client, live `job_progress`, queue positions | Working; real ComfyUI verified locally (60 s song in about 77 s, 1024x1024 cover in about 25 s on an Apple Silicon Mac), GPU on k3s untested |
 | Song graph: guardrail, lyrics, approval, music, cover, daily quota | Working with real models ([ADR-0022](docs/decisions/0022-song-graph-and-guardrail.md), [ADR-0024](docs/decisions/0024-real-model-validation.md)) |
 | Song downloads: the MP3 with its cover and lyrics inside, the cover, and a video of the cover with the song playing ([ADR-0034](docs/decisions/0034-song-downloads.md)) | Working |
-| Studio home ("WD AI Studio") with a card per product; `wd-music-ai` web app under `/music`: create, review lyrics, progress, player, My songs | Working; the `wd-image-ai` app is under `/image`; video is a "Coming soon" page ([ADR-0033](docs/decisions/0033-studio-home-and-product-urls.md)) |
+| Studio home ("WD AI Studio") with a card per product; `wd-music-ai` web app under `/music`: create, review lyrics, progress, player, My songs | Working; the `wd-image-ai` app is under `/image` and the `wd-video-ai` app under `/video`; My creations (`/creations`) lists them all ([ADR-0033](docs/decisions/0033-studio-home-and-product-urls.md)) |
 | Sign-in (Auth.js with Google, GitHub, Microsoft; signed API tokens; users table) | Working; verified with a real GitHub login. Google and Microsoft are wired but not tried ([ADR-0030](docs/decisions/0030-authentication.md)) |
 | Admin area (`/admin`): users, songs, usage, audit log, model access | Working; LLM providers (Gemini, Groq, Cerebras, OpenRouter, any OpenAI-compatible or LiteLLM model, or local) are changed at run time, the guardrail model is vetted first. Media backends (local ComfyUI, Comfy Cloud / Comfy API v2, OpenAI-compatible image APIs) are chosen per product capability at `/admin/media` ([ADR-0032](docs/decisions/0032-media-backends.md); tested against stand-in servers, not yet the real Comfy Cloud) |
 | Helm chart, local Kubernetes (kind), CI smoke test | Working |
@@ -82,6 +82,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 |---|---|---|
 | [`wd-music-ai`](products/wd-music-ai/README.md) | MVP working | Turns a song idea into lyrics, a 60-second track and cover art |
 | [`wd-image-ai`](products/wd-image-ai/README.md) | Working | Text to image and image to image on FLUX.2 klein 4B, with secure uploads |
+| [`wd-video-ai`](products/wd-video-ai/README.md) | Working | Text to video and image to video (2 or 5 seconds) on LTX-Video 2B, made in the background |
 
 A product is a folder under `products/` with its `product.yaml`, graphs, prompts and ComfyUI
 workflows. Adding a product adds no API endpoints: the graph registry exposes registered
@@ -259,6 +260,9 @@ Without a valid token every route except `/health` answers `401`. Responses for 
 | `GET /admin/models`, `PUT /admin/models/{alias}`, `POST /admin/models/{alias}/test`, `/reset` | Admin only: see and change which provider and model serve each LiteLLM alias; keys are write-only |
 | `GET /admin/users`, `/admin/songs`, `/admin/usage?days=`, `/admin/audit` | Admin only (`403` for others): users, songs from all users, usage totals, the audit log. Listing users is itself audited |
 | `POST /products/{id}/uploads/images` (raw image body) | Store the user's picture (re-encoded, metadata-free) and return its key ([ADR-0035](docs/decisions/0035-image-uploads.md)) |
+| `POST /products/{id}/prompt/enhance` | Rewrite the user's prompt for the product's model ([ADR-0038](docs/decisions/0038-prompt-enhancement.md)) |
+| `DELETE /products/{id}/uploads/images/{upload_id}` | Take back an uploaded picture ([ADR-0039](docs/decisions/0039-picture-input.md)) |
+| `GET /products/wd-video-ai/videos`, `GET/DELETE /products/wd-video-ai/videos/{id}`, `.../download` | The signed-in user's clips, including ones still being made ([ADR-0037](docs/decisions/0037-video-product.md)) |
 | `GET /products/wd-image-ai/images`, `GET/DELETE /products/wd-image-ai/images/{id}`, `.../download` | The signed-in user's images ([ADR-0036](docs/decisions/0036-image-product.md)) |
 | `GET /products/wd-music-ai/songs`, `GET /products/wd-music-ai/songs/{id}` | The signed-in user's songs, with presigned audio and cover links (product-provided routes, [ADR-0023](docs/decisions/0023-product-provided-routes.md)) |
 
@@ -411,6 +415,7 @@ The same container images run in all three. Only infrastructure and configuratio
 | [Decisions](docs/decisions/README.md) | Architecture decision records (ADRs) |
 | [`wd-music-ai`](products/wd-music-ai/README.md) | The first product's spec |
 | [`wd-image-ai`](products/wd-image-ai/README.md) | Text to image and image to image |
+| [`wd-video-ai`](products/wd-video-ai/README.md) | Text to video and image to video |
 
 ## Principles
 
