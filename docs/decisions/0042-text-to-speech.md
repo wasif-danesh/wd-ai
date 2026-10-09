@@ -139,9 +139,10 @@ worse than the engine's own English figure by a margin we state, with the table 
 - **Memory:** 32-bit needs about 4.5 GB, so with the Kokoro server also running the 6 GB Podman VM runs out
   (the kernel killed the Bengali server twice). The Podman VM needs about 12 GB (the host has 64 GB); this is a
   machine setting for you to change.
-- **Quality:** not yet judged. The Bengali voices are marked "limited" (grade D) until a native listener has
-  reviewed the samples; then the grade is raised or the voice descriptions are changed. Whisper is too weak in
-  Bengali to score them automatically.
+- **Quality:** a native Bengali listener reviewed six samples (three sentences, a female and a male voice) on
+  2026-10-09 and found all of them good, so the voices are graded B and no longer shown as limited. Whisper is
+  too weak in Bengali to score them automatically, so this listening review is the acceptance check. The model
+  runs at about 5 times slower than real time on a CPU.
 - **Found on the way:** the daily limit counted characters instead of speeches (it refused the second request
   of a user). It now counts one per result; the characters are kept in the event's details.
 

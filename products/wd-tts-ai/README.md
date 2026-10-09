@@ -19,7 +19,7 @@ choice. A combination with no voice (a male French voice) is shown as unavailabl
 this version: English (US, UK), Spanish, French, Hindi, Italian, Portuguese (Brazil). Spanish and Portuguese are
 graded low by the model card and are marked as limited. Japanese and Chinese are not offered because the
 Speaches server cannot make them. Bengali (Aditi and Arjun) is made by Indic Parler-TTS in the `speech-indic` service: slow on a CPU (about 5 times
-slower than real time) and not yet reviewed by a native listener. It needs `HF_TOKEN` in `.env` (read access to the
+slower than real time); a native listener reviewed both voices and found them good. It needs `HF_TOKEN` in `.env` (read access to the
 gated `ai4bharat/indic-parler-tts`) and about 4.5 GB of memory for that service alone.
 
 ## Run and test

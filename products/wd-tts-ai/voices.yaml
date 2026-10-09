@@ -375,7 +375,7 @@ voices:
   default: false
   grade: F
 # Bengali (Indic Parler-TTS): the voice is a named speaker plus a description, from the model card's
-# recommended speakers (Aditi, Arjun). Grade D = not yet reviewed by a native listener; raise it after review.
+# recommended speakers (Aditi, Arjun). Grade B: a native Bengali listener reviewed the samples on 2026-10-09 and found both voices good (the model card gives no letter grades for this engine).
 - id: indic-parler:aditi
   language: bn
   gender: female
@@ -383,7 +383,7 @@ voices:
   engine: indic-parler
   engine_voice: Aditi speaks clearly at a moderate pace, in a close, high quality recording with no background noise.
   default: true
-  grade: D
+  grade: B
 - id: indic-parler:arjun
   language: bn
   gender: male
@@ -391,4 +391,4 @@ voices:
   engine: indic-parler
   engine_voice: Arjun speaks clearly at a moderate pace, in a close, high quality recording with no background noise.
   default: true
-  grade: D
+  grade: B

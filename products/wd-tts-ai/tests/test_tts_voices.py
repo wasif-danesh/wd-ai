@@ -102,3 +102,9 @@ def test_voice_quality_follows_the_model_cards_grade_and_is_honest_about_weak_la
         "es": "limited",
     }
     assert catalog.resolve("en-US", "female").engine_voice == "af_bella"  # the best graded voice
+
+
+def test_bengali_voices_were_reviewed_by_a_native_listener_and_are_not_limited():
+    catalog = load_catalog()
+    for gender in GENDERS:
+        assert catalog.resolve("bn", gender).quality == "good"
