@@ -112,10 +112,11 @@ See [product spec](../products/wd-music-ai/README.md).
 - [x] Speech to Text, first slice (ADR-0043): upload or record, Whisper with language detection, transcripts in My
       creations and search; IndicConformer (`stt-indic`) for the 22 Indian languages. Next: chunked search for long
       transcripts, a native MLX server, a test on noisy recordings
-- [ ] Speech products, in this order, each designed by an ADR and each shown as a Coming-soon card on the home
-      page: Text to Speech (ADR-0042, introduces the speech runtime), Speech to Text (ADR-0043, adds audio and
-      video upload and recording, and chunked search), Lip Sync (ADR-0044, needs both; its safety policy needs
-      your confirmation). Each ADR lists the evaluation to run before it is accepted
+- [x] Lip Sync (ADR-0044): built (product, uploads, voice from a script or a file, library, search, safeguards switch of
+      ADR-0047) and run for real only on the placeholder backend. The spike showed the Mac is far too slow (about 4
+      minutes of compute per second of video, out of memory past one window). Next: a CUDA host, then the language,
+      guardrail and audio evaluations of the ADR, and the Enhance button for the style hint
+- [ ] Safeguards switch (ADR-0047): done; before the studio is public, Terms of Use and takedown handling
 - [ ] Audio uploads (the image upload endpoint exists; ADR-0035): designed in ADR-0043
 - [ ] Screen finished images and clips before showing them; measure the picture guardrail on unsafe pictures
 - [ ] Evaluate audio input on real recordings, not only synthetic speech (ADR-0020)

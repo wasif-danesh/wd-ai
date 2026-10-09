@@ -8,6 +8,7 @@ members = [
     "wd-api",
     "wd-contracts",
     "wd-image-ai",
+    "wd-lipsync-ai",
     "wd-media-worker",
     "wd-music-ai",
     "wd-platform-sdk",
@@ -2175,6 +2176,35 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
     { name = "wd-platform-sdk", editable = "packages/platform-sdk" },
+]
+
+[[package]]
+name = "wd-lipsync-ai"
+version = "0.0.0"
+source = { editable = "products/wd-lipsync-ai" }
+dependencies = [
+    { name = "imageio-ffmpeg" },
+    { name = "langgraph" },
+    { name = "pillow" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "wd-platform-sdk" },
+    { name = "wd-stt-ai" },
+    { name = "wd-tts-ai" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "imageio-ffmpeg", specifier = ">=0.5" },
+    { name = "langgraph", specifier = ">=0.6" },
+    { name = "pillow", specifier = ">=10" },
+    { name = "pydantic", specifier = ">=2.9" },
+    { name = "pyyaml", specifier = ">=6" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
+    { name = "wd-platform-sdk", editable = "packages/platform-sdk" },
+    { name = "wd-stt-ai", editable = "products/wd-stt-ai" },
+    { name = "wd-tts-ai", editable = "products/wd-tts-ai" },
 ]
 
 [[package]]

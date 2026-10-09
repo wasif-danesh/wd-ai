@@ -13,8 +13,7 @@ LangGraph graphs, a Next.js UI and a config file.
 > languages including Bengali, a male and a female voice each) and **speech to text** (upload or record, 51 languages). Everything made lands in one
 > library, **My creations**, which you can search by meaning in any language. Models run through
 > Ollama, ComfyUI and open speech servers. It runs in containers and installs on a local
-> Kubernetes cluster from a Helm chart. Still to come: Speech to Text and Lip Sync (designed, not
-> built), the home-lab (k3s + Argo CD) rollout, billing and a production deployment. See the
+> Kubernetes cluster from a Helm chart. Lip Sync is built but needs a GPU host to run for real. Still to come: the home-lab (k3s + Argo CD) rollout, billing and a production deployment. See the
 > [roadmap](docs/roadmap.md).
 
 ## Contents
@@ -93,7 +92,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | [`wd-video-ai`](products/wd-video-ai/README.md) | Working | Text to video and image to video (2 or 5 seconds) on LTX-Video 2B, made in the background |
 | [`wd-tts-ai`](products/wd-tts-ai/README.md) | Working | Text to speech in eight languages with a male and a female voice (Kokoro; Bengali with Indic Parler-TTS) |
 | [`wd-stt-ai`](products/wd-stt-ai/README.md) | Working (first slice) | Speech to text: upload or record, 51 languages (Whisper, and IndicConformer for the Indian languages), transcripts with timestamps as text, SRT, VTT or JSON |
-| Lip Sync | Designed ([ADR-0044](docs/decisions/0044-lip-sync.md)) | Shown as "Coming soon" on the home page |
+| [`wd-lipsync-ai`](products/wd-lipsync-ai/README.md) | Built; the real model needs a CUDA host | Lip Sync: a character picture and a voice, a song or a script become a talking clip (InfiniteTalk). Runs on a placeholder backend until a GPU host exists ([ADR-0044](docs/decisions/0044-lip-sync.md)) |
 
 A product is a folder under `products/` with its `product.yaml`, graphs, prompts and ComfyUI
 workflows. Adding a product adds no API endpoints: the graph registry exposes registered
@@ -292,6 +291,7 @@ Without a valid token every route except `/health` answers `401`. Responses for 
 | `DELETE /products/{id}/uploads/images/{upload_id}` | Take back an uploaded picture ([ADR-0039](docs/decisions/0039-picture-input.md)) |
 | `GET /products/wd-tts-ai/voices`, `GET /products/wd-tts-ai/speeches`, `GET/DELETE /products/wd-tts-ai/speeches/{id}`, `.../download` | The voice catalog (languages, male and female voices), and the signed-in user's speech with an MP3 download ([ADR-0042](docs/decisions/0042-text-to-speech.md)) |
 | `POST /products/wd-stt-ai/uploads/media` (raw body), `GET /products/wd-stt-ai/languages`, `GET /products/wd-stt-ai/transcripts`, `GET/DELETE .../transcripts/{id}`, `.../download?format=txt\|srt\|vtt\|json` | A recording or video becomes a clean WAV; the languages; the signed-in user's transcripts ([ADR-0043](docs/decisions/0043-speech-to-text.md)) |
+| `GET /products/wd-lipsync-ai/lipsyncs`, `GET/DELETE .../lipsyncs/{id}`, `.../download`; uploads of a picture and a voice (at most 15 s) | The signed-in user's lip syncs, including ones still being made ([ADR-0044](docs/decisions/0044-lip-sync.md)) |
 | `GET /products/wd-video-ai/videos`, `GET/DELETE /products/wd-video-ai/videos/{id}`, `.../download` | The signed-in user's clips, including ones still being made ([ADR-0037](docs/decisions/0037-video-product.md)) |
 | `GET /products/wd-image-ai/images`, `GET/DELETE /products/wd-image-ai/images/{id}`, `.../download` | The signed-in user's images ([ADR-0036](docs/decisions/0036-image-product.md)) |
 | `GET /products/wd-music-ai/songs`, `GET /products/wd-music-ai/songs/{id}` | The signed-in user's songs, with presigned audio and cover links (product-provided routes, [ADR-0023](docs/decisions/0023-product-provided-routes.md)) |
@@ -453,6 +453,7 @@ The same container images run in all three. Only infrastructure and configuratio
 | [`wd-video-ai`](products/wd-video-ai/README.md) | Text to video and image to video |
 | [`wd-tts-ai`](products/wd-tts-ai/README.md) | Text to speech |
 | [`wd-stt-ai`](products/wd-stt-ai/README.md) | Speech to text |
+| [`wd-lipsync-ai`](products/wd-lipsync-ai/README.md) | Lip Sync |
 | [`apps/web`](apps/web/README.md) | The web app: components, side panel, styling, sign-in |
 
 ## Principles
@@ -473,10 +474,10 @@ The same container images run in all three. Only infrastructure and configuratio
 | 3 | Platform core: capability layer, storage, usage events, RAG | Done |
 | 4 | Media pipeline: Redis queue, worker, ComfyUI, GPU sharing | Done except GPU on k3s (needs the lab) |
 | 5 | `wd-music-ai` MVP: song graph, auth, quota, UI, real models | Done |
-| 5b | Image, video, text-to-speech and speech-to-text products, one searchable library, shadcn/ui front end | Done; Lip Sync designed, not built |
+| 5b | Image, video, text-to-speech and speech-to-text products, one searchable library, shadcn/ui front end | Done; Lip Sync built, the real model needs a GPU host |
 | 6 | Production on GCP | Planned |
 
-Planned next: long transcripts in search and a native Mac speed-up for Speech to Text ([ADR-0043](docs/decisions/0043-speech-to-text.md)), and Lip Sync
+Planned next: long transcripts in search and a native Mac speed-up for Speech to Text ([ADR-0043](docs/decisions/0043-speech-to-text.md)), and Lip Sync on a GPU host
 ([ADR-0044](docs/decisions/0044-lip-sync.md)), the other Indic languages for text to speech, and the proposed ADRs: SEO, first-party analytics and
 Google Analytics ([0026](docs/decisions/0026-seo.md), [0027](docs/decisions/0027-first-party-analytics.md),
 [0028](docs/decisions/0028-google-analytics-and-consent.md)), and billing with Stripe

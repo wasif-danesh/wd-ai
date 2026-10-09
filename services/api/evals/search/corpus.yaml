@@ -20,6 +20,7 @@ concepts:
       - { kind: song,  lang: ja, text: "雪の森のきつね。静かなフォーク。白い雪の上に小さな足跡を残して、赤いきつねが歩いていく" }
       - { kind: speech, lang: fr, text: "Ce matin, un renard roux a traversé la neige fraîche derrière la maison. Ses traces menaient vers la forêt de sapins." }
       - { kind: transcript, lang: ru, text: "Рассказ о лисе. Сегодня утром рыжая лиса прошла по свежему снегу, и следы вели в сосновый лес. Мы тихо стояли у окна." }
+      - { kind: lipsync, lang: es, text: "Un zorro rojo cuenta cómo cruzó el bosque nevado esta mañana. Voz suave y tranquila." }
     queries:
       - { lang: ru, text: "рыжая лиса на снегу в зимнем лесу" }
       - { lang: es, text: "un zorro caminando entre árboles nevados" }
@@ -49,6 +50,7 @@ concepts:
       - { kind: video, lang: es, text: "Un niño corre por una colina con una cometa roja, el viento la eleva hacia el cielo azul" }
       - { kind: speech, lang: de, text: "Auf dem Hügel lassen die Kinder heute ihre Drachen steigen, der Wind ist stark genug und der Himmel ist wolkenlos." }
       - { kind: transcript, lang: hi, text: "बच्चों का पतंग उत्सव। पहाड़ी पर बच्चे रंगीन पतंगें उड़ा रहे हैं, हवा तेज़ है और आसमान साफ़ है।" }
+      - { kind: lipsync, lang: bn, text: "ছোট্ট মেয়েটি পাহাড়ের উপর ঘুড়ি ওড়ানোর গল্প বলছে। হাসিখুশি ও উচ্ছল স্বর।" }
     queries:
       - { lang: pt, text: "criança soltando pipa no alto de um morro" }
       - { lang: fr, text: "un enfant et son cerf-volant par une journée venteuse" }

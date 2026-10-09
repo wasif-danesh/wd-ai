@@ -48,6 +48,7 @@ from wd_api.admin import me_router as me_router
 from wd_api.admin import router as admin_router
 from wd_api.admin_media import router as admin_media_router
 from wd_api.admin_models import router as admin_models_router
+from wd_api.admin_safeguards import router as admin_safeguards_router
 from wd_api.auth import MIN_SECRET_BYTES
 from wd_api.config import get_settings
 from wd_api.creation_index import (
@@ -71,6 +72,12 @@ from wd_api.model_checks import RegistryCheckRunner
 from wd_api.rag import DIMENSIONS, RagService
 from wd_api.routes import HEARTBEAT_S, router
 from wd_api.runs import RunManager
+from wd_api.safeguards import (
+    KEY,
+    InMemorySettingsStore,
+    PostgresSettingsStore,
+    Safeguards,
+)
 from wd_api.uploads import router as uploads_router
 from wd_api.uploads import sweep_forever
 from wd_api.users import CachedUsers, PostgresUserStore, UserStore
@@ -118,6 +125,7 @@ def create_app(
     search_limiter: UploadLimiter | None = None,
     creation_embedder: Embedder | None = None,
     index_store: IndexStore | None = None,
+    safeguards: Safeguards | None = None,
 ) -> FastAPI:
     """App factory. Tests inject a registry, products dir (with `provider: fake` bindings),
     checkpointer, usage recorder, event log, run store and job sink, so no GPU, network, database
@@ -166,7 +174,14 @@ def create_app(
                     public_endpoint=settings.storage_public_endpoint,
                 )
             )
+        # ADR-0047: off by default, forced on by SAFEGUARDS_FORCE_ON. Tests start with it on.
+        guard = safeguards or Safeguards(
+            InMemorySettingsStore({KEY: True}) if injected else PostgresSettingsStore(db),
+            settings.safeguards_force_on,
+        )
+        app.state.safeguards = guard
         deps = ProviderDeps(
+            safeguards=guard.enabled,
             products_dir=pdir,
             usage=recorder,
             job_sink=sink,
@@ -330,6 +345,7 @@ def create_app(
     app.include_router(admin_router)
     app.include_router(admin_models_router)
     app.include_router(admin_media_router)
+    app.include_router(admin_safeguards_router)
     app.include_router(uploads_router)
     app.include_router(creations_router)
 

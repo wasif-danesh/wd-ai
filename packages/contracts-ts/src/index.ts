@@ -40,6 +40,7 @@ export type MediaView = components["schemas"]["MediaView"];
 export type MediaBackend = components["schemas"]["BackendView"];
 export type MediaField = components["schemas"]["FieldView"];
 export type MediaTestOutcome = components["schemas"]["MediaTestOutcome"];
+export type SafeguardsStatus = components["schemas"]["SafeguardsStatus"];
 
 // wd-image-ai's read API and the upload endpoint
 export type ImageSummary = components["schemas"]["ImageSummary"];
@@ -49,6 +50,8 @@ export type UploadResult = components["schemas"]["UploadResult"];
 // wd-video-ai's read API and the prompt enhancer every product shares
 export type VideoSummary = components["schemas"]["VideoSummary"];
 export type VideoPage = components["schemas"]["VideoPage"];
+export type LipSyncSummary = components["schemas"]["LipSyncSummary"];
+export type LipSyncPage = components["schemas"]["LipSyncPage"];
 export type EnhanceResult = components["schemas"]["EnhanceOut"];
 
 // Search over My creations (ADR-0041)

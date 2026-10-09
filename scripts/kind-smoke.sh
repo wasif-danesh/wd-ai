@@ -28,6 +28,7 @@ check "voice catalog answers through the BFF" "curl -fsS -m 10 http://localhost:
 check "Speech to Text page renders (server-side read of the language list)" "curl -fsS -m 20 http://localhost:3000/speech-to-text | grep -q 'speech'"
 check "language list answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-stt-ai/languages | grep -q '\"languages\"'"
 check "transcripts API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-stt-ai/transcripts | grep -q '\"transcripts\"'"
+check "lip syncs API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-lipsync-ai/lipsyncs | grep -q '\"lipsyncs\"'"
 check "uploading something that is not a recording is refused" "test \"\$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: audio/mpeg' --data-binary 'not audio' http://localhost:3000/api/products/wd-stt-ai/uploads/media)\" = 415"
 check "speeches API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-tts-ai/speeches | grep -q '\"speeches\"'"
 check "prompt enhancing needs a known kind" "test \"\$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{\"kind\":\"nope\",\"prompt\":\"x\"}' http://localhost:3000/api/products/wd-video-ai/prompt/enhance)\" = 422"

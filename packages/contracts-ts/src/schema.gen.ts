@@ -157,6 +157,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/safeguards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Safeguards */
+        get: operations["get_safeguards_admin_safeguards_get"];
+        /** Set Safeguards */
+        put: operations["set_safeguards_admin_safeguards_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/songs": {
         parameters: {
             query?: never;
@@ -329,6 +347,66 @@ export interface paths {
         put?: never;
         /** Enhance */
         post: operations["enhance_products_wd_image_ai_prompt_enhance_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-lipsync-ai/lipsyncs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Lipsyncs */
+        get: operations["list_lipsyncs_products_wd_lipsync_ai_lipsyncs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-lipsync-ai/lipsyncs/{video_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Lipsync */
+        get: operations["get_lipsync_products_wd_lipsync_ai_lipsyncs__video_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Lipsync
+         * @description Delete a clip (or dismiss a failed one): its files first, then the record. A clip still
+         *     being made cannot be deleted: its job is running.
+         */
+        delete: operations["delete_lipsync_products_wd_lipsync_ai_lipsyncs__video_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-lipsync-ai/lipsyncs/{video_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download
+         * @description The clip as a file the browser saves (browsers ignore `download` on links to the
+         *     storage host, ADR-0034).
+         */
+        get: operations["download_products_wd_lipsync_ai_lipsyncs__video_id__download_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1113,6 +1191,46 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** LipSyncPage */
+        LipSyncPage: {
+            /** Lipsyncs */
+            lipsyncs: components["schemas"]["LipSyncSummary"][];
+            /** Next Before */
+            next_before: string | null;
+        };
+        /** LipSyncSummary */
+        LipSyncSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error?: string | null;
+            /** Height */
+            height?: number | null;
+            /** Id */
+            id: string;
+            /** Poster Url */
+            poster_url?: string | null;
+            /** Seconds */
+            seconds: number;
+            /** Source */
+            source: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "working" | "done" | "failed";
+            /** Style */
+            style: string;
+            /** Text */
+            text: string;
+            /** Video Url */
+            video_url?: string | null;
+            /** Width */
+            width?: number | null;
+        };
         /** Me */
         Me: {
             /** Role */
@@ -1291,6 +1409,18 @@ export interface components {
             /** Thread Id */
             thread_id?: string | null;
         };
+        /** SafeguardsIn */
+        SafeguardsIn: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** SafeguardsStatus */
+        SafeguardsStatus: {
+            /** Enabled */
+            enabled: boolean;
+            /** Forced */
+            forced: boolean;
+        };
         /** SearchHit */
         SearchHit: {
             /** Id */
@@ -1299,7 +1429,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "song" | "image" | "video" | "speech" | "transcript";
+            kind: "song" | "image" | "video" | "speech" | "transcript" | "lipsync";
             /**
              * Match
              * @enum {string}
@@ -1926,6 +2056,59 @@ export interface operations {
             };
         };
     };
+    get_safeguards_admin_safeguards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SafeguardsStatus"];
+                };
+            };
+        };
+    };
+    set_safeguards_admin_safeguards_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SafeguardsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SafeguardsStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_songs_admin_songs_get: {
         parameters: {
             query?: {
@@ -2025,7 +2208,7 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
-                kind?: ("song" | "image" | "video" | "speech" | "transcript") | null;
+                kind?: ("song" | "image" | "video" | "speech" | "transcript" | "lipsync") | null;
                 limit?: number;
             };
             header?: never;
@@ -2240,6 +2423,131 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EnhanceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_lipsyncs_products_wd_lipsync_ai_lipsyncs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: string | null;
+                status?: ("working" | "done" | "failed") | null;
+                ids?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LipSyncPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_lipsync_products_wd_lipsync_ai_lipsyncs__video_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                video_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LipSyncSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_lipsync_products_wd_lipsync_ai_lipsyncs__video_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                video_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_products_wd_lipsync_ai_lipsyncs__video_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                video_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

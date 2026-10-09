@@ -811,6 +811,139 @@
         "title": "LanguageChoice",
         "type": "object"
       },
+      "LipSyncPage": {
+        "properties": {
+          "lipsyncs": {
+            "items": {
+              "$ref": "#/components/schemas/LipSyncSummary"
+            },
+            "title": "Lipsyncs",
+            "type": "array"
+          },
+          "next_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          }
+        },
+        "required": [
+          "lipsyncs",
+          "next_before"
+        ],
+        "title": "LipSyncPage",
+        "type": "object"
+      },
+      "LipSyncSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "poster_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Url"
+          },
+          "seconds": {
+            "title": "Seconds",
+            "type": "number"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "working",
+              "done",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "style": {
+            "title": "Style",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "style",
+          "source",
+          "status",
+          "seconds",
+          "created_at"
+        ],
+        "title": "LipSyncSummary",
+        "type": "object"
+      },
       "Me": {
         "properties": {
           "role": {
@@ -1302,6 +1435,37 @@
         "title": "RunRequest",
         "type": "object"
       },
+      "SafeguardsIn": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "SafeguardsIn",
+        "type": "object"
+      },
+      "SafeguardsStatus": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "forced": {
+            "title": "Forced",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "forced"
+        ],
+        "title": "SafeguardsStatus",
+        "type": "object"
+      },
       "SearchHit": {
         "properties": {
           "id": {
@@ -1314,7 +1478,8 @@
               "image",
               "video",
               "speech",
-              "transcript"
+              "transcript",
+              "lipsync"
             ],
             "title": "Kind",
             "type": "string"
@@ -2675,6 +2840,66 @@
         ]
       }
     },
+    "/admin/safeguards": {
+      "get": {
+        "operationId": "get_safeguards_admin_safeguards_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafeguardsStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Safeguards",
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "operationId": "set_safeguards_admin_safeguards_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SafeguardsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafeguardsStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Safeguards",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/admin/songs": {
       "get": {
         "operationId": "list_songs_admin_songs_get",
@@ -2871,7 +3096,8 @@
                     "image",
                     "video",
                     "speech",
-                    "transcript"
+                    "transcript",
+                    "lipsync"
                   ],
                   "type": "string"
                 },
@@ -3201,6 +3427,223 @@
         "tags": [
           "wd-image-ai",
           "wd-image-ai"
+        ]
+      }
+    },
+    "/products/wd-lipsync-ai/lipsyncs": {
+      "get": {
+        "operationId": "list_lipsyncs_products_wd_lipsync_ai_lipsyncs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "working",
+                    "done",
+                    "failed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ids",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ids"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LipSyncPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Lipsyncs",
+        "tags": [
+          "wd-lipsync-ai"
+        ]
+      }
+    },
+    "/products/wd-lipsync-ai/lipsyncs/{video_id}": {
+      "delete": {
+        "description": "Delete a clip (or dismiss a failed one): its files first, then the record. A clip still\nbeing made cannot be deleted: its job is running.",
+        "operationId": "delete_lipsync_products_wd_lipsync_ai_lipsyncs__video_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Lipsync",
+        "tags": [
+          "wd-lipsync-ai"
+        ]
+      },
+      "get": {
+        "operationId": "get_lipsync_products_wd_lipsync_ai_lipsyncs__video_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LipSyncSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Lipsync",
+        "tags": [
+          "wd-lipsync-ai"
+        ]
+      }
+    },
+    "/products/wd-lipsync-ai/lipsyncs/{video_id}/download": {
+      "get": {
+        "description": "The clip as a file the browser saves (browsers ignore `download` on links to the\nstorage host, ADR-0034).",
+        "operationId": "download_products_wd_lipsync_ai_lipsyncs__video_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "video_id",
+            "required": true,
+            "schema": {
+              "title": "Video Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download",
+        "tags": [
+          "wd-lipsync-ai"
         ]
       }
     },

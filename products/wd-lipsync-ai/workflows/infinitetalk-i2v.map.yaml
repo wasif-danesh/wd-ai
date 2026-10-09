@@ -1,0 +1,34 @@
+workflow: infinitetalk-i2v.json
+licence: "InfiniteTalk (MeiGen-AI) Apache-2.0; Wan2.1-I2V-14B-480P Apache-2.0; chinese-wav2vec2-base MIT; ComfyUI-WanVideoWrapper Apache-2.0; lightx2v LoRA Apache-2.0 (ADR-0044)"
+notes: >
+  A character picture and a voice become a talking or singing clip (ADR-0044). Run once on the Mac
+  (spike, 2026-10-09): it works in bf16 but needs about 4 minutes of compute per second of video and
+  runs out of memory past one 81-frame window, so production belongs on a CUDA host. Needs ComfyUI-WanVideoWrapper
+  (commit 088128b tested); on Apple silicon its RoPE and scheduler code also needed float32 in place of float64
+  (see the ADR). The base model is the bf16 conversion of Wan2_1-I2V-14B-480P_fp8_e4m3fn: on a CUDA host the fp8 file
+  and `quantization: fp8_e4m3fn` can be used instead. The size is the crop the picture is scaled to; the length is
+  the audio's frames at 25 per second. The audio encoder is fetched from Hugging Face the first time it runs.
+  The worker uploads the user's picture and voice under per-job names and the API writes those names into
+  LoadImage and LoadAudio. The default clip window is 81 frames; longer audio continues in further windows.
+models:
+  - diffusion_models/Wan2_1-I2V-14B-480P_bf16.safetensors
+  - diffusion_models/InfiniteTalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors
+  - text_encoders/umt5-xxl-enc-fp8_e4m3fn.safetensors
+  - vae/Wan2_1_VAE_bf16.safetensors
+  - clip_vision/clip_vision_h.safetensors
+  - loras/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors
+inputs:
+  prompt: { node: "12", field: positive_prompt }
+  seed: { node: "14", field: seed }
+  steps: { node: "14", field: steps }
+  length: { node: "11", field: num_frames }
+  width:
+    - { node: "7", field: width }
+    - { node: "13", field: width }
+  height:
+    - { node: "7", field: height }
+    - { node: "13", field: height }
+  image: { node: "6", field: image }
+  audio: { node: "9", field: audio }
+outputs:
+  video: { node: "17", type: video }

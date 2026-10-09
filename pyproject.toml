@@ -18,6 +18,8 @@ wd-contracts = { workspace = true }
 wd-platform-sdk = { workspace = true }
 wd-music-ai = { workspace = true }
 wd-stt-ai = { workspace = true }
+wd-tts-ai = { workspace = true }
+wd-lipsync-ai = { workspace = true }
 
 [tool.ruff]
 line-length = 100
@@ -36,7 +38,7 @@ exclude = ["services/speech-indic", "services/stt-indic", "**/node_modules", "**
 typeCheckingMode = "standard"
 # Test helper modules (conftest, fake_comfyui) are imported by name; pytest puts their folders on
 # sys.path, so tell pyright too.
-extraPaths = ["products/wd-music-ai/tests", "products/wd-image-ai/tests", "products/wd-video-ai/tests", "products/wd-tts-ai/tests", "products/wd-stt-ai/tests", "services/media-worker/tests"]
+extraPaths = ["products/wd-music-ai/tests", "products/wd-image-ai/tests", "products/wd-video-ai/tests", "products/wd-tts-ai/tests", "products/wd-stt-ai/tests", "products/wd-lipsync-ai/tests", "services/media-worker/tests"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

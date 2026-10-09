@@ -1,6 +1,6 @@
 # ADR-0044: Lip Sync
 
-- **Status:** Proposed
+- **Status:** Accepted (built 2026-10-09 against the placeholder backend; see "What was built")
 - **Date:** 2026-10-09
 
 ## Context
@@ -67,7 +67,7 @@ What the project documents, and what it does **not** say:
   (ADR-0042) and `await_job`, then the lip-sync job and `await_job`, then `finalise`: store the MP4, make the poster,
   write the row, delete the uploaded image and audio, write a usage event `lipsync.created` (seconds). Failures
   mark the row `failed` with a plain message.
-- **The safety policy (needs your confirmation; the defaults here are the cautious ones).**
+- **The safety policy. Update 2026-10-09: by the owner's decision (ADR-0047) every safeguard below (the real-person-photo refusal, audio and script checks, MP4 marking, the daily limit) is behind one Admin switch: off on local and staging, forced on in production. The text below describes what runs when the switch is on.**
   1. **No photographs of real people in this version.** A multimodal check of the image (the existing
      `multimodal` alias, like the picture guardrail of ADR-0036) classifies it as `real_person_photo` or not;
      photographs of people are refused with a fixed message. Illustrations, cartoons, 3D renders, paintings,
@@ -110,6 +110,30 @@ step 1 answers where InfiniteTalk can run.
 4. **The audio check:** a script, a spoken file and a song in several languages each reach the moderator through
    the right path.
 
+## Feasibility spike on the Mac (2026-10-09)
+
+Run on the 64 GB Apple Silicon Mac in a separate ComfyUI (port 8190) with ComfyUI-WanVideoWrapper (commit
+`088128b`), InfiniteTalk single, Wan2.1-I2V-14B-480P, the lightx2v step-distill LoRA (4 steps, cfg 1), a
+synthetic portrait and English speech. Scripts and the wrapper patch are in `~/ComfyUI-LipSync`
+(`spike_run.py`, `wrapper-mps-patch.diff`).
+
+| Question | Answer |
+|---|---|
+| Does it run on MPS? | **Yes, with changes**: the fp8 base file cannot be merged with the LoRA on MPS, so the base is converted to **bf16** (33 GB); the wrapper's RoPE and scheduler code needs float64 replaced by float32 (MPS has no float64); `transformers` 4.57 and `diffusers` 0.35 (newer ones break the wrapper). |
+| Is the output noise? | **No.** bf16 gives a clean face that moves and opens its mouth with the speech (unlike Wan 2.2 5B). Checked at 256x256, 1 step. |
+| Speed | 256x256, 1 step, 5 s of audio: 306 s in total (**about 60 s of compute per second of output**, including loading). 320x320, 4 steps: **about 200 s per step for one 81-frame window** (3.2 s of video), so about **13 minutes per 3 seconds of output**: roughly 4 minutes per second of video. A 15 s clip would take over an hour. |
+| Peak memory | 29-31 GB resident for the process, plus MPS allocations that grow with every window: **the second window ran out of memory at 320x320** (88 GB allowed). 448x448 ran out of memory in the first window (attention asks for a 20 GB block). So the Mac is limited to about 256-320 px and under one window. |
+| Languages | Not tested yet (English only so far). Bengali and the other Indic languages are still unverified. |
+
+**Verdict: the Mac cannot be the production host for Lip Sync.** It proves the engine and the workflow work, and is
+good for a small demo, but 4 minutes per second of video, small pictures and memory growth are not a product.
+Lip Sync needs a CUDA host (the home lab GPU or a cloud GPU) with the same workflow; there the fp8 base, the
+LoRA and `sageattn` apply and the speed is expected to be one to a few times real time (to be measured on that host).
+
+Consequence for the build: the product (graph, routes, upload, search, UI) can be built now against the worker
+contract and the stub backend, and switched to the real workflow when a CUDA host exists. One extra file was
+needed besides the list above: `clip_vision_h.safetensors` (1.26 GB, Comfy-Org repack of Wan 2.1).
+
 ## Consequences
 
 - New: the `video.lipsync` capability and InfiniteTalk workflow, the product and graph, migration 0016
@@ -133,3 +157,23 @@ step 1 answers where InfiniteTalk can run.
 Photographs of real people, voice cloning, several characters in one image (the multi-person variant exists in the
 model), full-body animation, changing the words on an existing video (the dubbing mode), clips longer than 15
 seconds, sharing or a public gallery, and translating a voice into another language.
+
+## What was built (2026-10-09)
+
+Built as designed, with these differences, all small and recorded here:
+
+- The product is `wd-lipsync-ai`; the table is `lipsyncs` (migration 0016: 0015 became the system settings table of ADR-0047).
+- It takes the **voice as a script or as an audio file or recording** and a **style hint**; the **Enhance button is not
+  built** for the hint (it is short and optional).
+- **Safeguards follow the owner's switch** (ADR-0047): off on local and staging, forced on in production. This covers the
+  picture check, the moderation of words and of the transcript of an uploaded voice, the AI-generated mark and the daily
+  limit of 3. The visible mark (`LIPSYNC_VISIBLE_MARK`) is not built; the metadata mark is.
+- The words of an uploaded voice are transcribed only while the safeguards are on, so with them off an uploaded voice is
+  searchable only by its style hint.
+- The workflow is the one run in the spike, with the core `CreateVideo` and `SaveVideo` nodes to mix the voice into an
+  MP4 (the example's `VHS_VideoCombine` is not needed). It has been run for real only on the Mac, at 256x256 and one
+  step, not at the product's size; the product config sets 640x640 and 4 steps for a CUDA host.
+- The worker now uploads a job's **voice** (`audio_key`) as well as a picture, and the stub backend returns a real
+  test-pattern MP4 for a video output.
+- Still to do from the evaluation: languages (step 2), the picture guardrail on a labelled set (step 3, only three
+  fixtures exist now), the audio check on songs (step 4), and speed on a CUDA host.
