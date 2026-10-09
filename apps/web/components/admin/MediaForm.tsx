@@ -1,6 +1,6 @@
 "use client";
 
-import { type MediaFormState, submitMedia } from "@/app/admin/media/actions";
+import { type MediaFormState, submitMedia } from "@/app/(site)/admin/media/actions";
 import { Notice } from "@/components/Notice";
 import type { MediaBackend, MediaView } from "@wd/contracts";
 import { useActionState, useId, useState } from "react";

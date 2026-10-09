@@ -8,6 +8,10 @@ export type Product = {
   action: string; // the button on the card: what you do there
   href: string;
   status: "live" | "soon";
+  /** The product's own views in the side panel (ADR-0046); the first is where the product starts. */
+  views: { label: string; href: string }[];
+  /** The kind it makes in My creations, used for the "My creations" link in its views. */
+  library?: "songs" | "images" | "videos" | "speeches";
 };
 
 export const PRODUCTS: Product[] = [
@@ -18,6 +22,11 @@ export const PRODUCTS: Product[] = [
     action: "Create a song",
     href: "/music",
     status: "live",
+    views: [
+      { label: "Create", href: "/music" },
+      { label: "In My creations", href: "/creations?show=songs" },
+    ],
+    library: "songs",
   },
   {
     id: "image",
@@ -26,6 +35,11 @@ export const PRODUCTS: Product[] = [
     action: "Make an image",
     href: "/image",
     status: "live",
+    views: [
+      { label: "Create", href: "/image" },
+      { label: "In My creations", href: "/creations?show=images" },
+    ],
+    library: "images",
   },
   {
     id: "video",
@@ -35,6 +49,11 @@ export const PRODUCTS: Product[] = [
     action: "Create a video",
     href: "/video",
     status: "live",
+    views: [
+      { label: "Create", href: "/video" },
+      { label: "In My creations", href: "/creations?show=videos" },
+    ],
+    library: "videos",
   },
   {
     id: "text-to-speech",
@@ -44,6 +63,11 @@ export const PRODUCTS: Product[] = [
     action: "Create speech",
     href: "/text-to-speech",
     status: "live",
+    views: [
+      { label: "Create", href: "/text-to-speech" },
+      { label: "In My creations", href: "/creations?show=speeches" },
+    ],
+    library: "speeches",
   },
   {
     id: "speech-to-text",
@@ -53,6 +77,7 @@ export const PRODUCTS: Product[] = [
     action: "Transcribe audio",
     href: "/speech-to-text",
     status: "soon",
+    views: [{ label: "Create", href: "/speech-to-text" }],
   },
   {
     id: "lip-sync",
@@ -62,5 +87,6 @@ export const PRODUCTS: Product[] = [
     action: "Create lip sync",
     href: "/lip-sync",
     status: "soon",
+    views: [{ label: "Create", href: "/lip-sync" }],
   },
 ];

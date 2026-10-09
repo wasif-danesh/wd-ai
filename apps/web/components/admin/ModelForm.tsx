@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormState, submitModel } from "@/app/admin/models/actions";
+import { type FormState, submitModel } from "@/app/(site)/admin/models/actions";
 import { Notice } from "@/components/Notice";
 import type { ModelView, ProviderView } from "@wd/contracts";
 import { useActionState, useId, useState } from "react";

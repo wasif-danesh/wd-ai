@@ -8,7 +8,15 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "My creations" };
 export const dynamic = "force-dynamic";
 
-export default async function Creations() {
+const FILTERS = ["songs", "images", "videos", "speeches"] as const;
+
+export default async function Creations({
+  searchParams,
+}: {
+  searchParams: Promise<{ show?: string }>;
+}) {
+  const { show } = await searchParams;
+  const initialFilter = FILTERS.find((f) => f === show) ?? "all";
   const [songsResult, imagesResult, videosResult, speechesResult] = await Promise.allSettled([
     apiGet<SongPage>(`/products/${PRODUCT}/songs?limit=12`),
     apiGet<ImagePage>("/products/wd-image-ai/images?limit=12"),
@@ -51,7 +59,13 @@ export default async function Creations() {
               Your other creations are still available below.
             </Notice>
           ) : null}
-          <CreationsList songs={songs} images={images} videos={videos} speeches={speeches} />
+          <CreationsList
+            songs={songs}
+            images={images}
+            videos={videos}
+            speeches={speeches}
+            initialFilter={initialFilter}
+          />
         </>
       ) : (
         <Notice tone="error" title="Couldn't load your creations">

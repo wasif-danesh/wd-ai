@@ -126,13 +126,23 @@ or, for images, an **OpenAI-compatible image API**, enter its address and key, t
 answers; it does not generate anything) or **Save**. The next job uses it. A saved key is kept when you save again for the same
 backend, and is never shown. Needs `MEDIA_SECRETS_KEY` (`make setup` creates it) before a key can be saved.
 
-## UI components (ADR-0045, ADR-0046: decided, not built yet)
+## UI components and the side panel (ADR-0045, ADR-0046)
 
-New and changed screens will use shadcn/ui components added with its CLI into `components/ui/` (they are our source),
-react-hook-form with Zod for forms and TanStack Table for grids. Our CSS variables in `app/globals.css` stay the design
-tokens and are mapped into the Tailwind theme, so there is one palette. Migrate a screen when you touch it, and check
-keyboard use, Bengali and right-to-left text, dark and light colours, and 320 px width. Inside a product the side panel
-(ADR-0046) lists the products from `lib/products.ts`; the home page keeps its cards.
+Controls and tables are shadcn/ui components in `components/ui/` (our source: edit them freely), react-hook-form with
+Zod for forms and TanStack Table for grids. Tailwind is loaded from `app/tailwind.css` with theme and utilities only (no
+preflight); its colour names map onto our CSS variables in `app/globals.css`, so there is one palette in light and dark.
+Migrate a screen when you touch it, and check keyboard use, Bengali and right-to-left text, dark and light colours, and
+320 px width.
+
+Adding a component: `pnpm dlx shadcn@latest add <name>`, then (1) the CLI writes `import { cn } from "cn"` and adds a
+`cn` package, so change it to `@/lib/utils` and `pnpm remove cn`; (2) it appends light/dark colour variables to
+`app/tailwind.css`, so delete those and keep our mapping; (3) run `pnpm exec biome check --write .`. Our old class names
+`.grid` (now `.tiles`) and `.table` clash with Tailwind utility names: do not reuse a Tailwind utility name for a legacy class.
+
+Routes are in two groups with the same URLs: `app/(product)/` (music, image, video, text-to-speech, creations) has the side
+panel and top bar (`components/shell/`: panel, breadcrumb, ⌘K search over My creations, "ready" notices); `app/(site)/`
+(home, sign-in, admin, coming-soon pages) keeps the plain header. A product's panel entry and views come from
+`lib/products.ts`. My creations has a Cards/Table switch; `/creations?show=songs|images|videos|speeches` opens a filter.
 
 ## Not done yet
 

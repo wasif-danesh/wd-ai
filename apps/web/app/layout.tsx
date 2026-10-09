@@ -1,7 +1,7 @@
-import { Header } from "@/components/Header";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import "./tailwind.css";
 
 export const metadata: Metadata = {
   title: { default: "WD AI Studio", template: "%s · WD AI Studio" },
@@ -23,10 +23,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <Header />
-        <main id="main" className="page">
-          {children}
-        </main>
+        {children}
       </body>
     </html>
   );

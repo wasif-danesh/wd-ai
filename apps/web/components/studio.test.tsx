@@ -30,7 +30,7 @@ describe("the studio's products", () => {
 
 describe("the home page", () => {
   it("has the headline and the subtitle, with Ideas picked out", async () => {
-    const Home = (await import("@/app/page")).default;
+    const Home = (await import("@/app/(site)/page")).default;
     const { container } = render(<Home />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bring Your Ideas to Life");
     expect(container.querySelector(".studio-hero__accent")).toHaveTextContent("Ideas");

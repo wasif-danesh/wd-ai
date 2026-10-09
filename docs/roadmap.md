@@ -98,6 +98,10 @@ See [product spec](../products/wd-music-ai/README.md).
 
 ## Backlog (not yet scheduled)
 
+- [ ] Migrate the remaining screens to shadcn/ui (ADR-0045): music, image and video forms, the admin tables, sign-in; then
+      delete the old CSS they no longer use. Done so far: the Text to Speech form, My creations table, the side panel (ADR-0046)
+- [ ] Side panel follow-ups (ADR-0046): pinning and reordering, a shared prompt bar for the creation products (needs its own ADR)
+
 - [x] Text to Speech (ADR-0042): Kokoro in 7 languages and Bengali by Indic Parler-TTS, in My creations and search.
       Known gaps: Bengali awaits native review, the other Indic languages, Japanese and Chinese (Speaches cannot make them), no male French voice, Spanish and
       Portuguese voices are graded low, no `/admin/media` entry for the speech server

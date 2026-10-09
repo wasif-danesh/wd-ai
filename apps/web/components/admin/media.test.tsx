@@ -103,7 +103,7 @@ function form(fields: Record<string, string>) {
 describe("submitMedia (the server action)", () => {
   it("sends the settings and the key once, and never echoes the key back", async () => {
     apiSend.mockResolvedValue({ status: 200, data: { ok: true, message: "fine", latency_ms: 5 } });
-    const { submitMedia } = await import("../../app/admin/media/actions");
+    const { submitMedia } = await import("../../app/(site)/admin/media/actions");
     const out = await submitMedia(
       "wd-music-ai",
       "image.generate",
@@ -126,7 +126,7 @@ describe("submitMedia (the server action)", () => {
   });
 
   it("saves with PUT and reports problems in words", async () => {
-    const { submitMedia } = await import("../../app/admin/media/actions");
+    const { submitMedia } = await import("../../app/(site)/admin/media/actions");
     apiSend.mockResolvedValueOnce({ status: 200, data: {} });
     expect(
       (
@@ -163,7 +163,7 @@ describe("submitMedia (the server action)", () => {
 
   it("resets without a body and refuses odd names before calling the API", async () => {
     apiSend.mockResolvedValue({ status: 200, data: {} });
-    const { submitMedia } = await import("../../app/admin/media/actions");
+    const { submitMedia } = await import("../../app/(site)/admin/media/actions");
     expect(
       (await submitMedia("p", "music.generate", { status: "idle" }, form({ intent: "reset" })))
         .status,

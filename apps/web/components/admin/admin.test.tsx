@@ -33,7 +33,7 @@ describe("the admin layout", () => {
     vi.doMock("@/components/NavLink", () => ({
       NavLink: ({ children }: { children: React.ReactNode }) => <a href="/x">{children}</a>,
     }));
-    const { default: AdminLayout } = await import("../../app/admin/layout");
+    const { default: AdminLayout } = await import("../../app/(site)/admin/layout");
     render(await AdminLayout({ children: <p>secret numbers</p> }));
   }
 

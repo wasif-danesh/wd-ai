@@ -58,7 +58,7 @@ describe("submitModel (the server action)", () => {
       status: 200,
       data: { ok: true, latency_ms: 40, sample: "ok", error: "" },
     });
-    const { submitModel } = await import("../../app/admin/models/actions");
+    const { submitModel } = await import("../../app/(site)/admin/models/actions");
     const out = await submitModel(
       "lyrics-writer",
       { status: "idle" },
@@ -76,7 +76,7 @@ describe("submitModel (the server action)", () => {
 
   it("saves, and reports that the checks passed", async () => {
     apiSend.mockResolvedValue({ status: 200, data: { model: {}, checks: "passed" } });
-    const { submitModel } = await import("../../app/admin/models/actions");
+    const { submitModel } = await import("../../app/(site)/admin/models/actions");
     const out = await submitModel(
       "moderator",
       { status: "idle" },
@@ -91,7 +91,7 @@ describe("submitModel (the server action)", () => {
       status: 409,
       data: { detail: { message: "the product's checks failed", failures: ["cv: allowed"] } },
     });
-    const { submitModel } = await import("../../app/admin/models/actions");
+    const { submitModel } = await import("../../app/(site)/admin/models/actions");
     const out = await submitModel(
       "moderator",
       { status: "idle" },
@@ -110,7 +110,7 @@ describe("submitModel (the server action)", () => {
     [422, "needs an API key"],
   ])("explains a %i answer", async (status, words) => {
     apiSend.mockResolvedValue({ status, data: { detail: "Google Gemini needs an API key" } });
-    const { submitModel } = await import("../../app/admin/models/actions");
+    const { submitModel } = await import("../../app/(site)/admin/models/actions");
     const out = await submitModel("x-y", { status: "idle" }, form({ ...fields, intent: "save" }));
     expect(out.status).toBe("error");
     expect((out as { message: string }).message).toContain(words);
@@ -118,7 +118,7 @@ describe("submitModel (the server action)", () => {
 
   it("resets without sending a binding, and refuses an odd alias before calling the API", async () => {
     apiSend.mockResolvedValue({ status: 200, data: {} });
-    const { submitModel } = await import("../../app/admin/models/actions");
+    const { submitModel } = await import("../../app/(site)/admin/models/actions");
     expect(
       (await submitModel("embedder", { status: "idle" }, form({ intent: "reset" }))).status,
     ).toBe("reset");
