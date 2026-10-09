@@ -116,6 +116,10 @@ class MediaCapabilities:
         """Say a text aloud (ADR-0042): `text`, `language`, `engine`, `voice` and `model`."""
         return await self._run("synthesize", inputs)
 
+    async def transcribe(self, **inputs: Any) -> JobHandle:
+        """Turn an uploaded recording into text (ADR-0043): `audio_key`, `language`, `model`."""
+        return await self._run("transcribe", inputs)
+
     async def animate(self, **inputs: Any) -> JobHandle:
         """Make a clip from a picture the user uploaded: pass its storage key as `image_key`."""
         return await self._run("animate", inputs)

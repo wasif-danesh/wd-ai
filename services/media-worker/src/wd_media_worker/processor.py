@@ -237,20 +237,25 @@ class JobProcessor:
     async def _input_files(self, job: JobRequest) -> InputFiles:
         """The user's uploaded picture for this job, read from their own prefix (ADR-0035). The key
         must be one of their uploads: anything else fails the job, never reading another path."""
-        key = job.inputs.get("image_key")
-        if not key:
-            return {}
-        if not isinstance(key, str) or not key.startswith("uploads/") or ".." in key:
-            raise ComfyError("invalid_input", "The picture for this job is not valid.")
-        try:
-            data = await self.storage.get(
-                object_key(job.tenant_id, job.product_id, job.user_id, key)
-            )
-        except (FileNotFoundError, ValueError):
-            raise ComfyError(
-                "invalid_input", "The picture for this job could not be found."
-            ) from None
-        return {"image": data}
+        found: InputFiles = {}
+        for name, field, noun in (
+            ("image", "image_key", "picture"),
+            ("audio", "audio_key", "recording"),
+        ):
+            key = job.inputs.get(field)
+            if not key:
+                continue
+            if not isinstance(key, str) or not key.startswith("uploads/") or ".." in key:
+                raise ComfyError("invalid_input", f"The {noun} for this job is not valid.")
+            try:
+                found[name] = await self.storage.get(
+                    object_key(job.tenant_id, job.product_id, job.user_id, key)
+                )
+            except (FileNotFoundError, ValueError):
+                raise ComfyError(
+                    "invalid_input", f"The {noun} for this job could not be found."
+                ) from None
+        return found
 
     def _failed(
         self, job: JobRequest, code: str, message: str, gpu_seconds: float, retryable: bool

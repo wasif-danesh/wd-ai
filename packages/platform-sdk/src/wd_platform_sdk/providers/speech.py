@@ -31,7 +31,11 @@ class SpeechProvider:
             workflow="speech",
             prompt={},
             inputs=merged,
-            outputs={"audio": {"node": "", "type": "audio"}},
+            outputs=(
+                {"transcript": {"node": "", "type": "json"}}
+                if capability == "speech.transcribe"
+                else {"audio": {"node": "", "type": "audio"}}
+            ),
         )
         await self._sink.submit(request)
         return JobHandle(job_id=request.job_id, capability=capability)

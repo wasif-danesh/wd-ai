@@ -180,6 +180,8 @@ def test_the_settings_parse_the_engine_map():
     assert WorkerSettings().speech_server_map == {
         "kokoro": "http://speech:8000",
         "indic-parler": "http://speech-indic:8000",
+        "whisper": "http://speech:8000",
+        "indic-stt": "http://stt-indic:8000",
     }
 
 

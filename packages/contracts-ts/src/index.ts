@@ -61,3 +61,11 @@ export type SpeechPage = components["schemas"]["SpeechPage"];
 export type VoiceCatalog = components["schemas"]["VoiceCatalog"];
 export type LanguageChoice = components["schemas"]["LanguageChoice"];
 export type VoiceChoice = components["schemas"]["VoiceChoice"];
+
+// wd-stt-ai: the languages to choose from and a user's transcripts (ADR-0043)
+export type SpokenLanguages = components["schemas"]["LanguageCatalog"];
+export type SpokenLanguage = components["schemas"]["SpokenLanguage"];
+export type TranscriptSummary = components["schemas"]["TranscriptSummary"];
+export type TranscriptDetail = components["schemas"]["TranscriptDetail"];
+export type TranscriptPage = components["schemas"]["TranscriptPage"];
+export type MediaUploadResult = components["schemas"]["MediaUploadResult"];

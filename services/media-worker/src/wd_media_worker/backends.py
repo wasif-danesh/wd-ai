@@ -32,6 +32,7 @@ _EXT = {
     "image/png": "png",
     "image/jpeg": "jpg",
     "image/webp": "webp",
+    "application/json": "json",
     "audio/mpeg": "mp3",
     "audio/wav": "wav",
     "audio/flac": "flac",
@@ -307,6 +308,12 @@ class BackendRouter:
         from wd_media_worker.processor import ComfyRunner  # circular at import time
 
         if b is None and job.capability.startswith("speech.") and self._s.comfyui_mode != "stub":
+            if job.capability == "speech.transcribe":
+                from wd_media_worker.transcribe import OpenAITranscriptionRunner
+
+                return OpenAITranscriptionRunner(
+                    self._s.speech_server_map, self._s.job_timeout_s, self._http
+                )
             from wd_media_worker.speech import OpenAISpeechRunner
 
             return OpenAISpeechRunner(self._s.speech_server_map, self._s.job_timeout_s, self._http)

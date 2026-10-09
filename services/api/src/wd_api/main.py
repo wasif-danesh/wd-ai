@@ -204,8 +204,8 @@ def create_app(
         configs: dict[str, Any] = {}
         app.state.caps = {}  # product id -> its capabilities, for product routes (prompt enhancing)
         # what each product accepts as an upload (ADR-0035): None for a product that accepts none
-        app.state.upload_rules = lambda pid: (
-            configs[pid].uploads.get("image") if pid in configs else None
+        app.state.upload_rules = lambda pid, kind="image": (
+            configs[pid].uploads.get(kind) if pid in configs else None
         )
 
         def build_graphs(saver: Any) -> dict[str, Any]:

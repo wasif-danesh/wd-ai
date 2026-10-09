@@ -3,6 +3,7 @@ For UI work and laptops that cannot run the real models."""
 
 import asyncio
 import hashlib
+import json
 import math
 import struct
 import wave
@@ -61,7 +62,16 @@ async def run_stub(
     made: dict[str, tuple[bytes, str, str]] = {}
     for name, spec in outputs.items():
         kind = spec.get("type", "image")
-        if kind == "audio":
+        if kind == "json":
+            sample = {
+                "text": "This is a placeholder transcript.",
+                "language": "en",
+                "segments": [
+                    {"start": 0.0, "end": 2.0, "text": "This is a placeholder transcript."}
+                ],
+            }
+            made[name] = (json.dumps(sample).encode(), "application/json", "json")
+        elif kind == "audio":
             made[name] = (placeholder_wav(job_id), "audio/wav", "wav")
         else:
             made[name] = (placeholder_png(job_id), "image/png", "png")

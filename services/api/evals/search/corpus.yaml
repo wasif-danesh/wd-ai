@@ -18,6 +18,8 @@ concepts:
       - { kind: image, lang: en, text: "A red fox walking through fresh snow in a pine forest at dawn, soft golden light" }
       - { kind: video, lang: de, text: "Ein Rotfuchs schleicht im Morgengrauen durch tief verschneiten Wald, sein Atem steigt als Dampf auf" }
       - { kind: song,  lang: ja, text: "雪の森のきつね。静かなフォーク。白い雪の上に小さな足跡を残して、赤いきつねが歩いていく" }
+      - { kind: speech, lang: fr, text: "Ce matin, un renard roux a traversé la neige fraîche derrière la maison. Ses traces menaient vers la forêt de sapins." }
+      - { kind: transcript, lang: ru, text: "Рассказ о лисе. Сегодня утром рыжая лиса прошла по свежему снегу, и следы вели в сосновый лес. Мы тихо стояли у окна." }
     queries:
       - { lang: ru, text: "рыжая лиса на снегу в зимнем лесу" }
       - { lang: es, text: "un zorro caminando entre árboles nevados" }
@@ -45,6 +47,8 @@ concepts:
       - { kind: image, lang: ja, text: "丘の上で凧揚げをする子ども、青空と白い雲、夏の風景" }
       - { kind: song,  lang: en, text: "Fly High. Upbeat pop. A little kid runs up the hill with a kite and laughs as the wind lifts it to the sky" }
       - { kind: video, lang: es, text: "Un niño corre por una colina con una cometa roja, el viento la eleva hacia el cielo azul" }
+      - { kind: speech, lang: de, text: "Auf dem Hügel lassen die Kinder heute ihre Drachen steigen, der Wind ist stark genug und der Himmel ist wolkenlos." }
+      - { kind: transcript, lang: hi, text: "बच्चों का पतंग उत्सव। पहाड़ी पर बच्चे रंगीन पतंगें उड़ा रहे हैं, हवा तेज़ है और आसमान साफ़ है।" }
     queries:
       - { lang: pt, text: "criança soltando pipa no alto de um morro" }
       - { lang: fr, text: "un enfant et son cerf-volant par une journée venteuse" }
@@ -54,6 +58,8 @@ concepts:
       - { kind: image, lang: de, text: "Eine orangefarbene Katze schläft zusammengerollt auf einem Sofa neben dem Fenster, weiches Licht" }
       - { kind: song,  lang: zh, text: "懒猫午后。轻柔的爵士。猫咪在沙发上打盹，窗外下着小雪" }
       - { kind: video, lang: en, text: "A ginger cat sleeps on a cosy sofa by a window, snow falling outside, the cat breathes slowly" }
+      - { kind: speech, lang: ja, text: "うちの猫は午後になると窓際のソファで丸くなって眠ります。外は静かに雪が降っています。" }
+      - { kind: transcript, lang: es, text: "Mi gata duerme la siesta. Cada tarde se acurruca en el sofá junto a la ventana mientras nieva suavemente afuera." }
     queries:
       - { lang: hi, text: "सोफे पर सोती हुई बिल्ली खिड़की के पास" }
       - { lang: ar, text: "قطة نائمة على الأريكة بجانب النافذة" }
@@ -63,6 +69,8 @@ concepts:
       - { kind: image, lang: hi, text: "भोर में पहाड़ों के बीच शांत झील, पानी पर हल्की धुंध और गुलाबी आसमान" }
       - { kind: video, lang: fr, text: "Lever de soleil sur un lac de montagne, la brume glisse lentement sur l'eau, les sommets se reflètent" }
       - { kind: song,  lang: pt, text: "Lago ao amanhecer. Folk instrumental. A névoa sobe devagar e a montanha acorda em silêncio" }
+      - { kind: speech, lang: ar, text: "عند الفجر يغطي الضباب البحيرة الجبلية ببطء، وتنعكس القمم الثلجية على سطح الماء الهادئ." }
+      - { kind: transcript, lang: bn, text: "পাহাড়ি হ্রদের সকাল। ভোরের কুয়াশা ধীরে ধীরে হ্রদের উপর দিয়ে ভেসে যাচ্ছে আর বরফে ঢাকা চূড়াগুলো জলে প্রতিফলিত হচ্ছে।" }
     queries:
       - { lang: en, text: "misty alpine lake at dawn" }
       - { lang: es, text: "amanecer en un lago rodeado de montañas" }

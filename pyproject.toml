@@ -9,7 +9,7 @@ dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8", "pyright>=1.1.380", "ht
 
 [tool.uv.workspace]
 members = ["services/*", "packages/contracts", "packages/platform-sdk", "products/*"]
-exclude = ["products/hello", "products/media-demo", "services/speech-indic"]   # config-only samples; a container-only service
+exclude = ["products/hello", "products/media-demo", "services/speech-indic", "services/stt-indic"]   # config-only samples; a container-only service
 
 [tool.uv.sources]
 wd-api = { workspace = true }
@@ -17,6 +17,7 @@ wd-media-worker = { workspace = true }
 wd-contracts = { workspace = true }
 wd-platform-sdk = { workspace = true }
 wd-music-ai = { workspace = true }
+wd-stt-ai = { workspace = true }
 
 [tool.ruff]
 line-length = 100
@@ -31,11 +32,11 @@ extend-immutable-calls = ["fastapi.Depends"]
 [tool.pyright]
 include = ["services", "packages", "products"]
 # its libraries (torch, parler-tts) exist only inside its container image
-exclude = ["services/speech-indic", "**/node_modules", "**/.venv"]
+exclude = ["services/speech-indic", "services/stt-indic", "**/node_modules", "**/.venv"]
 typeCheckingMode = "standard"
 # Test helper modules (conftest, fake_comfyui) are imported by name; pytest puts their folders on
 # sys.path, so tell pyright too.
-extraPaths = ["products/wd-music-ai/tests", "products/wd-image-ai/tests", "products/wd-video-ai/tests", "products/wd-tts-ai/tests", "services/media-worker/tests"]
+extraPaths = ["products/wd-music-ai/tests", "products/wd-image-ai/tests", "products/wd-video-ai/tests", "products/wd-tts-ai/tests", "products/wd-stt-ai/tests", "services/media-worker/tests"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

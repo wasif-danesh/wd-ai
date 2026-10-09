@@ -14,7 +14,10 @@ class WorkerSettings(BaseSettings):
     # process-wide setting that would slow the image and music models. Empty: COMFYUI_BASE_URL.
     comfyui_video_base_url: str = ""
     # Speech engines (ADR-0042): `engine=address` pairs, comma separated.
-    speech_servers: str = "kokoro=http://speech:8000,indic-parler=http://speech-indic:8000"
+    speech_servers: str = (
+        "kokoro=http://speech:8000,indic-parler=http://speech-indic:8000,"
+        "whisper=http://speech:8000,indic-stt=http://stt-indic:8000"
+    )
     comfyui_mode: str = "real"  # real | stub (stub returns placeholder files, no GPU needed)
 
     media_secrets_key: str = ""  # decrypts the API keys saved in the admin area (ADR-0025)

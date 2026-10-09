@@ -49,6 +49,7 @@ from wd_platform_sdk.media_bindings import (
     MediaBindingStore,
     PostgresMediaBindingStore,
 )
+from wd_platform_sdk.media_upload import ProcessedAudio, process_audio
 from wd_platform_sdk.parts import (
     Audio,
     Image,
@@ -105,6 +106,8 @@ __all__ = [
     "UploadRecord",
     "UploadStore",
     "new_upload",
+    "ProcessedAudio",
+    "process_audio",
     "process_image",
     "BACKENDS",
     "BackendSpec",

@@ -412,6 +412,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/wd-stt-ai/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Languages
+         * @description The languages to choose from, and what an upload may be.
+         */
+        get: operations["languages_products_wd_stt_ai_languages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-stt-ai/transcripts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Transcripts */
+        get: operations["list_transcripts_products_wd_stt_ai_transcripts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-stt-ai/transcripts/{transcript_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Transcript */
+        get: operations["get_transcript_products_wd_stt_ai_transcripts__transcript_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Transcript
+         * @description Delete a transcript (or dismiss a failed one). One still being made cannot be deleted.
+         */
+        delete: operations["delete_transcript_products_wd_stt_ai_transcripts__transcript_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-stt-ai/transcripts/{transcript_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download
+         * @description The transcript as a file the browser saves: plain text, SRT, WebVTT or JSON.
+         */
+        get: operations["download_products_wd_stt_ai_transcripts__transcript_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/products/wd-tts-ai/speeches": {
         parameters: {
             query?: never;
@@ -614,9 +692,50 @@ export interface paths {
         post?: never;
         /**
          * Delete Upload
-         * @description Remove the caller's own unused upload (the user took the picture back, ADR-0039).
+         * @description Remove the caller's own unused upload (the user took the file back, ADR-0039).
          */
         delete: operations["delete_upload_products__product_id__uploads_images__upload_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{product_id}/uploads/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Media
+         * @description A recording or a video file (ADR-0043): checked by its first bytes, decoded to a clean
+         *     16 kHz mono WAV (no video, no tags) in a limited child process, and stored in its place.
+         */
+        post: operations["upload_media_products__product_id__uploads_media_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{product_id}/uploads/media/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Upload
+         * @description Remove the caller's own unused upload (the user took the file back, ADR-0039).
+         */
+        delete: operations["delete_upload_products__product_id__uploads_media__upload_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -966,6 +1085,21 @@ export interface components {
             /** Ts */
             ts?: string;
         };
+        /** LanguageCatalog */
+        LanguageCatalog: {
+            /** Languages */
+            languages: components["schemas"]["SpokenLanguage"][];
+            /**
+             * Max Bytes
+             * @default 104857600
+             */
+            max_bytes: number;
+            /**
+             * Max Seconds
+             * @default 1800
+             */
+            max_seconds: number;
+        };
         /** LanguageChoice */
         LanguageChoice: {
             /** English */
@@ -1019,6 +1153,17 @@ export interface components {
             message: string;
             /** Ok */
             ok: boolean;
+        };
+        /** MediaUploadResult */
+        MediaUploadResult: {
+            /** Bytes */
+            bytes: number;
+            /** Key */
+            key: string;
+            /** Seconds */
+            seconds: number;
+            /** Upload Id */
+            upload_id: string;
         };
         /** MediaView */
         MediaView: {
@@ -1154,7 +1299,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "song" | "image" | "video" | "speech";
+            kind: "song" | "image" | "video" | "speech" | "transcript";
             /**
              * Match
              * @enum {string}
@@ -1173,6 +1318,15 @@ export interface components {
             query: string;
             /** Results */
             results: components["schemas"]["SearchHit"][];
+        };
+        /** Segment */
+        Segment: {
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
+            /** Text */
+            text: string;
         };
         /** SongDetail */
         SongDetail: {
@@ -1252,6 +1406,20 @@ export interface components {
             /** Voice */
             voice: string;
         };
+        /** SpokenLanguage */
+        SpokenLanguage: {
+            /** English */
+            english: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Quality
+             * @enum {string}
+             */
+            quality: "good" | "fair" | "limited" | "unrated";
+        };
         SseEvent: components["schemas"]["NodeEvent"] | components["schemas"]["TokenEvent"] | components["schemas"]["InterruptEvent"] | components["schemas"]["JobProgressEvent"] | components["schemas"]["ErrorEvent"] | components["schemas"]["DoneEvent"];
         /** TestOutcome */
         TestOutcome: {
@@ -1295,6 +1463,71 @@ export interface components {
             thread_id: string;
             /** Ts */
             ts?: string;
+        };
+        /** TranscriptDetail */
+        TranscriptDetail: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error?: string | null;
+            /** Id */
+            id: string;
+            /** Language */
+            language: string;
+            /** Language Name */
+            language_name: string;
+            /** Preview */
+            preview: string;
+            /** Seconds */
+            seconds: number;
+            /** Segments */
+            segments: components["schemas"]["Segment"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "working" | "done" | "failed";
+            /** Text */
+            text: string;
+            /** Title */
+            title: string;
+        };
+        /** TranscriptPage */
+        TranscriptPage: {
+            /** Next Before */
+            next_before: string | null;
+            /** Transcripts */
+            transcripts: components["schemas"]["TranscriptSummary"][];
+        };
+        /** TranscriptSummary */
+        TranscriptSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error?: string | null;
+            /** Id */
+            id: string;
+            /** Language */
+            language: string;
+            /** Language Name */
+            language_name: string;
+            /** Preview */
+            preview: string;
+            /** Seconds */
+            seconds: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "working" | "done" | "failed";
+            /** Title */
+            title: string;
         };
         /** UploadResult */
         UploadResult: {
@@ -1792,7 +2025,7 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
-                kind?: ("song" | "image" | "video" | "speech") | null;
+                kind?: ("song" | "image" | "video" | "speech" | "transcript") | null;
                 limit?: number;
             };
             header?: never;
@@ -2124,6 +2357,153 @@ export interface operations {
             path: {
                 song_id: string;
                 kind: "audio" | "cover" | "video";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    languages_products_wd_stt_ai_languages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LanguageCatalog"];
+                };
+            };
+        };
+    };
+    list_transcripts_products_wd_stt_ai_transcripts_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: string | null;
+                status?: ("working" | "done" | "failed") | null;
+                ids?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranscriptPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_transcript_products_wd_stt_ai_transcripts__transcript_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transcript_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranscriptDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_transcript_products_wd_stt_ai_transcripts__transcript_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transcript_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_products_wd_stt_ai_transcripts__transcript_id__download_get: {
+        parameters: {
+            query?: {
+                format?: "txt" | "srt" | "vtt" | "json";
+            };
+            header?: never;
+            path: {
+                transcript_id: string;
             };
             cookie?: never;
         };
@@ -2518,6 +2898,67 @@ export interface operations {
         };
     };
     delete_upload_products__product_id__uploads_images__upload_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_media_products__product_id__uploads_media_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaUploadResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_upload_products__product_id__uploads_media__upload_id__delete: {
         parameters: {
             query?: never;
             header?: never;

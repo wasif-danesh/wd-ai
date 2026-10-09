@@ -21,6 +21,7 @@ from wd_platform_sdk import (
     UsageEvent,
     UsageRecorder,
     new_upload,
+    process_audio,
     process_image,
 )
 from wd_platform_sdk.usage import record_safely
@@ -98,21 +99,78 @@ async def upload_image(
     )
 
 
+class MediaUploadResult(BaseModel):
+    upload_id: str
+    key: str  # relative to the user's prefix: what a run passes as `audio_key`
+    seconds: float
+    bytes: int
+
+
+@router.post(
+    "/products/{product_id}/uploads/media", response_model=MediaUploadResult, status_code=201
+)
+async def upload_media(
+    product_id: str, request: Request, identity: Identity = Depends(get_identity)
+) -> MediaUploadResult:
+    """A recording or a video file (ADR-0043): checked by its first bytes, decoded to a clean
+    16 kHz mono WAV (no video, no tags) in a limited child process, and stored in its place."""
+    state: Any = request.app.state
+    rule = state.upload_rules(product_id, "audio")
+    if rule is None:
+        raise HTTPException(404, "this product does not accept recordings")
+    limiter: UploadLimiter = state.upload_limiter
+    if not await limiter.allow(identity.tenant_id, identity.user_id):
+        raise HTTPException(429, "Too many uploads. Please wait a while and try again.")
+    try:
+        data = await read_capped(request, rule.max_bytes)
+        # decoding is CPU work in a child process: keep it off the event loop
+        audio = await asyncio.to_thread(process_audio, data, rule.max_seconds)
+    except UploadError as exc:
+        raise HTTPException(exc.status, exc.message) from None
+    storage: ScopedStorage | None = state.storage
+    if storage is None:
+        raise HTTPException(503, "file storage is not available")
+    record = new_upload(
+        identity.tenant_id, product_id, identity.user_id, len(audio.wav), "audio", audio.seconds
+    )
+    await storage.put_for(record.owner, record.key, audio.wav, "audio/wav")
+    await state.uploads.add(record)
+    recorder: UsageRecorder = state.usage
+    await record_safely(
+        recorder,
+        UsageEvent(
+            tenant_id=record.tenant_id, product_id=product_id, user_id=record.user_id,
+            kind=UPLOAD_CREATED, quantity=record.bytes, unit="bytes",
+            meta={"kind": "audio", "seconds": audio.seconds, "container": audio.container},
+        ),
+    )  # fmt: skip
+    return MediaUploadResult(
+        upload_id=record.id, key=record.key, seconds=audio.seconds, bytes=record.bytes
+    )
+
+
 @router.delete("/products/{product_id}/uploads/images/{upload_id}", status_code=204)
+@router.delete("/products/{product_id}/uploads/media/{upload_id}", status_code=204)
 async def delete_upload(
     product_id: str,
     upload_id: str,
     request: Request,
     identity: Identity = Depends(get_identity),
 ) -> None:
-    """Remove the caller's own unused upload (the user took the picture back, ADR-0039)."""
+    """Remove the caller's own unused upload (the user took the file back, ADR-0039)."""
     state: Any = request.app.state
     try:
-        key = f"uploads/{UUID(upload_id)}.png"
+        uid = UUID(upload_id)
     except ValueError:
         raise HTTPException(404, "upload not found") from None
     store: UploadStore = state.uploads
-    record = await store.find(identity.tenant_id, product_id, identity.user_id, key)
+    record = None
+    for ext in ("png", "wav"):
+        record = await store.find(
+            identity.tenant_id, product_id, identity.user_id, f"uploads/{uid}.{ext}"
+        )
+        if record is not None:
+            break
     if record is None:  # also what someone else's upload looks like: no hint that it exists
         raise HTTPException(404, "upload not found")
     storage: ScopedStorage | None = state.storage

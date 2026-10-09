@@ -6,6 +6,7 @@ dependencies = [
     "asyncpg>=0.32.0",
     "cryptography>=43",
     "fastapi>=0.142.2",
+    "imageio-ffmpeg>=0.5",
     "langgraph>=1.2.14",
     "obstore>=0.11.1",
     "openai>=3.26.0",

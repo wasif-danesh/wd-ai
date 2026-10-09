@@ -77,15 +77,28 @@ class UploadRecord:
     bytes: int
     created_at: datetime | None = None
     consumed_at: datetime | None = None
+    kind: str = "image"  # "image" or "audio" (ADR-0043)
+    seconds: float | None = None  # the length of an audio upload
 
     @property
     def owner(self) -> tuple[str, str, str]:
         return (self.tenant_id, self.product_id, self.user_id)
 
 
-def new_upload(tenant_id: str, product_id: str, user_id: str, size: int) -> UploadRecord:
+def new_upload(
+    tenant_id: str,
+    product_id: str,
+    user_id: str,
+    size: int,
+    kind: str = "image",
+    seconds: float | None = None,
+) -> UploadRecord:
     upload_id = str(uuid4())
-    return UploadRecord(upload_id, tenant_id, product_id, user_id, f"uploads/{upload_id}.png", size)
+    ext = "wav" if kind == "audio" else "png"
+    return UploadRecord(
+        upload_id, tenant_id, product_id, user_id, f"uploads/{upload_id}.{ext}", size,
+        kind=kind, seconds=seconds,
+    )  # fmt: skip
 
 
 class UploadStore(Protocol):
@@ -144,21 +157,25 @@ class PostgresUploadStore:
     def _row(r) -> UploadRecord:
         return UploadRecord(
             id=str(r[0]), tenant_id=r[1], product_id=r[2], user_id=r[3], key=r[4], bytes=r[5],
-            created_at=r[6], consumed_at=r[7],
+            created_at=r[6], consumed_at=r[7], kind=r[8], seconds=r[9],
         )  # fmt: skip
 
-    _COLUMNS = "id, tenant_id, product_id, user_id, key, bytes, created_at, consumed_at"
+    _COLUMNS = (
+        "id, tenant_id, product_id, user_id, key, bytes, created_at, consumed_at, kind, seconds"
+    )
 
     async def add(self, upload: UploadRecord) -> None:
         async with self._engine.begin() as conn:
             await conn.execute(
                 text(
-                    "INSERT INTO uploads (id, tenant_id, product_id, user_id, key, bytes) "
-                    "VALUES (:id, :t, :p, :u, :k, :b)"
+                    "INSERT INTO uploads "
+                    "(id, tenant_id, product_id, user_id, key, bytes, kind, seconds) "
+                    "VALUES (:id, :t, :p, :u, :k, :b, :kind, :s)"
                 ),
                 {
                     "id": UUID(upload.id), "t": upload.tenant_id, "p": upload.product_id,
                     "u": upload.user_id, "k": upload.key, "b": upload.bytes,
+                    "kind": upload.kind, "s": upload.seconds,
                 },
             )  # fmt: skip
 

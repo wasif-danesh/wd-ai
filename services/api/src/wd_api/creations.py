@@ -19,7 +19,7 @@ SEARCHED = "creation.searched"
 
 
 class SearchHit(BaseModel):
-    kind: Literal["song", "image", "video", "speech"]
+    kind: Literal["song", "image", "video", "speech", "transcript"]
     product_id: str
     id: str
     score: float
@@ -36,7 +36,7 @@ class SearchResponse(BaseModel):
 async def search_creations(
     request: Request,
     q: str = Query(min_length=1, max_length=200),
-    kind: Literal["song", "image", "video", "speech"] | None = None,
+    kind: Literal["song", "image", "video", "speech", "transcript"] | None = None,
     limit: int = Query(20, ge=1, le=50),
     identity: Identity = Depends(get_identity),
 ) -> SearchResponse:
