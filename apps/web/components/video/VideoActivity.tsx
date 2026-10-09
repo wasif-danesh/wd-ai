@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useVideoActivity } from "@/hooks/use-video-activity";
+import { clamp2 } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -36,8 +37,10 @@ export function VideoActivity({ enabled }: { enabled: boolean }) {
             <strong>
               {notice.status === "done" ? "Your video is ready" : "Your video couldn't be made"}
             </strong>
-            <span className="line-clamp-2 overflow-hidden text-step--1 text-muted-foreground">
-              {notice.status === "done" ? notice.prompt : (notice.error ?? "Please try again.")}
+            <span className="block text-step--1 text-muted-foreground">
+              <span className={clamp2}>
+                {notice.status === "done" ? notice.prompt : (notice.error ?? "Please try again.")}
+              </span>
             </span>
             <span className="flex flex-wrap gap-2">
               {notice.status === "done" ? (

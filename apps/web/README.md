@@ -1,17 +1,20 @@
 # web
 
 The Next.js app (App Router, React 19, strict TypeScript) that users see, and the backend-for-frontend (BFF)
-in front of the API. One app serves every product (ADR-0014); today `wd-music-ai` (`/music`) and `wd-video-ai` (`/video`: create, `/video/creations/{id}`; a clip is made in the background, the header shows "Making your video…" and a notice says when it is ready) and `wd-image-ai` (`/image`: create, `/image/creations` My images, `/image/creations/{id}`; image to image uploads the picture first through `/api/products/wd-image-ai/uploads/images`).
+in front of the API. One app serves every product (ADR-0014). The UI is built from **shadcn/ui** (Radix) with
+**Tailwind CSS**, **react-hook-form** and **Zod** for forms and **TanStack Table** for data grids (ADR-0045); inside a
+product the user navigates with a **side panel** (ADR-0046), and the home page keeps its cards.
+
+![Create a song, with the side panel](../../docs/images/create.jpg)
 
 | Page | What it is |
 |---|---|
 | `/` | The studio home, "WD AI Studio": a card per product (public) |
-| `/music` | Create a song: idea form, live progress, lyric review, result (sign-in required) |
-| `/creations` | My creations: one library of everything the user made (songs, images, videos, including clips still being made), newest first, with filters, "Load more" and a search box that finds things by meaning or exact words in any language (sign-in required) |
-| `/music/songs/[id]` | One song: cover, player, downloads, lyrics (links are signed fresh on every visit) |
-| `/text-to-speech`, `/speech-to-text`, `/lip-sync` | "Coming soon" pages for the three speech products (public, `noindex`; ADR-0042 to ADR-0044 design them) |
-| `/image`, `/video` | Create an image or a video (sign-in required); one item is at `/image/creations/[id]` and `/video/creations/[id]` |
-| `/admin/...` | The admin area (admins only) |
+| `/music`, `/image`, `/video`, `/text-to-speech` | Create a song, an image, a video or speech (sign-in required). A video is made in the background: the top bar shows "Making your video…" and a notice says when it is ready |
+| `/music/songs/[id]`, `/image/creations/[id]`, `/video/creations/[id]`, `/text-to-speech/creations/[id]` | One saved result: the media, its words, downloads, delete (links are signed fresh on every visit) |
+| `/creations` | My creations: one library of everything the user made, newest first, as cards or a sortable table, with filters (`?show=songs\|images\|videos\|speeches`), "Load more" and a search that finds things by meaning or exact words in any language (sign-in required) |
+| `/speech-to-text`, `/lip-sync` | "Coming soon" pages (public, `noindex`; ADR-0043 and ADR-0044 design them) |
+| `/admin/...` | The admin area (admins only): usage, users, songs, models, media, audit log, as sortable, filterable, paged tables |
 
 ## How it fits together
 
@@ -24,8 +27,8 @@ Browser ── fetch ──► app/api/* (BFF route handlers) ──► FastAPI 
 - **The browser never calls FastAPI.** `app/api/**/route.ts` forward to it through `lib/proxy.ts`,
   which validates path segments (UUIDs and product ids, not just URL-encoding them), forwards only
   `Last-Event-ID` when it is a plain number, and passes event streams through unbuffered.
-- **Pages that read data are server components** (`/music/songs`, `/music/songs/[id]`): the first paint has the
-  data, and an unknown song is a real 404.
+- **Pages that read data are server components** (the saved-result pages, `/creations`, the admin tables): the first
+  paint has the data, and an unknown item is a real 404.
 - **Interaction is client components** under `components/create/`, driven by one hook.
 
 ## The song flow
@@ -67,7 +70,7 @@ are tokens that meet contrast in both schemes.
 
 ```bash
 pnpm --filter web dev      # API_BASE_URL=http://localhost:8000 pnpm --filter web dev, with the stack up
-pnpm --filter web test     # 84 tests: reducer, hook, components, BFF routes
+pnpm --filter web test     # about 260 tests: reducers, hooks, components, data tables, BFF routes
 pnpm --filter web build    # production build (also type-checks and lints)
 ```
 
@@ -106,10 +109,10 @@ Playing and showing on the page still use the signed storage links.
 
 ## Admin
 
-`/admin` (Overview with usage, Users, Songs, Audit log) is for users whose role is `admin`; everyone else
+`/admin` (Overview with usage, Users, Songs, Models, Media, Audit log) is for users whose role is `admin`; everyone else
 sees "Admins only", and the API answers `403` to the same calls. To become admin, list your verified email in
 `ADMIN_EMAILS` for the API (Google's verified address, or the primary verified address of your GitHub account) and
-sign in again. With `AUTH_MODE=stub` the dev user is an admin. The Admin link in the header appears only for admins.
+sign in again. With `AUTH_MODE=stub` the dev user is an admin. The Admin link (in the header, and in the side panel inside a product) appears only for admins.
 
 ### Models
 

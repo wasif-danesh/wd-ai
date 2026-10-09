@@ -51,3 +51,7 @@ export const pager =
 
 /** Secondary text. */
 export const muted = "text-muted-foreground";
+
+/** Two lines of text, then an ellipsis. (Tailwind's own line-clamp does not clamp in current Chrome builds.) */
+export const clamp2 =
+  "overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:2] [display:-webkit-box]";

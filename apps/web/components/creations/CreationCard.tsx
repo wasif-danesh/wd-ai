@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import type { Entry } from "@/lib/creations";
 import { styleTags, timeAgo } from "@/lib/format";
-import { coverTile } from "@/lib/styles";
+import { clamp2, coverTile } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import type { VideoSummary } from "@wd/contracts";
 import Link from "next/link";
@@ -39,9 +39,9 @@ function Card({
       <span className="absolute start-[1.15rem] top-[1.15rem] rounded-full border border-white/20 bg-[oklch(20%_0.02_280/0.72)] px-[0.6rem] py-[0.3rem] text-[0.7rem] font-bold tracking-[0.04em] text-white uppercase backdrop-blur-[10px]">
         {kind}
       </span>
-      <div className="grid h-28 min-h-0 grid-rows-[auto_auto_1fr] gap-[0.9rem] px-[0.15rem] pt-[0.1rem] pb-[0.2rem]">
-        <h3 className="line-clamp-2 text-[1.05rem] leading-tight" lang={lang}>
-          {title}
+      <div className="grid h-32 min-h-0 grid-rows-[auto_auto_1fr] gap-[0.9rem] px-[0.15rem] pt-[0.1rem] pb-[0.2rem]">
+        <h3 className="text-[1.05rem] leading-tight" lang={lang}>
+          <span className={clamp2}>{title}</span>
         </h3>
         <div className="flex flex-nowrap gap-[0.35rem] overflow-hidden [&>*]:shrink-0">{tags}</div>
         <time dateTime={when} className="mt-auto pt-[0.3rem] text-step--1 text-muted-foreground">

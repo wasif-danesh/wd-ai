@@ -181,7 +181,7 @@ export function DataTable<T>({
                 table.setPageIndex(0);
               }}
             >
-              <SelectTrigger size="sm" aria-label="Rows per page" className="w-28">
+              <SelectTrigger size="sm" aria-label="Rows per page" className="w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
