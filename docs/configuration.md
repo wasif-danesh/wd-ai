@@ -174,6 +174,19 @@ encrypted with `MEDIA_SECRETS_KEY` (set once by `make setup`; changing it makes 
 never shown, logged or audited. Remote backends take no GPU lock; their time is recorded as
 `media.remote_seconds`.
 
+### Speech
+
+Text to speech (ADR-0042) calls an OpenAI-compatible speech server. `SPEECH_SERVERS` on the media worker maps
+an engine name to its address (`kokoro=http://speech:8000`). `compose.yaml` runs the `speech` service
+(Speaches, CPU image) with `WHISPER__COMPUTE_TYPE=int8`, which keeps Whisper inside a 6 GB machine. In Helm,
+`speech.enabled=true` adds the same service and sets the variable. The voice model is downloaded once into
+the `speechmodels` volume: `curl -X POST localhost:8100/v1/models/speaches-ai%2FKokoro-82M-v1.0-ONNX`.
+Bengali uses a second server, `speech-indic` (our adapter for Indic Parler-TTS, `indic-parler=http://speech-indic:8000`).
+Its model is gated: accept the terms on Hugging Face and put a read token in `.env` as `HF_TOKEN`. It needs about
+4.5 GB of memory, more than the default 6 GB Podman VM can give next to the other services. In Helm,
+`speechIndic.enabled=true` with a Secret named in `speechIndic.hfTokenSecret`.
+The voices a user can choose are listed in `products/wd-tts-ai/voices.yaml`.
+
 ### Search over My creations
 
 `SEARCH_MIN_SIMILARITY` (default 0.57) is the floor under which a match by meaning is not shown; re-tune it on

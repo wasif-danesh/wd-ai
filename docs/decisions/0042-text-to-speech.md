@@ -1,6 +1,6 @@
 # ADR-0042: Text to Speech
 
-- **Status:** Proposed
+- **Status:** Accepted for the Kokoro slice (Indic Parler-TTS and Bengali are still Proposed)
 - **Date:** 2026-10-09
 
 ## Context
@@ -14,7 +14,7 @@ What the facts are (checked on 2026-10-09 from the model cards and repositories)
 
 | Engine | Licence | Languages | Voices |
 |---|---|---|---|
-| **Kokoro-82M** (82M parameters) | Apache-2.0 | English (US and UK), Spanish, French, Hindi, Italian, Japanese, Portuguese (Brazil), Chinese | 53 presets: US English 10 female and 9 male, UK English 4 and 4, Spanish 1 and 2, French **1 and 0**, Hindi 2 and 2, Italian 1 and 1, Japanese 4 and 1, Portuguese 1 and 2, Chinese 4 and 4 |
+| **Kokoro-82M** (82M parameters) | Apache-2.0 | English (US and UK), Spanish, French, Hindi, Italian, Japanese, Portuguese (Brazil), Chinese | 54 presets in the catalog: US English 11 female and 9 male, UK English 4 and 4, Spanish 1 and 2, French **1 and 0**, Hindi 2 and 2, Italian 1 and 1, Japanese 4 and 1, Portuguese 1 and 2, Chinese 4 and 4 |
 | **Chatterbox Multilingual** (0.5B) | MIT | 23: Arabic, Danish, German, Greek, English, Spanish, Finnish, French, Hebrew, Hindi, Italian, Japanese, Korean, Malay, Dutch, Norwegian, Polish, Portuguese, Russian, Swedish, Swahili, Turkish, Chinese | None built in: it speaks in the voice of a reference recording (zero-shot cloning) |
 | **Indic Parler-TTS** (AI4Bharat and Hugging Face, about 0.94B parameters) | Apache-2.0 (the model is gated: access terms are accepted on Hugging Face and a token is needed to download it) | 21 officially: Assamese, **Bengali**, Bodo, Dogri, Gujarati, Hindi, Kannada, Konkani, Maithili, Malayalam, Manipuri, Marathi, Nepali, Odia, Sanskrit, Santali, Sindhi, Tamil, Telugu, Urdu and English; Chhattisgarhi, Kashmiri and Punjabi are reported as unofficial | The voice is described in words (gender, pitch, pace, style) and the card lists recommended named speakers per language (69 voices in total, per the card) |
 | **Piper** | engine MIT; each voice has its own licence | many | many; per-voice licences must be read one by one |
@@ -108,6 +108,42 @@ Like ADR-0037 and ADR-0041, the engine is chosen by measuring on the development
 Acceptance needs Bengali and the languages the home page promises (decided with you after the coverage table),
 a male and a female voice for each language we list (a gap is shown, not hidden), and an error rate that is not
 worse than the engine's own English figure by a margin we state, with the table in this ADR.
+
+## Results of the Kokoro slice (2026-10-09, development Mac, CPU in a container)
+
+- **Built and working end to end:** the `speech` service (Speaches, Whisper with int8), the worker runner, the
+  product `wd-tts-ai`, `voices.yaml` (41 voices in 7 languages), the web area and My creations with search.
+  A real request takes about 7 seconds.
+- **Round trip with Whisper large-v3-turbo** (five sentences per voice, numbers avoided because Whisper writes
+  digits): English (US and UK), Spanish and Italian are at or near 0 to 2 percent word error; French about 2
+  percent (one voice); Hindi 25 to 28 percent, which is mostly Whisper's own weakness in Devanagari, so a native
+  listener must decide. The run did not finish for every language (see below), so this is a partial table.
+- **Not possible with this server:** Japanese came back as empty audio and Chinese failed (the phonemiser has no
+  Chinese). They were removed from the catalog, and the worker now fails a job whose audio is silent instead of
+  saving it. They return with another engine.
+- **Gaps:** no male French voice; Spanish and Portuguese voices are graded F by the Kokoro model card and are
+  shown as limited; Bengali and the other Indic languages wait for the Indic Parler-TTS slice, which needs you to
+  accept the model terms on Hugging Face, an `HF_TOKEN`, and a native Bengali listener; no `/admin/media` entry
+  for the speech address yet (it is the `SPEECH_SERVERS` variable); the speed and listening checks are not done.
+
+## Results of the Indic Parler-TTS slice (Bengali, 2026-10-09)
+
+- **Built:** `services/speech-indic` (our adapter, `POST /v1/audio/speech`, WAV out), the `speech-indic` compose
+  service on port 8101, the `indic-parler` engine and the Bengali voices Aditi (female) and Arjun (male), the two
+  speakers the model card recommends. The weights (3.5 GB) download on first use with `HF_TOKEN`; the token is
+  passed to that one container only.
+- **Speed on the Mac (CPU, container):** 5 seconds of speech take about 28 to 30 seconds in 32-bit precision
+  (about 5 times slower than real time). 16-bit precision halves the memory but is about 4 times slower again
+  (122 seconds), so 32-bit is the default. A 111-character story took 66 seconds end to end. A GPU host would be
+  far faster.
+- **Memory:** 32-bit needs about 4.5 GB, so with the Kokoro server also running the 6 GB Podman VM runs out
+  (the kernel killed the Bengali server twice). The Podman VM needs about 12 GB (the host has 64 GB); this is a
+  machine setting for you to change.
+- **Quality:** not yet judged. The Bengali voices are marked "limited" (grade D) until a native listener has
+  reviewed the samples; then the grade is raised or the voice descriptions are changed. Whisper is too weak in
+  Bengali to score them automatically.
+- **Found on the way:** the daily limit counted characters instead of speeches (it refused the second request
+  of a user). It now counts one per result; the characters are kept in the event's details.
 
 ## Consequences
 
