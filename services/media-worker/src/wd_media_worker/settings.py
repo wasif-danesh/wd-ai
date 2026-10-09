@@ -13,6 +13,10 @@ class WorkerSettings(BaseSettings):
     # Video runs on its own ComfyUI (ADR-0037): the model needs fp32 weights on a Mac, a
     # process-wide setting that would slow the image and music models. Empty: COMFYUI_BASE_URL.
     comfyui_video_base_url: str = ""
+    # The talking-head server for Lip Sync (ADR-0044, services/lipsync-musetalk); native on a Mac.
+    lipsync_server_url: str = ""
+    # A song is minutes of video, about 6 s of compute per second (ADR-0044): a longer limit.
+    lipsync_timeout_s: int = 5400
     # Speech engines (ADR-0042): `engine=address` pairs, comma separated.
     speech_servers: str = (
         "kokoro=http://speech:8000,indic-parler=http://speech-indic:8000,"

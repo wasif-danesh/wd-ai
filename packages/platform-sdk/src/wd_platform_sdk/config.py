@@ -35,7 +35,7 @@ class ConfigError(Exception):
 class CapabilityBinding(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    provider: Literal["litellm", "comfyui", "speech", "fake"]
+    provider: Literal["litellm", "comfyui", "speech", "lipsync", "fake"]
     model: str | None = None  # litellm: a LiteLLM alias, never a raw model name
     workflow: str | None = None  # comfyui: workflow name under products/<id>/workflows/
     defaults: dict[str, Any] = Field(default_factory=dict)

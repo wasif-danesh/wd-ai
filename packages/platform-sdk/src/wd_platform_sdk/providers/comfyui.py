@@ -10,16 +10,10 @@ from uuid import uuid4
 
 from wd_platform_sdk.config import CapabilityBinding
 from wd_platform_sdk.context import require_context
-from wd_platform_sdk.jobs import (
-    JobHandle,
-    JobRequest,
-    JobSink,
-    input_audio_name,
-    input_image_name,
-)
+from wd_platform_sdk.jobs import JobHandle, JobRequest, JobSink, input_image_name
 from wd_platform_sdk.workflows import Workflow
 
-RESERVED_INPUTS = {"image_key", "audio_key"}  # for the job, not for the workflow
+RESERVED_INPUTS = {"image_key"}  # for the job, not for the workflow
 
 
 class ComfyUIProvider:
@@ -47,10 +41,6 @@ class ComfyUIProvider:
             if "image" not in wf.map.inputs:
                 raise ValueError(f"workflow {wf.name!r} has no picture input")
             workflow_inputs["image"] = input_image_name(job_id)
-        if merged.get("audio_key"):  # the user's voice, the same way (ADR-0044)
-            if "audio" not in wf.map.inputs:
-                raise ValueError(f"workflow {wf.name!r} has no voice input")
-            workflow_inputs["audio"] = input_audio_name(job_id)
         graph = wf.fill(workflow_inputs)
         request = JobRequest(
             job_id=job_id,

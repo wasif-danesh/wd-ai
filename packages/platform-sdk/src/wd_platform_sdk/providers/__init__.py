@@ -12,6 +12,7 @@ from wd_platform_sdk.config import CapabilityBinding, ProductConfig
 from wd_platform_sdk.jobs import InMemoryJobSink, JobSink
 from wd_platform_sdk.providers.comfyui import ComfyUIProvider
 from wd_platform_sdk.providers.fake import FakeMediaProvider, FakeTextProvider
+from wd_platform_sdk.providers.lipsync import LipSyncProvider
 from wd_platform_sdk.providers.litellm import LiteLLMTextProvider
 from wd_platform_sdk.providers.speech import SpeechProvider
 from wd_platform_sdk.storage import ScopedStorage
@@ -56,6 +57,7 @@ for _family in ("image", "music", "video"):
 
 
 register_provider("speech", "speech", lambda d, c: SpeechProvider(d.job_sink))
+register_provider("lipsync", "video", lambda d, c: LipSyncProvider(d.job_sink))  # ADR-0044
 register_provider("fake", "speech", lambda d, c: FakeMediaProvider(d.job_sink))
 
 

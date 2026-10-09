@@ -17,7 +17,6 @@ from wd_platform_sdk import (
     MediaBindingStore,
     SecretBox,
     SecretsUnavailable,
-    input_audio_name,
     input_image_name,
 )
 
@@ -90,9 +89,6 @@ class ComfyApiRunner:
         if files and "image" in files:
             name = input_image_name(job.job_id)
             graph = use_picture(graph, name, await self._upload(name, files["image"]))
-        if files and "audio" in files:
-            name = input_audio_name(job.job_id)
-            graph = use_picture(graph, name, await self._upload(name, files["audio"]))
         r = await self._http.post(
             f"{self._base}/api/v2/jobs", json={"workflow": graph}, headers=self._headers
         )
@@ -311,6 +307,15 @@ class BackendRouter:
         b = await self._binding(job)
         from wd_media_worker.processor import ComfyRunner  # circular at import time
 
+        if (
+            b is None
+            and job.workflow == "lipsync"
+            and self._s.comfyui_mode != "stub"
+            and self._s.lipsync_server_url
+        ):
+            from wd_media_worker.lipsync import LipSyncRunner
+
+            return LipSyncRunner(self._s.lipsync_server_url, self._s.lipsync_timeout_s, self._http)
         if b is None and job.capability.startswith("speech.") and self._s.comfyui_mode != "stub":
             if job.capability == "speech.transcribe":
                 from wd_media_worker.transcribe import OpenAITranscriptionRunner
@@ -348,6 +353,8 @@ class BackendRouter:
 
     def _video_url(self, job: JobRequest) -> str:
         """The separate ComfyUI for video jobs, if set (never in stub mode)."""
+        if job.workflow == "lipsync":  # not a ComfyUI job: it has no graph to send
+            return ""
         if job.capability.startswith("video.") and self._s.comfyui_mode != "stub":
             return self._s.comfyui_video_base_url
         return ""

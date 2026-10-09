@@ -25,11 +25,6 @@ def _now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def input_audio_name(job_id: str) -> str:
-    """The file name an input voice goes by on the backend for this job (see `input_image_name`)."""
-    return f"wd-{job_id}.wav"
-
-
 def input_image_name(job_id: str) -> str:
     """The file name an input picture goes by on the backend for this job. The API puts it in the
     workflow before the job exists; the worker uploads the user's picture under it."""
