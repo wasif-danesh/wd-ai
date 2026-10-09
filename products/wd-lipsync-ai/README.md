@@ -2,13 +2,15 @@
 
 A character picture and a voice become a short talking or singing clip. The voice is a **script** (made into
 speech by Text to Speech, any of its languages), an **uploaded file** (audio, or the audio of a video) or a
-**recording**. A song works as a voice. Clips are at most **15 seconds**; one is made at a time per user.
+**recording**. A song works as a voice. Clips are at most **5 minutes** (a song; it takes about five times as long to make); one is made at a time per user.
 
-Engine: **InfiniteTalk** (MeiGen-AI, Apache-2.0) on Wan2.1-I2V-14B, as a ComfyUI workflow
-(`workflows/infinitetalk-i2v.json` and its map) through ComfyUI-WanVideoWrapper. The feasibility spike
-(ADR-0044) found that the development Mac cannot run it at a usable speed, so the real workflow is meant for a CUDA
-host (the video ComfyUI, `COMFYUI_VIDEO_BASE_URL`). Until one exists the worker's stub mode (`COMFYUI_MODE=stub`)
-returns a placeholder clip, which is what the rest of the product is tested and demonstrated with.
+Engine: **MuseTalk v1.5** (MIT) on the lip sync server, `services/lipsync-musetalk` (set up with its
+`setup.sh`, started with `scripts/lipsync-server.sh`, natively on a Mac). It redraws the mouth of a front-facing
+face; the head stays still. About 6 seconds of compute per second of video on an Apple M-series Mac, 11.8 GB.
+Set `LIPSYNC_SERVER_URL=http://host.containers.internal:8191` in `.env`. The worker's stub mode
+(`COMFYUI_MODE=stub`) returns a placeholder clip without any of this.
+
+(InfiniteTalk was tried first and removed: too slow and too big for a Mac, see ADR-0044.)
 
 ## How a run goes (`graphs/lipsync.py`)
 

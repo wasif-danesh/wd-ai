@@ -1,6 +1,6 @@
 # ADR-0044: Lip Sync
 
-- **Status:** Accepted (built 2026-10-09 against the placeholder backend; see "What was built")
+- **Status:** Accepted (built 2026-10-09; the engine is MuseTalk, see "Engine change"; InfiniteTalk was removed)
 - **Date:** 2026-10-09
 
 ## Context
@@ -177,3 +177,49 @@ Built as designed, with these differences, all small and recorded here:
   test-pattern MP4 for a video output.
 - Still to do from the evaluation: languages (step 2), the picture guardrail on a labelled set (step 3, only three
   fixtures exist now), the audio check on songs (step 4), and speed on a CUDA host.
+
+## Engine change: MuseTalk (2026-10-09)
+
+A first run of InfiniteTalk on the Mac, at the only size it could manage (256x256, 2 steps), looked poor, and
+the owner decided that a prototype must run on the development machine. **The default engine is now MuseTalk
+v1.5** (TMElyralab; code MIT; weights stated free for commercial use; checked 2026-10-09). InfiniteTalk stays as
+the option for a big GPU (`PRODUCT_ENV=infinitetalk`, `product.infinitetalk.yaml`, the workflow files and the
+ComfyUI route are kept).
+
+| | MuseTalk v1.5 | InfiniteTalk (spike) |
+|---|---|---|
+| Runs on the Mac (MPS) | **Yes**, fp32, no patches to the model code | Only at 256x256, bf16, patched |
+| Memory (peak, MPS) | 11.8 GB | 29 to 45 GB |
+| Compute per second of video | about 6 s (15 s for the network plus 12 s of blending, for 5 s) | 60 s to over 200 s |
+| What it makes | The mouth area redrawn, **the head and eyes stay still** | A whole moving video |
+| Picture | Best on real, front-facing faces; weak on cartoons (not tested yet) | Works on drawings |
+| Size | The picture as given, scaled to at most 768 px on the long side | 256 on the Mac |
+
+How it is built: `services/lipsync-musetalk` is a small server (`POST /v1/lipsync`, picture and voice in, MP4 out)
+run natively (`scripts/lipsync-server.sh`, set up by `services/lipsync-musetalk/setup.sh`, about 4 GB) because a
+container on a Mac cannot reach the GPU; a CUDA container is the same code. The product's `video.lipsync`
+capability uses a new `lipsync` provider; the worker's `LipSyncRunner` (set by `LIPSYNC_SERVER_URL`) sends the
+picture and voice to it. MuseTalk's own code needs mmpose, which does not install without CUDA; the server takes the
+68 face landmarks from the `face-alignment` package instead, with the same crop rule. Weights and licences:
+MuseTalk v1.5 (MIT), sd-vae-ft-mse (MIT), whisper-tiny (MIT), the BiSeNet face parser and ResNet18 (the project's
+own links), face-alignment's S3FD and 2DFAN4 (BSD-3). A real run through the stack (script, Kokoro speech,
+768x768 clip, cold start included) took 39 seconds for 1.8 seconds of video.
+
+**Length.** The 15 second limit of the InfiniteTalk design is gone: with MuseTalk a clip costs about 5 seconds of
+compute per second of video (a 52 second voice took 254 seconds, warm), so the limit is **5 minutes**, enough for a
+song (about 20 minutes of work for 4 minutes). The worker allows a lip sync job 90 minutes (`LIPSYNC_TIMEOUT_S`,
+reclaimed after 91), a row is marked failed only after 100, and a script may be 1000 characters. The InfiniteTalk
+overlay keeps 15 seconds.
+
+Consequences: a still picture gives a head that does not move, and the safeguard that refuses photographs of real
+people (ADR-0047 switch) refuses the very pictures this engine works best on, so with the safeguards on the
+product needs either an illustration that MuseTalk handles (to test) or a consent design (a separate ADR).
+
+## InfiniteTalk removed (2026-10-09)
+
+The owner asked for the InfiniteTalk code and its models to be removed. The workflow and its map, the
+`infinitetalk` product overlay, the worker's ComfyUI address for lip sync (`COMFYUI_LIPSYNC_BASE_URL`), and the
+ability to hand a voice to a ComfyUI workflow were deleted, and the 62 GB of models, the ComfyUI environment and the
+spike scripts were removed from the Mac. The spike section above stays as the record of what was measured and why
+it was dropped. If a CUDA host and a need for whole-body motion appear, InfiniteTalk (Apache-2.0) can be added back
+as another provider, from this ADR and the git history (the commits of 2026-10-09).

@@ -22,7 +22,9 @@ log = logging.getLogger(__name__)
 
 LIPSYNC_CREATED = "lipsync.created"
 POSTER_PX = 480
-STALE_AFTER = timedelta(minutes=30)
+STALE_AFTER = timedelta(
+    minutes=100
+)  # a 5 minute song takes about half an hour; the worker gives up at 90
 STALE_MESSAGE = "This took too long and was stopped. Please try again."
 FFMPEG_TIMEOUT_S = 60
 

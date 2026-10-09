@@ -45,7 +45,7 @@
 | [0041](0041-semantic-search.md) | Semantic search in My creations (multilingual, bge-m3) | Accepted |
 | [0042](0042-text-to-speech.md) | Text to Speech (voice catalog; Kokoro and Indic Parler-TTS for Bengali and Indic languages) | Proposed |
 | [0043](0043-speech-to-text.md) | Speech to Text (audio and video upload, recording, Whisper, chunked search) | Proposed |
-| [0044](0044-lip-sync.md) | Lip Sync (InfiniteTalk; character image plus voice, song or script; safety policy) | Accepted |
+| [0044](0044-lip-sync.md) | Lip Sync (MuseTalk; character image plus voice, song or script; safety policy) | Accepted |
 | [0045](0045-ui-components.md) | UI components for forms and data grids (shadcn/ui, TanStack Table) | Accepted |
 | [0046](0046-product-side-panel.md) | Product side panel (navigation inside a product) | Accepted |
 | [0047](0047-safeguards-switch.md) | A system-wide safeguards switch (Admin on/off) | Accepted |

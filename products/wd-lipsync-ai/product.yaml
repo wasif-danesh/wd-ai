@@ -4,11 +4,10 @@ capabilities:
   text.moderate_image: { provider: litellm, model: multimodal, inputs: [text, image] }
   speech.synthesize:   { provider: speech }
   speech.transcribe:   { provider: speech }
-  # InfiniteTalk image-to-video on Wan2.1 14B (ADR-0044). The size is the picture's crop; the spike
-  # showed the Mac cannot run it at a usable speed, so this belongs on a CUDA host (video ComfyUI).
-  video.lipsync:       { provider: comfyui, workflow: infinitetalk-i2v, defaults: { width: 640, height: 640, steps: 4 } }
+  # MuseTalk v1.5 on the lip sync server (services/lipsync-musetalk): runs on a Mac and on a CUDA host.
+  video.lipsync:       { provider: lipsync }
 quotas:
   lipsyncs_per_user_per_day: 3
 uploads:
   image: { max_bytes: 10485760 }
-  audio: { max_bytes: 26214400, max_seconds: 15 }
+  audio: { max_bytes: 52428800, max_seconds: 300 }

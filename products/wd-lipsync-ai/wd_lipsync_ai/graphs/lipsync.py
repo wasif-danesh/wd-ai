@@ -62,7 +62,8 @@ Status = Literal["working", "done", "refused", "failed"]
 BUSY = "You already have a lip sync being made. It will be in My creations when it's ready."
 FAILED = "Your lip sync couldn't be made. Please try again."
 TOO_LONG = (
-    f"That voice is longer than the limit of {int(MAX_SECONDS)} seconds. Please use a shorter one."
+    f"That voice is longer than the limit of {int(MAX_SECONDS // 60)} minutes. "
+    "Please use a shorter one."
 )
 SLACK_SECONDS = 0.5  # a spoken script may run a little over the limit before it is refused
 

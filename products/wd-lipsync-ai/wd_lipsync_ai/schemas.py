@@ -4,9 +4,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-MAX_SCRIPT_CHARS = 300
+MAX_SCRIPT_CHARS = 1000
 MAX_STYLE_CHARS = 120
-MAX_SECONDS = 15.0  # ADR-0044: the limit is for cost and is raised only from measured speed
+MAX_SECONDS = 300.0  # 5 minutes: a song (ADR-0044); about 6 s of compute per second of video
 FPS = 25
 Source = Literal["script", "audio"]
 

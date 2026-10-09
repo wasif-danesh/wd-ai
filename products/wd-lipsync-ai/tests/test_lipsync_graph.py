@@ -131,7 +131,7 @@ async def test_a_script_that_speaks_for_too_long_is_refused_and_nothing_is_kept(
     rig = make_rig(tmp_path)
     image = await put_image(rig)
     s = await Story(rig).start({**SCRIPT, "image_key": image.key})
-    await s.speech(20.0)
+    await s.speech(400.0)
     assert s.state["refusal"]["code"] == "too_long"
     assert [r.status for r in s.rows.videos] == ["failed"]
     assert len(rig.sink.submitted) == 1 and not await exists(rig, image.key)
@@ -179,7 +179,7 @@ async def test_a_voice_that_says_something_not_allowed_is_refused_after_it_is_he
 
 async def test_a_voice_longer_than_the_limit_is_refused_up_front(tmp_path, ctx):
     rig = make_rig(tmp_path)
-    image, voice = await put_image(rig), await put_voice(rig, 16.5)
+    image, voice = await put_image(rig), await put_voice(rig, 301.0)
     s = await Start(rig, image, voice)
     assert s.state["refusal"]["code"] == "too_long"
     assert rig.sink.submitted == [] and s.rows.videos == []
@@ -260,7 +260,7 @@ async def test_only_one_lip_sync_is_made_at_a_time(tmp_path, ctx):
     [
         {"source": "video"},
         {"source": "script", "script": "  "},
-        {"source": "script", "script": "x" * 301, "language": "en-US", "gender": "female"},
+        {"source": "script", "script": "x" * 1001, "language": "en-US", "gender": "female"},
         {"source": "script", "script": "Hi", "language": "xx", "gender": "female"},
         {"source": "audio", "audio_key": "uploads/missing.wav"},
     ],
