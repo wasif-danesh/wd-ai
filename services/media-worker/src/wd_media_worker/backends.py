@@ -306,6 +306,10 @@ class BackendRouter:
         b = await self._binding(job)
         from wd_media_worker.processor import ComfyRunner  # circular at import time
 
+        if b is None and job.capability.startswith("speech.") and self._s.comfyui_mode != "stub":
+            from wd_media_worker.speech import OpenAISpeechRunner
+
+            return OpenAISpeechRunner(self._s.speech_server_map, self._s.job_timeout_s, self._http)
         if b is None:
             video_url = self._video_url(job)
             return self._local_runner(video_url, ComfyRunner) if video_url else self._default

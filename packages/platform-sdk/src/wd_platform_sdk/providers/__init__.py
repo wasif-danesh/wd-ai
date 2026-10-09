@@ -13,6 +13,7 @@ from wd_platform_sdk.jobs import InMemoryJobSink, JobSink
 from wd_platform_sdk.providers.comfyui import ComfyUIProvider
 from wd_platform_sdk.providers.fake import FakeMediaProvider, FakeTextProvider
 from wd_platform_sdk.providers.litellm import LiteLLMTextProvider
+from wd_platform_sdk.providers.speech import SpeechProvider
 from wd_platform_sdk.storage import ScopedStorage
 from wd_platform_sdk.usage import InMemoryUsageRecorder, UsageRecorder
 
@@ -53,6 +54,10 @@ for _family in ("image", "music", "video"):
     register_provider("fake", _family, lambda d, c: FakeMediaProvider(d.job_sink))
 
 
+register_provider("speech", "speech", lambda d, c: SpeechProvider(d.job_sink))
+register_provider("fake", "speech", lambda d, c: FakeMediaProvider(d.job_sink))
+
+
 def build_capabilities(config: ProductConfig, deps: ProviderDeps) -> Capabilities:
     """Instantiate the providers a product's config binds, and expose them as `caps`."""
     cache: dict[tuple[str, str], Any] = {}
@@ -61,6 +66,7 @@ def build_capabilities(config: ProductConfig, deps: ProviderDeps) -> Capabilitie
         "image": {},
         "music": {},
         "video": {},
+        "speech": {},
     }
     for name, binding in config.capabilities.items():
         family, _, action = name.partition(".")
@@ -75,6 +81,7 @@ def build_capabilities(config: ProductConfig, deps: ProviderDeps) -> Capabilitie
         image=MediaCapabilities("image", grouped["image"], config.id),
         music=MediaCapabilities("music", grouped["music"], config.id),
         video=MediaCapabilities("video", grouped["video"], config.id),
+        speech=MediaCapabilities("speech", grouped["speech"], config.id),
         storage=deps.storage,
         config=config,
         db=deps.db,

@@ -412,6 +412,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/wd-tts-ai/speeches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Speeches */
+        get: operations["list_speeches_products_wd_tts_ai_speeches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-tts-ai/speeches/{speech_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Speech */
+        get: operations["get_speech_products_wd_tts_ai_speeches__speech_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Speech
+         * @description Delete a result: its file first, then the record.
+         */
+        delete: operations["delete_speech_products_wd_tts_ai_speeches__speech_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-tts-ai/speeches/{speech_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download
+         * @description The speech as a file the browser saves (browsers ignore `download` on links to the
+         *     storage host, ADR-0034).
+         */
+        get: operations["download_products_wd_tts_ai_speeches__speech_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/wd-tts-ai/voices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Voices
+         * @description The languages and voices the form offers: a gender with no voice is an empty list.
+         */
+        get: operations["list_voices_products_wd_tts_ai_voices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/products/wd-video-ai/prompt/enhance": {
         parameters: {
             query?: never;
@@ -887,6 +966,19 @@ export interface components {
             /** Ts */
             ts?: string;
         };
+        /** LanguageChoice */
+        LanguageChoice: {
+            /** English */
+            english: string;
+            /** Genders */
+            genders: {
+                [key: string]: components["schemas"]["VoiceChoice"][];
+            };
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /** Me */
         Me: {
             /** Role */
@@ -1062,7 +1154,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "song" | "image" | "video";
+            kind: "song" | "image" | "video" | "speech";
             /**
              * Match
              * @enum {string}
@@ -1126,6 +1218,39 @@ export interface components {
             style: string;
             /** Title */
             title: string;
+        };
+        /** SpeechPage */
+        SpeechPage: {
+            /** Next Before */
+            next_before: string | null;
+            /** Speeches */
+            speeches: components["schemas"]["SpeechSummary"][];
+        };
+        /** SpeechSummary */
+        SpeechSummary: {
+            /** Audio Url */
+            audio_url: string;
+            /** Characters */
+            characters: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Gender */
+            gender: string;
+            /** Id */
+            id: string;
+            /** Language */
+            language: string;
+            /** Language Name */
+            language_name: string;
+            /** Seconds */
+            seconds: number;
+            /** Text */
+            text: string;
+            /** Voice */
+            voice: string;
         };
         SseEvent: components["schemas"]["NodeEvent"] | components["schemas"]["TokenEvent"] | components["schemas"]["InterruptEvent"] | components["schemas"]["JobProgressEvent"] | components["schemas"]["ErrorEvent"] | components["schemas"]["DoneEvent"];
         /** TestOutcome */
@@ -1266,6 +1391,22 @@ export interface components {
             video_url?: string | null;
             /** Width */
             width?: number | null;
+        };
+        /** VoiceCatalog */
+        VoiceCatalog: {
+            /** Languages */
+            languages: components["schemas"]["LanguageChoice"][];
+        };
+        /** VoiceChoice */
+        VoiceChoice: {
+            /** Default */
+            default: boolean;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Quality */
+            quality: string;
         };
     };
     responses: never;
@@ -1651,7 +1792,7 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
-                kind?: ("song" | "image" | "video") | null;
+                kind?: ("song" | "image" | "video" | "speech") | null;
                 limit?: number;
             };
             header?: never;
@@ -2004,6 +2145,150 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_speeches_products_wd_tts_ai_speeches_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: string | null;
+                ids?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeechPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_speech_products_wd_tts_ai_speeches__speech_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                speech_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpeechSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_speech_products_wd_tts_ai_speeches__speech_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                speech_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_products_wd_tts_ai_speeches__speech_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                speech_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_voices_products_wd_tts_ai_voices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceCatalog"];
                 };
             };
         };

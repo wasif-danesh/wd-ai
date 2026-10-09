@@ -13,12 +13,19 @@ class WorkerSettings(BaseSettings):
     # Video runs on its own ComfyUI (ADR-0037): the model needs fp32 weights on a Mac, a
     # process-wide setting that would slow the image and music models. Empty: COMFYUI_BASE_URL.
     comfyui_video_base_url: str = ""
+    # Speech engines (ADR-0042): `engine=address` pairs, comma separated.
+    speech_servers: str = "kokoro=http://speech:8000,indic-parler=http://speech-indic:8000"
     comfyui_mode: str = "real"  # real | stub (stub returns placeholder files, no GPU needed)
 
     media_secrets_key: str = ""  # decrypts the API keys saved in the admin area (ADR-0025)
 
     ollama_base_url: str = ""  # set to unload LLMs from the GPU before each job
     unload_llm: bool = True
+
+    @property
+    def speech_server_map(self) -> dict[str, str]:
+        pairs = (p.split("=", 1) for p in self.speech_servers.split(",") if "=" in p)
+        return {k.strip(): v.strip() for k, v in pairs if k.strip() and v.strip()}
 
     gpu_id: str = "gpu0"  # workers sharing one GPU share this id and take turns
     job_timeout_s: int = 1200  # a 5 s clip takes about 8 minutes on a Mac (ADR-0037)

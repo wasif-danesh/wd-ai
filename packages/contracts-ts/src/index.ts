@@ -54,3 +54,10 @@ export type EnhanceResult = components["schemas"]["EnhanceOut"];
 // Search over My creations (ADR-0041)
 export type SearchHit = components["schemas"]["SearchHit"];
 export type SearchResponse = components["schemas"]["SearchResponse"];
+
+// wd-tts-ai: the voice catalog and a user's speech results (ADR-0042)
+export type SpeechSummary = components["schemas"]["SpeechSummary"];
+export type SpeechPage = components["schemas"]["SpeechPage"];
+export type VoiceCatalog = components["schemas"]["VoiceCatalog"];
+export type LanguageChoice = components["schemas"]["LanguageChoice"];
+export type VoiceChoice = components["schemas"]["VoiceChoice"];

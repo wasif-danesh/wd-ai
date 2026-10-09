@@ -112,6 +112,10 @@ class MediaCapabilities:
         """Change a picture the user uploaded: pass its storage key as `image_key`."""
         return await self._run("edit", inputs)
 
+    async def synthesize(self, **inputs: Any) -> JobHandle:
+        """Say a text aloud (ADR-0042): `text`, `language`, `engine`, `voice` and `model`."""
+        return await self._run("synthesize", inputs)
+
     async def animate(self, **inputs: Any) -> JobHandle:
         """Make a clip from a picture the user uploaded: pass its storage key as `image_key`."""
         return await self._run("animate", inputs)
@@ -133,6 +137,7 @@ class Capabilities:
     image: MediaCapabilities
     music: MediaCapabilities
     video: MediaCapabilities
+    speech: MediaCapabilities
     storage: ScopedStorage | None = None
     rag: RagStore | None = None
     config: ProductConfig | None = None  # this product's validated config (quotas, settings)

@@ -751,6 +751,40 @@
         "title": "JobProgressEvent",
         "type": "object"
       },
+      "LanguageChoice": {
+        "properties": {
+          "english": {
+            "title": "English",
+            "type": "string"
+          },
+          "genders": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/VoiceChoice"
+              },
+              "type": "array"
+            },
+            "title": "Genders",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "english",
+          "genders"
+        ],
+        "title": "LanguageChoice",
+        "type": "object"
+      },
       "Me": {
         "properties": {
           "role": {
@@ -1224,7 +1258,8 @@
             "enum": [
               "song",
               "image",
-              "video"
+              "video",
+              "speech"
             ],
             "title": "Kind",
             "type": "string"
@@ -1406,6 +1441,94 @@
           "cover_url"
         ],
         "title": "SongSummary",
+        "type": "object"
+      },
+      "SpeechPage": {
+        "properties": {
+          "next_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          },
+          "speeches": {
+            "items": {
+              "$ref": "#/components/schemas/SpeechSummary"
+            },
+            "title": "Speeches",
+            "type": "array"
+          }
+        },
+        "required": [
+          "speeches",
+          "next_before"
+        ],
+        "title": "SpeechPage",
+        "type": "object"
+      },
+      "SpeechSummary": {
+        "properties": {
+          "audio_url": {
+            "title": "Audio Url",
+            "type": "string"
+          },
+          "characters": {
+            "title": "Characters",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "gender": {
+            "title": "Gender",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "language_name": {
+            "title": "Language Name",
+            "type": "string"
+          },
+          "seconds": {
+            "title": "Seconds",
+            "type": "number"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "voice": {
+            "title": "Voice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "language",
+          "language_name",
+          "gender",
+          "voice",
+          "characters",
+          "seconds",
+          "created_at",
+          "audio_url"
+        ],
+        "title": "SpeechSummary",
         "type": "object"
       },
       "SseEvent": {
@@ -1794,6 +1917,50 @@
           "created_at"
         ],
         "title": "VideoSummary",
+        "type": "object"
+      },
+      "VoiceCatalog": {
+        "properties": {
+          "languages": {
+            "items": {
+              "$ref": "#/components/schemas/LanguageChoice"
+            },
+            "title": "Languages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "languages"
+        ],
+        "title": "VoiceCatalog",
+        "type": "object"
+      },
+      "VoiceChoice": {
+        "properties": {
+          "default": {
+            "title": "Default",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "quality": {
+            "title": "Quality",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "default",
+          "quality"
+        ],
+        "title": "VoiceChoice",
         "type": "object"
       }
     }
@@ -2418,7 +2585,8 @@
                   "enum": [
                     "song",
                     "image",
-                    "video"
+                    "video",
+                    "speech"
                   ],
                   "type": "string"
                 },
@@ -2966,6 +3134,224 @@
         "summary": "Download",
         "tags": [
           "wd-music-ai"
+        ]
+      }
+    },
+    "/products/wd-tts-ai/speeches": {
+      "get": {
+        "operationId": "list_speeches_products_wd_tts_ai_speeches_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ids",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ids"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Speeches",
+        "tags": [
+          "wd-tts-ai"
+        ]
+      }
+    },
+    "/products/wd-tts-ai/speeches/{speech_id}": {
+      "delete": {
+        "description": "Delete a result: its file first, then the record.",
+        "operationId": "delete_speech_products_wd_tts_ai_speeches__speech_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "speech_id",
+            "required": true,
+            "schema": {
+              "title": "Speech Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Speech",
+        "tags": [
+          "wd-tts-ai"
+        ]
+      },
+      "get": {
+        "operationId": "get_speech_products_wd_tts_ai_speeches__speech_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "speech_id",
+            "required": true,
+            "schema": {
+              "title": "Speech Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Speech",
+        "tags": [
+          "wd-tts-ai"
+        ]
+      }
+    },
+    "/products/wd-tts-ai/speeches/{speech_id}/download": {
+      "get": {
+        "description": "The speech as a file the browser saves (browsers ignore `download` on links to the\nstorage host, ADR-0034).",
+        "operationId": "download_products_wd_tts_ai_speeches__speech_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "speech_id",
+            "required": true,
+            "schema": {
+              "title": "Speech Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download",
+        "tags": [
+          "wd-tts-ai"
+        ]
+      }
+    },
+    "/products/wd-tts-ai/voices": {
+      "get": {
+        "description": "The languages and voices the form offers: a gender with no voice is an empty list.",
+        "operationId": "list_voices_products_wd_tts_ai_voices_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Voices",
+        "tags": [
+          "wd-tts-ai"
         ]
       }
     },
