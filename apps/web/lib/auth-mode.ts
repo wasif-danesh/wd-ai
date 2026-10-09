@@ -16,7 +16,6 @@ const PUBLIC_PATHS = new Set([
   "/",
   "/signin",
   // pages for products that are not built yet (ADR-0042 to ADR-0044): public until they are real
-  "/text-to-speech",
   "/speech-to-text",
   "/lip-sync",
 ]);
@@ -32,6 +31,9 @@ export function signInReason(next: string): string {
   }
   if (next === "/image" || next.startsWith("/image/")) {
     return "Sign in to create images and keep them.";
+  }
+  if (next === "/text-to-speech" || next.startsWith("/text-to-speech/")) {
+    return "Sign in to create speech and keep it.";
   }
   if (next === "/video" || next.startsWith("/video/")) {
     return "Sign in to create videos and keep them.";

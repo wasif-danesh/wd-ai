@@ -1468,6 +1468,15 @@
     display: grid;
     place-items: center;
   }
+  .speech-result {
+    margin: 0;
+    display: grid;
+    gap: 0.6rem;
+    justify-items: stretch;
+    .player {
+      inline-size: 100%;
+    }
+  }
   .dropzone {
     display: grid;
     gap: 0.25rem;

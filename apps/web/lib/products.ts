@@ -43,7 +43,7 @@ export const PRODUCTS: Product[] = [
       "Type or paste text, pick a language and a male or female voice, and get natural speech to play and download.",
     action: "Create speech",
     href: "/text-to-speech",
-    status: "soon",
+    status: "live",
   },
   {
     id: "speech-to-text",

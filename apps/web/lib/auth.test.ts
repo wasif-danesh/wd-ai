@@ -90,7 +90,7 @@ describe("auth mode and redirects", () => {
 });
 
 describe("which pages need a session", () => {
-  it.each(["/", "/signin", "/text-to-speech", "/speech-to-text", "/lip-sync", "/lip-sync/"])(
+  it.each(["/", "/signin", "/speech-to-text", "/lip-sync", "/lip-sync/"])(
     "%s is public",
     (path) => {
       expect(isPublicPath(path)).toBe(true);
@@ -110,6 +110,7 @@ describe("which pages need a session", () => {
     "/image/creations",
     "/image/secret",
     "/video",
+    "/text-to-speech",
     "/video/",
     "/video/creations/1",
     "/signin/x",
@@ -124,6 +125,7 @@ describe("which pages need a session", () => {
     expect(signInReason("/image/creations/x")).toMatch(/create images/);
     expect(signInReason("/video")).toMatch(/create videos/);
     expect(signInReason("/video/creations/x")).toMatch(/create videos/);
+    expect(signInReason("/text-to-speech")).toMatch(/create speech/);
     expect(signInReason("/admin")).toBe("Sign in to continue.");
     expect(signInReason("/")).toBe("Sign in to continue.");
   });

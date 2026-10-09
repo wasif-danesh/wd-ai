@@ -1,3 +1,4 @@
+import { Equaliser } from "@/components/Logo";
 import type { Entry } from "@/lib/creations";
 import { styleTags, timeAgo } from "@/lib/format";
 import type { VideoSummary } from "@wd/contracts";
@@ -5,6 +6,28 @@ import Link from "next/link";
 
 /** One card in My creations: a song, an image or a video, each linking to its own page. */
 export function CreationCard({ entry, note }: { entry: Entry; note?: string }) {
+  if (entry.kind === "speech") {
+    const { speech } = entry;
+    return (
+      <Link href={`/text-to-speech/creations/${speech.id}`} className="song-card creation-card">
+        <div className="song-card__cover cover-placeholder speech-placeholder" aria-hidden="true">
+          <Equaliser still />
+        </div>
+        <span className="creation-kind">Speech</span>
+        <div className="stack creation-card__details">
+          <h3 className="clamp" lang={speech.language}>
+            {speech.text}
+          </h3>
+          <div className="tags">
+            <span className="tag">{speech.language_name}</span>
+            <span className="tag">{speech.gender === "male" ? "Male" : "Female"}</span>
+            {note ? <span className="tag">{note}</span> : null}
+          </div>
+          <time dateTime={speech.created_at}>{timeAgo(speech.created_at)}</time>
+        </div>
+      </Link>
+    );
+  }
   if (entry.kind === "video") return <VideoCard video={entry.video} note={note} />;
   if (entry.kind === "image") {
     return (

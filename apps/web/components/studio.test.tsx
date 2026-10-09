@@ -8,12 +8,12 @@ import { ProductCard } from "./ProductCard";
 vi.mock("next/navigation", () => ({ usePathname: () => "/music/songs" }));
 
 describe("the studio's products", () => {
-  it("lists music, image and video as live and three more as coming soon, each with its own page", () => {
+  it("lists music, image, video and text to speech as live and two more as coming soon, each with its own page", () => {
     expect(PRODUCTS.map((p) => [p.id, p.status, p.href])).toEqual([
       ["music", "live", "/music"],
       ["image", "live", "/image"],
       ["video", "live", "/video"],
-      ["text-to-speech", "soon", "/text-to-speech"],
+      ["text-to-speech", "live", "/text-to-speech"],
       ["speech-to-text", "soon", "/speech-to-text"],
       ["lip-sync", "soon", "/lip-sync"],
     ]);
@@ -58,7 +58,6 @@ describe("ProductCard", () => {
   });
 
   it.each([
-    ["Text to Speech", "Create speech", "/text-to-speech"],
     ["Speech to Text", "Transcribe audio", "/speech-to-text"],
     ["Lip Sync", "Create lip sync", "/lip-sync"],
   ])("shows %s with a Coming soon tag, its description and a %s button", (title, action, href) => {
@@ -75,7 +74,7 @@ describe("ProductCard", () => {
   });
 
   it("has a direct action for each live product", () => {
-    const names = PRODUCTS.slice(0, 3).map((p) => {
+    const names = PRODUCTS.slice(0, 4).map((p) => {
       const { unmount } = render(<ProductCard product={p} />);
       const text = screen.getByRole("link").textContent;
       unmount();
@@ -84,6 +83,7 @@ describe("ProductCard", () => {
     expect(names[0]).toContain("Create a song");
     expect(names[1]).toContain("Make an image");
     expect(names[2]).toContain("Create a video");
+    expect(names[3]).toContain("Create speech");
   });
 
   it("hides the decorative art from screen readers", () => {

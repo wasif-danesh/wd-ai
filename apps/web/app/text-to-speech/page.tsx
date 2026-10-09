@@ -1,13 +1,25 @@
-import { ComingSoon } from "@/components/ComingSoon";
+import { Notice } from "@/components/Notice";
+import { CreateSpeech } from "@/components/speech/CreateSpeech";
+import { apiGet } from "@/lib/api";
+import type { VoiceCatalog } from "@wd/contracts";
 import type { Metadata } from "next";
 
-// Not built yet: public, but kept out of search results until it is real (ADR-0026).
-export const metadata: Metadata = { title: "Text to speech", robots: { index: false } };
+export const metadata: Metadata = { title: "Text to Speech" };
+export const dynamic = "force-dynamic";
 
-export default function Page() {
-  return (
-    <ComingSoon title="Text to speech">
-      Turning text into natural speech in your language, with a male or female voice, is on its way.
-    </ComingSoon>
-  );
+export default async function TextToSpeechPage() {
+  let catalog: VoiceCatalog | null = null;
+  try {
+    catalog = await apiGet<VoiceCatalog>("/products/wd-tts-ai/voices");
+  } catch {
+    // shown below
+  }
+  if (!catalog) {
+    return (
+      <Notice tone="error" title="Couldn't load the voices">
+        The service isn't answering right now. Try again in a moment.
+      </Notice>
+    );
+  }
+  return <CreateSpeech catalog={catalog} />;
 }

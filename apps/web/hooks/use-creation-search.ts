@@ -2,7 +2,7 @@
 
 import type { Entry, Filter } from "@/lib/creations";
 import { kindOf, longEnough } from "@/lib/creations";
-import type { ImagePage, SearchResponse, SongPage, VideoPage } from "@wd/contracts";
+import type { ImagePage, SearchResponse, SongPage, SpeechPage, VideoPage } from "@wd/contracts";
 import { useEffect, useState } from "react";
 
 export const DEBOUNCE_MS = 300;
@@ -37,7 +37,7 @@ async function cards(response: SearchResponse, signal: AbortSignal): Promise<Ent
     by(kind)
       .map((r) => r.id)
       .join(",");
-  const [songs, images, videos] = await Promise.all([
+  const [songs, images, videos, speeches] = await Promise.all([
     by("song").length
       ? getJson<SongPage>(`/api/products/wd-music-ai/songs?ids=${ids("song")}`, signal)
       : null,
@@ -46,6 +46,9 @@ async function cards(response: SearchResponse, signal: AbortSignal): Promise<Ent
       : null,
     by("video").length
       ? getJson<VideoPage>(`/api/products/wd-video-ai/videos?ids=${ids("video")}`, signal)
+      : null,
+    by("speech").length
+      ? getJson<SpeechPage>(`/api/products/wd-tts-ai/speeches?ids=${ids("speech")}`, signal)
       : null,
   ]);
   const found = new Map<string, Entry>();
@@ -66,6 +69,14 @@ async function cards(response: SearchResponse, signal: AbortSignal): Promise<Ent
       id: video.id,
       createdAt: video.created_at,
       video,
+    });
+  }
+  for (const speech of speeches?.speeches ?? []) {
+    found.set(`speech:${speech.id}`, {
+      kind: "speech",
+      id: speech.id,
+      createdAt: speech.created_at,
+      speech,
     });
   }
   return response.results.flatMap((r) => found.get(`${r.kind}:${r.id}`) ?? []);

@@ -5,7 +5,7 @@ import { Notice } from "@/components/Notice";
 import { useCreationSearch } from "@/hooks/use-creation-search";
 import type { Entry, Filter } from "@/lib/creations";
 import { PRODUCT } from "@/lib/run-client";
-import type { ImagePage, SongPage, VideoPage } from "@wd/contracts";
+import type { ImagePage, SongPage, SpeechPage, VideoPage } from "@wd/contracts";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 import { CreationCard } from "./CreationCard";
@@ -16,23 +16,28 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "songs", label: "Songs" },
   { value: "images", label: "Images" },
   { value: "videos", label: "Videos" },
+  { value: "speeches", label: "Speech" },
 ];
 
 export function CreationsList({
   songs: songPage,
   images: imagePage,
   videos: videoPage = null,
+  speeches: speechPage = null,
 }: {
   songs: SongPage | null;
   images: ImagePage | null;
   videos?: VideoPage | null;
+  speeches?: SpeechPage | null;
 }) {
   const [songs, setSongs] = useState(songPage?.songs ?? []);
   const [images, setImages] = useState(imagePage?.images ?? []);
   const [videos, setVideos] = useState(videoPage?.videos ?? []);
+  const [speeches, setSpeeches] = useState(speechPage?.speeches ?? []);
   const [songNext, setSongNext] = useState(songPage?.next_before ?? null);
   const [imageNext, setImageNext] = useState(imagePage?.next_before ?? null);
   const [videoNext, setVideoNext] = useState(videoPage?.next_before ?? null);
+  const [speechNext, setSpeechNext] = useState(speechPage?.next_before ?? null);
   const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -57,12 +62,24 @@ export function CreationsList({
         createdAt: video.created_at,
         video,
       })),
+      ...speeches.map((speech) => ({
+        kind: "speech" as const,
+        id: speech.id,
+        createdAt: speech.created_at,
+        speech,
+      })),
     ];
-    const wanted = { all: null, songs: "song", images: "image", videos: "video" }[filter];
+    const wanted = {
+      all: null,
+      songs: "song",
+      images: "image",
+      videos: "video",
+      speeches: "speech",
+    }[filter];
     return all
       .filter((entry) => wanted === null || entry.kind === wanted)
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  }, [filter, images, songs, videos]);
+  }, [filter, images, songs, speeches, videos]);
 
   /** Load the next page of one kind. Returns true when it failed. */
   async function page<T>(url: string, apply: (p: T) => void): Promise<boolean> {
@@ -106,25 +123,36 @@ export function CreationsList({
         }),
       );
     }
+    if (speechNext && (filter === "all" || filter === "speeches")) {
+      jobs.push(
+        page<SpeechPage>(`/api/products/wd-tts-ai/speeches?${q(speechNext)}`, (p) => {
+          setSpeeches((cur) => [...cur, ...p.speeches]);
+          setSpeechNext(p.next_before ?? null);
+        }),
+      );
+    }
     const results = await Promise.all(jobs);
     setFailed(results.some(Boolean));
     setLoading(false);
   }
 
   const counts = {
-    all: songs.length + images.length + videos.length,
+    all: songs.length + images.length + videos.length + speeches.length,
     songs: songs.length,
     images: images.length,
     videos: videos.length,
+    speeches: speeches.length,
   };
   const hasMore =
     filter === "all"
-      ? Boolean(songNext || imageNext || videoNext)
+      ? Boolean(songNext || imageNext || videoNext || speechNext)
       : filter === "songs"
         ? Boolean(songNext)
         : filter === "images"
           ? Boolean(imageNext)
-          : Boolean(videoNext);
+          : filter === "videos"
+            ? Boolean(videoNext)
+            : Boolean(speechNext);
 
   const [query, setQuery] = useState("");
   const searchId = useId();
@@ -214,7 +242,11 @@ export function CreationsList({
       ) : empty ? (
         <div className="empty panel creations-empty">
           {filter === "all" || filter === "songs" ? <Equaliser still /> : null}
-          <h2>{filter === "all" ? "Your creative space is ready" : `No ${filter} yet`}</h2>
+          <h2>
+            {filter === "all"
+              ? "Your creative space is ready"
+              : `No ${filter === "speeches" ? "speech" : filter} yet`}
+          </h2>
           <p>Make something new and it will appear here.</p>
           <div className="actions">
             <Link href="/music" className="btn btn--primary">
@@ -225,6 +257,9 @@ export function CreationsList({
             </Link>
             <Link href="/video" className="btn btn--ghost">
               Make a video
+            </Link>
+            <Link href="/text-to-speech" className="btn btn--ghost">
+              Create speech
             </Link>
           </div>
         </div>
