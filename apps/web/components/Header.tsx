@@ -7,7 +7,7 @@ import { connection } from "next/server";
 import { Logo } from "./Logo";
 import { NavLink } from "./NavLink";
 import { ThemeToggle } from "./ThemeToggle";
-import { VideoActivity } from "./video/VideoActivity";
+import { Activity } from "./shell/Activity";
 
 export async function Header() {
   await connection(); // per request: the session is not known at build time
@@ -39,7 +39,7 @@ export async function Header() {
           {isAdmin && <NavLink href="/admin">Admin</NavLink>}
         </nav>
         <div className="ms-auto flex items-center justify-end gap-3 max-[420px]:gap-2">
-          <VideoActivity enabled={signedIn} />
+          <Activity enabled={signedIn} />
           <ThemeToggle />
           {who ? (
             <form

@@ -11,11 +11,11 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { VideoActivity } from "@/components/video/VideoActivity";
 import { crumbs } from "@/lib/nav";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment } from "react";
+import { Activity } from "./Activity";
 import { CommandMenu } from "./CommandMenu";
 
 /** The bar above a product page: the panel button, where you are, search, and the "ready" notices. */
@@ -46,7 +46,7 @@ export function TopBar() {
       </Breadcrumb>
       <div className="ms-auto flex min-w-0 flex-1 items-center justify-end gap-2 sm:flex-none">
         <CommandMenu />
-        <VideoActivity enabled />
+        <Activity enabled />
         <ThemeToggle />
       </div>
     </header>

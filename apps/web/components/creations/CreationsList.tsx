@@ -13,7 +13,7 @@ import type { Entry, Filter } from "@/lib/creations";
 import { PRODUCT } from "@/lib/run-client";
 import { actions, empty, hint, panel } from "@/lib/styles";
 import { cn } from "@/lib/utils";
-import type { ImagePage, SongPage, SpeechPage, VideoPage } from "@wd/contracts";
+import type { ImagePage, SongPage, SpeechPage, TranscriptPage, VideoPage } from "@wd/contracts";
 import { LayoutGrid, Table2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useState } from "react";
@@ -29,6 +29,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "images", label: "Images" },
   { value: "videos", label: "Videos" },
   { value: "speeches", label: "Speech" },
+  { value: "transcripts", label: "Transcripts" },
 ];
 
 export function CreationsList({
@@ -36,12 +37,14 @@ export function CreationsList({
   images: imagePage,
   videos: videoPage = null,
   speeches: speechPage = null,
+  transcripts: transcriptPage = null,
   initialFilter = "all",
 }: {
   songs: SongPage | null;
   images: ImagePage | null;
   videos?: VideoPage | null;
   speeches?: SpeechPage | null;
+  transcripts?: TranscriptPage | null;
   initialFilter?: Filter;
 }) {
   const [songs, setSongs] = useState(songPage?.songs ?? []);
@@ -51,6 +54,8 @@ export function CreationsList({
   const [songNext, setSongNext] = useState(songPage?.next_before ?? null);
   const [imageNext, setImageNext] = useState(imagePage?.next_before ?? null);
   const [videoNext, setVideoNext] = useState(videoPage?.next_before ?? null);
+  const [transcripts, setTranscripts] = useState(transcriptPage?.transcripts ?? []);
+  const [transcriptNext, setTranscriptNext] = useState(transcriptPage?.next_before ?? null);
   const [speechNext, setSpeechNext] = useState(speechPage?.next_before ?? null);
   const [filter, setFilter] = useState<Filter>(initialFilter);
   const [loading, setLoading] = useState(false);
@@ -82,6 +87,12 @@ export function CreationsList({
         createdAt: speech.created_at,
         speech,
       })),
+      ...transcripts.map((transcript) => ({
+        kind: "transcript" as const,
+        id: transcript.id,
+        createdAt: transcript.created_at,
+        transcript,
+      })),
     ];
     const wanted = {
       all: null,
@@ -89,11 +100,12 @@ export function CreationsList({
       images: "image",
       videos: "video",
       speeches: "speech",
+      transcripts: "transcript",
     }[filter];
     return all
       .filter((entry) => wanted === null || entry.kind === wanted)
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  }, [filter, images, songs, speeches, videos]);
+  }, [filter, images, songs, speeches, transcripts, videos]);
 
   /** Load the next page of one kind. Returns true when it failed. */
   async function page<T>(url: string, apply: (p: T) => void): Promise<boolean> {
@@ -145,28 +157,39 @@ export function CreationsList({
         }),
       );
     }
+    if (transcriptNext && (filter === "all" || filter === "transcripts")) {
+      jobs.push(
+        page<TranscriptPage>(`/api/products/wd-stt-ai/transcripts?${q(transcriptNext)}`, (p) => {
+          setTranscripts((cur) => [...cur, ...p.transcripts]);
+          setTranscriptNext(p.next_before ?? null);
+        }),
+      );
+    }
     const results = await Promise.all(jobs);
     setFailed(results.some(Boolean));
     setLoading(false);
   }
 
   const counts = {
-    all: songs.length + images.length + videos.length + speeches.length,
+    all: songs.length + images.length + videos.length + speeches.length + transcripts.length,
     songs: songs.length,
     images: images.length,
     videos: videos.length,
     speeches: speeches.length,
+    transcripts: transcripts.length,
   };
   const hasMore =
     filter === "all"
-      ? Boolean(songNext || imageNext || videoNext || speechNext)
+      ? Boolean(songNext || imageNext || videoNext || speechNext || transcriptNext)
       : filter === "songs"
         ? Boolean(songNext)
         : filter === "images"
           ? Boolean(imageNext)
           : filter === "videos"
             ? Boolean(videoNext)
-            : Boolean(speechNext);
+            : filter === "speeches"
+              ? Boolean(speechNext)
+              : Boolean(transcriptNext);
 
   const [view, setView] = useState<"cards" | "table">("cards");
   useEffect(() => {
@@ -307,6 +330,9 @@ export function CreationsList({
             </Button>
             <Button asChild variant="outline">
               <Link href="/text-to-speech">Create speech</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/speech-to-text">Transcribe audio</Link>
             </Button>
           </div>
         </div>

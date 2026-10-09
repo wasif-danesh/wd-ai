@@ -2,10 +2,11 @@ import { Equaliser } from "@/components/Logo";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import type { Entry } from "@/lib/creations";
-import { styleTags, timeAgo } from "@/lib/format";
+import { clock, styleTags, timeAgo } from "@/lib/format";
 import { clamp2, coverTile } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import type { VideoSummary } from "@wd/contracts";
+import { Mic } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -81,6 +82,40 @@ export function CreationCard({ entry, note }: { entry: Entry; note?: string }) {
           </>
         }
         when={speech.created_at}
+      />
+    );
+  }
+  if (entry.kind === "transcript") {
+    const { transcript } = entry;
+    return (
+      <Card
+        href={`/speech-to-text/creations/${transcript.id}`}
+        kind="Transcript"
+        status={transcript.status}
+        cover={
+          <div
+            className={cn(picture, "grid place-items-center p-4 text-primary-foreground")}
+            aria-hidden="true"
+          >
+            {transcript.status === "working" ? <Spinner /> : <Mic className="size-10" />}
+          </div>
+        }
+        title={transcript.title || "Transcribing…"}
+        lang={transcript.language}
+        tags={
+          transcript.status === "working" ? (
+            <Badge variant="tag">Transcribing…</Badge>
+          ) : transcript.status === "failed" ? (
+            <Badge variant="tag">Couldn't be transcribed</Badge>
+          ) : (
+            <>
+              <Badge variant="tag">{transcript.language_name}</Badge>
+              <Badge variant="tag">{clock(transcript.seconds)}</Badge>
+              {noteTag}
+            </>
+          )
+        }
+        when={transcript.created_at}
       />
     );
   }

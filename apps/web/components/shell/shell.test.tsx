@@ -43,7 +43,7 @@ describe("the side panel", () => {
   it("shows products that are not built yet as disabled, with a Soon tag", () => {
     path = "/music";
     panel();
-    const soon = screen.getByRole("link", { name: /Speech to Text/ });
+    const soon = screen.getByRole("link", { name: /Lip Sync/ });
     expect(soon).toHaveAttribute("aria-disabled", "true");
     expect(within(soon).getByText("Soon")).toBeInTheDocument();
   });

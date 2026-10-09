@@ -1,13 +1,22 @@
+import { clock } from "./format";
+
 // What My creations shows: one entry per song, image or video, whatever product made it (ADR-0040).
-import type { ImageSummary, SongSummary, SpeechSummary, VideoSummary } from "@wd/contracts";
+import type {
+  ImageSummary,
+  SongSummary,
+  SpeechSummary,
+  TranscriptSummary,
+  VideoSummary,
+} from "@wd/contracts";
 
 export type Entry =
   | { kind: "song"; id: string; createdAt: string; song: SongSummary }
   | { kind: "image"; id: string; createdAt: string; image: ImageSummary }
   | { kind: "video"; id: string; createdAt: string; video: VideoSummary }
-  | { kind: "speech"; id: string; createdAt: string; speech: SpeechSummary };
+  | { kind: "speech"; id: string; createdAt: string; speech: SpeechSummary }
+  | { kind: "transcript"; id: string; createdAt: string; transcript: TranscriptSummary };
 
-export type Filter = "all" | "songs" | "images" | "videos" | "speeches";
+export type Filter = "all" | "songs" | "images" | "videos" | "speeches" | "transcripts";
 
 /** A search needs two characters, except in Chinese, Japanese and Korean, where one character can be a
  * whole word (龙 is "dragon"). The API applies the same rule. */
@@ -18,7 +27,13 @@ export function longEnough(query: string): boolean {
 
 /** The `kind` the search API takes for a filter, or undefined for "all". */
 export function kindOf(filter: Filter): Entry["kind"] | undefined {
-  const kinds = { songs: "song", images: "image", videos: "video", speeches: "speech" } as const;
+  const kinds = {
+    songs: "song",
+    images: "image",
+    videos: "video",
+    speeches: "speech",
+    transcripts: "transcript",
+  } as const;
   return filter === "all" ? undefined : kinds[filter];
 }
 
@@ -72,6 +87,17 @@ export function toRow(entry: Entry): Row {
         detail: `${entry.speech.language_name} · ${entry.speech.gender === "male" ? "Male" : "Female"}, ${entry.speech.voice}`,
         href: `/text-to-speech/creations/${entry.id}`,
         status: "done",
+      };
+    case "transcript":
+      return {
+        ...base,
+        kindLabel: "Transcript",
+        title: entry.transcript.title || "Transcribing…",
+        detail: [entry.transcript.language_name, clock(entry.transcript.seconds)]
+          .filter(Boolean)
+          .join(" · "),
+        href: `/speech-to-text/creations/${entry.id}`,
+        status: entry.transcript.status,
       };
   }
 }

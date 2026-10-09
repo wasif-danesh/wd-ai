@@ -83,6 +83,40 @@ export async function uploadImage(
   return (await res.json()) as UploadedImage;
 }
 
+export type UploadedMedia = { upload_id: string; key: string; seconds: number; bytes: number };
+
+/** Send the user's recording or video file to the server (ADR-0043). The body is the file itself;
+ * the server decides what it is from its first bytes and returns a clean copy's length. */
+export async function uploadMedia(
+  product: string,
+  file: Blob,
+  signal?: AbortSignal,
+): Promise<UploadedMedia> {
+  const res = await fetch(`/api/products/${product}/uploads/media`, {
+    method: "POST",
+    headers: { "content-type": file.type || "application/octet-stream" },
+    body: file,
+    signal,
+  });
+  if (res.status === 401 && typeof window !== "undefined") {
+    window.location.assign(`/signin?next=${encodeURIComponent(window.location.pathname)}`);
+  }
+  if (!res.ok) throw new HttpError(res.status, await errorMessage(res));
+  return (await res.json()) as UploadedMedia;
+}
+
+/** Take back a recording that was uploaded but not used. */
+export async function deleteMediaUpload(product: string, uploadId: string): Promise<void> {
+  try {
+    await fetch(`/api/products/${product}/uploads/media/${uploadId}`, {
+      method: "DELETE",
+      keepalive: true,
+    });
+  } catch {
+    // the server deletes unused uploads after 24 hours anyway
+  }
+}
+
 export type Enhanced = { prompt: string; changed: boolean };
 
 /** Ask the product to rewrite the user's prompt (ADR-0038). A refusal or a busy model arrives as an

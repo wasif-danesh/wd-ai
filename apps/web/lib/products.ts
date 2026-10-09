@@ -11,7 +11,7 @@ export type Product = {
   /** The product's own views in the side panel (ADR-0046); the first is where the product starts. */
   views: { label: string; href: string }[];
   /** The kind it makes in My creations, used for the "My creations" link in its views. */
-  library?: "songs" | "images" | "videos" | "speeches";
+  library?: "songs" | "images" | "videos" | "speeches" | "transcripts";
 };
 
 export const PRODUCTS: Product[] = [
@@ -73,11 +73,15 @@ export const PRODUCTS: Product[] = [
     id: "speech-to-text",
     title: "Speech to Text",
     blurb:
-      "Upload an audio or video file, or record your voice, and get an accurate transcript with timestamps.",
+      "Upload an audio or video file, or record your voice, and get a transcript with timestamps. Leave while it's made: we'll tell you when it's ready.",
     action: "Transcribe audio",
     href: "/speech-to-text",
-    status: "soon",
-    views: [{ label: "Create", href: "/speech-to-text" }],
+    status: "live",
+    views: [
+      { label: "Create", href: "/speech-to-text" },
+      { label: "In My creations", href: "/creations?show=transcripts" },
+    ],
+    library: "transcripts",
   },
   {
     id: "lip-sync",

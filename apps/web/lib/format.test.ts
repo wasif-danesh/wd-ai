@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { styleTags, timeAgo } from "./format";
+import { clock, styleTags, timeAgo } from "./format";
 
 const NOW = new Date("2026-10-08T12:00:00Z");
 const ago = (seconds: number) => new Date(NOW.getTime() - seconds * 1000).toISOString();
@@ -25,5 +25,18 @@ describe("styleTags", () => {
       "female vocal",
     ]);
     expect(styleTags("")).toEqual([]);
+  });
+});
+
+describe("clock", () => {
+  it.each([
+    [0, "0:00"],
+    [5, "0:05"],
+    [65, "1:05"],
+    [599.6, "10:00"],
+    [3725, "1:02:05"],
+    [-3, "0:00"],
+  ])("shows %s seconds as %s", (seconds, expected) => {
+    expect(clock(seconds)).toBe(expected);
   });
 });

@@ -13,7 +13,8 @@ product the user navigates with a **side panel** (ADR-0046), and the home page k
 | `/music`, `/image`, `/video`, `/text-to-speech` | Create a song, an image, a video or speech (sign-in required). A video is made in the background: the top bar shows "Making your video…" and a notice says when it is ready |
 | `/music/songs/[id]`, `/image/creations/[id]`, `/video/creations/[id]`, `/text-to-speech/creations/[id]` | One saved result: the media, its words, downloads, delete (links are signed fresh on every visit) |
 | `/creations` | My creations: one library of everything the user made, newest first, as cards or a sortable table, with filters (`?show=songs\|images\|videos\|speeches`), "Load more" and a search that finds things by meaning or exact words in any language (sign-in required) |
-| `/speech-to-text`, `/lip-sync` | "Coming soon" pages (public, `noindex`; ADR-0043 and ADR-0044 design them) |
+| `/speech-to-text`, `/speech-to-text/creations/[id]` | Upload or record, choose the language, transcribe; one transcript with Copy and downloads (sign-in required) |
+| `/lip-sync` | A "Coming soon" page (public, `noindex`; ADR-0044 designs it) |
 | `/admin/...` | The admin area (admins only): usage, users, songs, models, media, audit log, as sortable, filterable, paged tables |
 
 ## How it fits together

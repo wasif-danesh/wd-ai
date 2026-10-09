@@ -15,8 +15,7 @@ export function safeNext(value: string | null | undefined): string {
 const PUBLIC_PATHS = new Set([
   "/",
   "/signin",
-  // pages for products that are not built yet (ADR-0042 to ADR-0044): public until they are real
-  "/speech-to-text",
+  // pages for products that are not built yet (ADR-0044): public until they are real
   "/lip-sync",
 ]);
 
@@ -34,6 +33,9 @@ export function signInReason(next: string): string {
   }
   if (next === "/text-to-speech" || next.startsWith("/text-to-speech/")) {
     return "Sign in to create speech and keep it.";
+  }
+  if (next === "/speech-to-text" || next.startsWith("/speech-to-text/")) {
+    return "Sign in to transcribe recordings and keep the transcripts.";
   }
   if (next === "/video" || next.startsWith("/video/")) {
     return "Sign in to create videos and keep them.";
