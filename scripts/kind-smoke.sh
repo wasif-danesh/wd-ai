@@ -13,16 +13,19 @@ check "all deployments available" "kubectl -n $NS wait --for=condition=available
 check "usage_events table exists" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select to_regclass('public.usage_events')\" | grep -q usage_events"
 check "rag_chunks table + pgvector extension exist" "kubectl -n $NS exec statefulset/wd-ai-postgres -- psql -U wd -d wd -tAc \"select to_regclass('public.rag_chunks'), (select count(*) from pg_extension where extname='vector')\" | grep -q 'rag_chunks|1'"
 check "web serves / (HTTP 200)" "curl -fsS -m 10 -o /dev/null http://localhost:3000/"
-check "My songs page renders (server-side read of the API)" "curl -fsS -m 20 http://localhost:3000/music/songs | grep -q 'My songs'"
+check "Music page renders" "curl -fsS -m 20 http://localhost:3000/music | grep -q 'a song'"
 check "songs API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-music-ai/songs | grep -q '\"songs\"'"
 check "an unknown song is a real 404" "test \"\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/music/songs/00000000-0000-0000-0000-000000000000)\" = 404"
 
-check "My images page renders (server-side read of the API)" "curl -fsS -m 20 http://localhost:3000/image/creations | grep -q 'My images'"
+check "Image page renders" "curl -fsS -m 20 http://localhost:3000/image | grep -q 'an image'"
 check "images API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-image-ai/images | grep -q '\"images\"'"
 check "uploading something that is not a picture is refused" "test \"\$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: image/png' --data-binary 'not a picture' http://localhost:3000/api/products/wd-image-ai/uploads/images)\" = 422"
 
 check "videos API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-video-ai/videos?status=working | grep -q '\"videos\"'"
-check "My creations lists songs, images and videos" "curl -fsS -m 20 http://localhost:3000/creations | grep -q 'My creations'"
+check "My creations lists songs, images, videos and speech" "curl -fsS -m 20 http://localhost:3000/creations | grep -q 'My creations'"
+check "Text to Speech page renders (server-side read of the voice catalog)" "curl -fsS -m 20 http://localhost:3000/text-to-speech | grep -q 'speech'"
+check "voice catalog answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-tts-ai/voices | grep -q '\"languages\"'"
+check "speeches API answers through the BFF" "curl -fsS -m 10 http://localhost:3000/api/products/wd-tts-ai/speeches | grep -q '\"speeches\"'"
 check "prompt enhancing needs a known kind" "test \"\$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{\"kind\":\"nope\",\"prompt\":\"x\"}' http://localhost:3000/api/products/wd-video-ai/prompt/enhance)\" = 422"
 
 # Model aliases live in LiteLLM's database and are seeded by the API (ADR-0025). The local overlay runs
