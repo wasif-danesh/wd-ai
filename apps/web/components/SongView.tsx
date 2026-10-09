@@ -1,5 +1,9 @@
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { styleTags } from "@/lib/format";
 import { PRODUCT } from "@/lib/run-client";
+import { actions, coverTile, eyebrow, panel, player, tagRow } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import { LyricSheet } from "./LyricSheet";
 
 export type SongViewData = {
@@ -34,33 +38,46 @@ export function SongView({
   heading: H = "h2",
 }: { song: SongViewData; heading?: "h1" | "h2" }) {
   return (
-    <article className="song-shell panel">
-      <div className="song">
+    <article className={cn(panel, "@container")}>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-[1.4rem] @min-[40rem]:grid-cols-[minmax(12rem,18rem)_minmax(0,1fr)] @min-[40rem]:items-start">
         {song.coverUrl ? (
           // The cover is a presigned URL on the storage host, so next/image would need its config.
-          <img className="song__cover" src={song.coverUrl} alt={`Cover art for ${song.title}`} />
+          <img
+            className={cn(coverTile, "shadow-card")}
+            src={song.coverUrl}
+            alt={`Cover art for ${song.title}`}
+          />
         ) : (
-          <div className="song__cover cover-placeholder" role="img" aria-label="No cover art">
+          <div
+            className={cn(
+              coverTile,
+              "grid place-items-center p-4 text-center font-bold text-primary-foreground shadow-card",
+            )}
+            role="img"
+            aria-label="No cover art"
+          >
             {song.title}
           </div>
         )}
-        <div className="song__head">
-          <span className="eyebrow">{song.when ?? "Your song"}</span>
-          <H>{song.title}</H>
-          <div className="tags">
+        <div className="grid content-start gap-[0.6rem]">
+          <span className={eyebrow}>{song.when ?? "Your song"}</span>
+          <H className="text-step-2 leading-[1.1] font-semibold tracking-[-0.025em]">
+            {song.title}
+          </H>
+          <div className={tagRow}>
             {styleTags(song.style).map((t) => (
-              <span className="tag" key={t}>
+              <Badge variant="tag" key={t}>
                 {t}
-              </span>
+              </Badge>
             ))}
           </div>
           {/* biome-ignore lint/a11y/useMediaCaption: generated music has no speech track to caption */}
-          <audio className="player" controls preload="metadata" src={song.audioUrl}>
+          <audio className={player} controls preload="metadata" src={song.audioUrl}>
             Your browser can't play this audio.
           </audio>
-          <div className="actions">
+          <div className={actions}>
             <a
-              className="btn btn--ghost"
+              className={buttonVariants({ variant: "outline" })}
               href={downloadHref(song, "audio")}
               download={filename(song.title, song.audioUrl)}
             >
@@ -68,7 +85,7 @@ export function SongView({
             </a>
             {song.coverUrl ? (
               <a
-                className="btn btn--ghost"
+                className={buttonVariants({ variant: "outline" })}
                 href={downloadHref(song, "cover")}
                 download={filename(song.title, song.coverUrl)}
               >
@@ -77,7 +94,7 @@ export function SongView({
             ) : null}
             {song.coverUrl && song.songId ? (
               <a
-                className="btn btn--ghost"
+                className={buttonVariants({ variant: "outline" })}
                 href={downloadHref(song, "video")}
                 download={filename(song.title, "x.mp4")}
                 title="The cover with your song playing, as a video you can share"
@@ -87,7 +104,7 @@ export function SongView({
             ) : null}
           </div>
         </div>
-        <div className="song__lyrics">
+        <div className="@min-[40rem]:col-span-full">
           <LyricSheet text={song.lyrics} />
         </div>
       </div>

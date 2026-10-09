@@ -73,12 +73,12 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="theme-toggle"
+      className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-[0.65rem] border bg-surface px-2.5 py-1.5 text-[0.82rem] font-medium whitespace-nowrap text-foreground transition-colors hover:border-primary/35 hover:bg-muted"
       onClick={toggle}
       aria-label={nextTheme ? `Switch to ${nextTheme} theme` : "Toggle light and dark theme"}
       title={nextTheme ? `Switch to ${nextTheme} theme` : "Toggle light and dark theme"}
     >
-      <span className="theme-toggle__icon" aria-hidden="true">
+      <span className="text-base leading-none text-muted-foreground" aria-hidden="true">
         {nextTheme === null ? "◐" : nextTheme === "dark" ? "☾" : "☼"}
       </span>
       <span>{nextTheme === null ? "Theme" : nextTheme === "dark" ? "Dark" : "Light"}</span>

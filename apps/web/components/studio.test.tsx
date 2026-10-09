@@ -33,7 +33,7 @@ describe("the home page", () => {
     const Home = (await import("@/app/(site)/page")).default;
     const { container } = render(<Home />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bring Your Ideas to Life");
-    expect(container.querySelector(".studio-hero__accent")).toHaveTextContent("Ideas");
+    expect(container.querySelector("[data-accent]")).toHaveTextContent("Ideas");
     expect(
       screen.getByText(/Create stunning images, immersive music, and captivating videos/),
     ).toHaveTextContent("with the power of AI — all in one place.");

@@ -2,10 +2,16 @@
 
 import { EnhanceButton } from "@/components/EnhanceButton";
 import { PictureInput } from "@/components/PictureInput";
+import { ModeTabs, PromptField } from "@/components/create/shared";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { Spinner } from "@/components/ui/spinner";
 import { type Picture, usePicture } from "@/hooks/use-picture";
 import { usePictureEvents } from "@/hooks/use-picture-events";
 import type { Mode } from "@/lib/image-flow";
-import { type FormEvent, type KeyboardEvent, useId, useState } from "react";
+import { chips, field, fieldLabel, panel } from "@/lib/styles";
+import { cn } from "@/lib/utils";
+import { type FormEvent, useId, useState } from "react";
 
 export const MAX_PROMPT = 500;
 const PRODUCT = "wd-image-ai";
@@ -77,26 +83,16 @@ export function ImageForm({
     });
   }
 
-  function onKey(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
-  }
-
   return (
-    <form className="card panel" onSubmit={submit} data-dragging={dragging || undefined}>
-      <fieldset className="tabs" style={{ border: 0, padding: 0 }}>
-        <legend className="sr-only">What do you want to do?</legend>
-        {(["text", "image"] as const).map((m) => (
-          <button
-            type="button"
-            className="chip"
-            key={m}
-            aria-pressed={mode === m}
-            onClick={() => setMode(m)}
-          >
-            {m === "text" ? "From text" : "From a picture"}
-          </button>
-        ))}
-      </fieldset>
+    <form
+      className={cn(
+        panel,
+        "gap-6 data-[dragging]:outline-2 data-[dragging]:outline-offset-4 data-[dragging]:outline-primary data-[dragging]:outline-dashed",
+      )}
+      onSubmit={submit}
+      data-dragging={dragging || undefined}
+    >
+      <ModeTabs mode={mode} onChange={setMode} />
 
       {mode === "image" ? (
         <PictureInput
@@ -110,25 +106,17 @@ export function ImageForm({
         />
       ) : null}
 
-      <div className="field">
-        <label htmlFor={`${id}-prompt`}>
-          {mode === "text" ? "What should the image show?" : "What should change?"}
-        </label>
-        <textarea
-          id={`${id}-prompt`}
-          className="textarea"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={onKey}
-          placeholder={EXAMPLES[mode][0]}
-          rows={3}
-          aria-describedby={`${id}-hint`}
-          aria-invalid={prompt.length > MAX_PROMPT}
-        />
-        <div className="row">
-          <span className="field__hint grow" id={`${id}-hint`}>
-            Press Ctrl or ⌘ + Enter to start.
-          </span>
+      <PromptField
+        id={id}
+        label={mode === "text" ? "What should the image show?" : "What should change?"}
+        value={prompt}
+        onChange={setPrompt}
+        placeholder={EXAMPLES[mode][0]}
+        hintText={"Press Ctrl or ⌘ + Enter to start."}
+        max={MAX_PROMPT}
+        examples={EXAMPLES[mode]}
+        exampleLabel={(ex) => ex.split(",")[0]}
+        enhance={
           <EnhanceButton
             product={PRODUCT}
             kind={mode === "text" ? "text_to_image" : "edit_image"}
@@ -139,44 +127,29 @@ export function ImageForm({
             disabled={busy || pic.status === "uploading"}
             onChange={setPrompt}
           />
-          <span className="counter" data-near={prompt.length > MAX_PROMPT * 0.9 || undefined}>
-            {prompt.length}/{MAX_PROMPT}
-          </span>
-        </div>
-        <div className="chips" aria-label="Example ideas">
-          {EXAMPLES[mode].map((ex) => (
-            <button type="button" className="chip" key={ex} onClick={() => setPrompt(ex)}>
-              {ex.split(",")[0]}
-            </button>
-          ))}
-        </div>
-      </div>
+        }
+        onSubmit={submit}
+      />
 
       {mode === "text" ? (
-        <fieldset className="field" style={{ border: 0, padding: 0 }}>
-          <legend className="field__label">Shape</legend>
-          <div className="chips">
+        <fieldset className={cn(field, "m-0 border-0 p-0")}>
+          <legend className={cn(fieldLabel, "mb-1.5")}>Shape</legend>
+          <div className={chips}>
             {SIZES.map((s) => (
-              <button
-                type="button"
-                className="chip"
-                key={s.id}
-                aria-pressed={size === s.id}
-                onClick={() => setSize(s.id)}
-              >
-                {s.label} <span className="muted">{s.hint}</span>
-              </button>
+              <Chip key={s.id} aria-pressed={size === s.id} onClick={() => setSize(s.id)}>
+                {s.label} <span className="opacity-70">{s.hint}</span>
+              </Chip>
             ))}
           </div>
         </fieldset>
       ) : null}
 
-      <div className="actions">
-        <button type="submit" className="btn btn--primary btn--lg" disabled={!valid || busy}>
-          {busy ? <span className="spinner" aria-hidden="true" /> : null}
+      <div className="flex flex-wrap items-center gap-4">
+        <Button type="submit" size="lg" disabled={!valid || busy}>
+          {busy ? <Spinner /> : null}
           Make my image
-        </button>
-        <span className="muted">
+        </Button>
+        <span className="text-muted-foreground">
           {mode === "image"
             ? "The result keeps the size of your picture."
             : "Takes about a minute."}

@@ -2,10 +2,17 @@
 
 import { Equaliser } from "@/components/Logo";
 import { Notice } from "@/components/Notice";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCreationSearch } from "@/hooks/use-creation-search";
 import type { Entry, Filter } from "@/lib/creations";
 import { PRODUCT } from "@/lib/run-client";
+import { actions, empty, hint, panel } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import type { ImagePage, SongPage, SpeechPage, VideoPage } from "@wd/contracts";
 import { LayoutGrid, Table2 } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +21,8 @@ import { CreationCard } from "./CreationCard";
 import { CreationsTable } from "./CreationsTable";
 
 const PAGE = 12;
+const tiles =
+  "m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(100%,13rem),1fr))] items-stretch gap-4 p-0";
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "songs", label: "Songs" },
@@ -182,18 +191,18 @@ export function CreationsList({
   const search = useCreationSearch(query, filter);
   const searching = search.status !== "idle";
   const shown = search.status === "done" ? search.entries : entries;
-  const empty = !searching && entries.length === 0;
+  const isEmpty = !searching && entries.length === 0;
 
   return (
-    <section className="creations-library" aria-label="Your creations">
-      <search className="creations-search">
-        <label htmlFor={searchId} className="sr-only">
+    <section className="grid gap-5" aria-label="Your creations">
+      <search className="flex flex-wrap items-center gap-2">
+        <Label htmlFor={searchId} className="sr-only">
           Search your creations
-        </label>
-        <input
+        </Label>
+        <Input
           id={searchId}
           type="search"
-          className="input"
+          className="h-11 min-w-[min(100%,18rem)] flex-1"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by what it's about, in any language…"
@@ -203,27 +212,27 @@ export function CreationsList({
           aria-describedby={`${searchId}-hint`}
         />
         {query ? (
-          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setQuery("")}>
+          <Button type="button" variant="outline" size="sm" onClick={() => setQuery("")}>
             Clear
-          </button>
+          </Button>
         ) : null}
-        <span className="field__hint" id={`${searchId}-hint`}>
+        <span className={cn(hint, "basis-full")} id={`${searchId}-hint`}>
           Try “rain in Madrid” or “zorro en la nieve”.
         </span>
       </search>
 
-      <div className="creations-toolbar">
-        <fieldset className="creations-filters">
+      <div className="flex flex-col items-start justify-between gap-4 pt-1 pb-2 min-[521px]:flex-row min-[521px]:items-center">
+        <fieldset className="m-0 inline-flex min-w-0 gap-1 rounded-full border bg-surface p-[0.3rem] max-[520px]:w-full max-[520px]:justify-between">
           <legend className="sr-only">Filter creations</legend>
           {FILTERS.map(({ value, label }) => (
             <button
               key={value}
               type="button"
-              className={filter === value ? "is-active" : ""}
               aria-pressed={filter === value}
               onClick={() => setFilter(value)}
+              className="inline-flex items-center gap-[0.45rem] rounded-full border-0 bg-transparent px-[0.85rem] py-[0.55rem] text-[0.9rem] font-semibold text-muted-foreground transition-colors hover:text-foreground aria-pressed:bg-accent aria-pressed:text-foreground max-[520px]:px-[0.7rem]"
             >
-              {label} <span>{counts[value]}</span>
+              {label} <span className="text-[0.78rem] opacity-70">{counts[value]}</span>
             </button>
           ))}
         </fieldset>
@@ -242,7 +251,7 @@ export function CreationsList({
             <Table2 aria-hidden="true" />
           </ToggleGroupItem>
         </ToggleGroup>
-        <span className="creations-count" aria-live="polite">
+        <span className="text-step--1 text-muted-foreground" aria-live="polite">
           {search.status === "searching" ? (
             "Searching…"
           ) : search.status === "done" ? (
@@ -270,49 +279,51 @@ export function CreationsList({
       ) : null}
 
       {search.status === "done" && search.entries.length === 0 ? (
-        <div className="empty panel creations-empty">
+        <div className={cn(panel, empty, "mt-4 mb-8")}>
           <h2>Nothing matched “{search.query}”</h2>
           <p>Try other words, or describe what it was about.</p>
-          <button type="button" className="btn btn--ghost" onClick={() => setQuery("")}>
+          <Button type="button" variant="outline" onClick={() => setQuery("")}>
             Clear the search
-          </button>
+          </Button>
         </div>
-      ) : empty ? (
-        <div className="empty panel creations-empty">
+      ) : isEmpty ? (
+        <div className={cn(panel, empty, "mt-4 mb-8")}>
           {filter === "all" || filter === "songs" ? <Equaliser still /> : null}
-          <h2>
+          <h2 className="text-step-1 font-semibold">
             {filter === "all"
               ? "Your creative space is ready"
               : `No ${filter === "speeches" ? "speech" : filter} yet`}
           </h2>
           <p>Make something new and it will appear here.</p>
-          <div className="actions">
-            <Link href="/music" className="btn btn--primary">
-              Create a song
-            </Link>
-            <Link href="/image" className="btn btn--ghost">
-              Make an image
-            </Link>
-            <Link href="/video" className="btn btn--ghost">
-              Make a video
-            </Link>
-            <Link href="/text-to-speech" className="btn btn--ghost">
-              Create speech
-            </Link>
+          <div className={actions}>
+            <Button asChild>
+              <Link href="/music">Create a song</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/image">Make an image</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/video">Make a video</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/text-to-speech">Create speech</Link>
+            </Button>
           </div>
         </div>
       ) : search.status === "searching" ? (
-        <ul className="tiles creations-grid" aria-busy="true" aria-label="Searching">
+        <ul className={tiles} aria-busy="true" aria-label="Searching">
           {[0, 1, 2].map((i) => (
-            <li key={i} className="skeleton" style={{ aspectRatio: "3 / 4" }} />
+            <li key={i}>
+              <Skeleton className="aspect-[3/4] rounded-lg" />
+            </li>
           ))}
         </ul>
       ) : view === "table" ? (
         <CreationsTable entries={shown} />
       ) : (
-        <ul className="tiles creations-grid">
+        <ul className={tiles}>
           {shown.map((entry) => (
-            <li key={`${entry.kind}-${entry.id}`}>
+            <li key={`${entry.kind}-${entry.id}`} className="grid min-w-0">
               <CreationCard
                 entry={entry}
                 note={
@@ -329,11 +340,11 @@ export function CreationsList({
           Check your connection and try again.
         </Notice>
       ) : null}
-      {!searching && !empty && hasMore ? (
-        <div className="actions creations-load-more">
-          <button type="button" className="btn btn--ghost" onClick={more} disabled={loading}>
-            {loading ? <span className="spinner" aria-hidden="true" /> : null}Load more
-          </button>
+      {!searching && !isEmpty && hasMore ? (
+        <div className={cn(actions, "justify-center pt-2 pb-8")}>
+          <Button type="button" variant="outline" onClick={more} disabled={loading}>
+            {loading ? <Spinner /> : null}Load more
+          </Button>
         </div>
       ) : null}
     </section>

@@ -1,7 +1,9 @@
 import { Notice } from "@/components/Notice";
 import { Table } from "@/components/admin/Table";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
+import { pager } from "@/lib/styles";
 import type { AdminSongPage } from "@wd/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -37,16 +39,18 @@ export default async function Songs({
         empty={page.songs.length ? undefined : "No songs yet."}
       >
         {page.songs.map((s) => (
-          <tr key={s.id}>
-            <th scope="row">{s.title}</th>
-            <td>{s.product_id}</td>
-            <td>{s.user_email ?? s.user_id}</td>
-            <td>{fullDate(s.created_at)}</td>
-          </tr>
+          <TableRow key={s.id}>
+            <TableHead scope="row" className="font-semibold text-foreground">
+              {s.title}
+            </TableHead>
+            <TableCell>{s.product_id}</TableCell>
+            <TableCell>{s.user_email ?? s.user_id}</TableCell>
+            <TableCell>{fullDate(s.created_at)}</TableCell>
+          </TableRow>
         ))}
       </Table>
       {page.next_before ? (
-        <p className="pager">
+        <p className={pager}>
           <Link href={`/admin/songs?before=${encodeURIComponent(page.next_before)}`}>Older</Link>
         </p>
       ) : null}

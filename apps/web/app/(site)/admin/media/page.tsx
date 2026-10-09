@@ -1,7 +1,9 @@
 import { Notice } from "@/components/Notice";
 import { Table } from "@/components/admin/Table";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
+import { muted } from "@/lib/styles";
 import type { MediaList } from "@wd/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -26,7 +28,7 @@ export default async function Media() {
   const label = new Map(list.backends.map((b) => [b.id, b.label]));
   return (
     <>
-      <p className="muted">
+      <p className={muted}>
         Music and cover jobs run on ComfyUI by default. Point a capability at Comfy Cloud or another
         service instead; the next job uses it.
       </p>
@@ -41,22 +43,26 @@ export default async function Media() {
         head={["Product", "Capability", "Runs on", "Source", "Changed", ""]}
       >
         {list.items.map((m) => (
-          <tr key={`${m.product_id}/${m.capability}`}>
-            <th scope="row">{m.product_id}</th>
-            <td>
+          <TableRow key={`${m.product_id}/${m.capability}`}>
+            <TableHead scope="row" className="font-semibold text-foreground">
+              {m.product_id}
+            </TableHead>
+            <TableCell>
               {m.capability}
-              {m.workflow ? <small className="muted"> {m.workflow}</small> : null}
-            </td>
-            <td>
+              {m.workflow ? <small className={muted}> {m.workflow}</small> : null}
+            </TableCell>
+            <TableCell>
               {label.get(m.backend) ?? m.backend}
-              {m.key_set ? <small className="muted"> key saved</small> : null}
-            </td>
-            <td>{m.source}</td>
-            <td>{m.updated_at && m.source === "custom" ? fullDate(m.updated_at) : "—"}</td>
-            <td>
+              {m.key_set ? <small className={muted}> key saved</small> : null}
+            </TableCell>
+            <TableCell>{m.source}</TableCell>
+            <TableCell>
+              {m.updated_at && m.source === "custom" ? fullDate(m.updated_at) : "—"}
+            </TableCell>
+            <TableCell>
               <Link href={`/admin/media/${m.product_id}/${m.capability}`}>Edit</Link>
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
       </Table>
     </>

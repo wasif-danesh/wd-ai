@@ -1,7 +1,14 @@
 "use client";
 
 import { EnhanceButton } from "@/components/EnhanceButton";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import type { SongInput } from "@/lib/run-client";
+import { chips, counter, field, fieldLabel, hint, panel } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import { type FormEvent, type KeyboardEvent, useId, useState } from "react";
 
 export const MAX_IDEA = 500;
@@ -37,21 +44,15 @@ function Choice({
   onChange: (v: string) => void;
 }) {
   return (
-    <fieldset className="field" style={{ border: 0, padding: 0 }}>
-      <legend className="field__label">
-        {legend} <span className="muted">(optional)</span>
+    <fieldset className={field}>
+      <legend className={cn(fieldLabel, "mb-1.5")}>
+        {legend} <span className="font-normal text-muted-foreground">(optional)</span>
       </legend>
-      <div className="chips">
+      <div className={chips}>
         {options.map((o) => (
-          <button
-            type="button"
-            className="chip"
-            key={o}
-            aria-pressed={value === o}
-            onClick={() => onChange(value === o ? "" : o)}
-          >
+          <Chip key={o} aria-pressed={value === o} onClick={() => onChange(value === o ? "" : o)}>
             {o}
-          </button>
+          </Chip>
         ))}
       </div>
     </fieldset>
@@ -85,12 +86,14 @@ export function IdeaForm({
   }
 
   return (
-    <form className="card panel" onSubmit={submit}>
-      <div className="field">
-        <label htmlFor={`${id}-idea`}>What's the song about?</label>
-        <textarea
+    <form className={cn(panel, "gap-6")} onSubmit={submit}>
+      <div className={field}>
+        <Label htmlFor={`${id}-idea`} className={fieldLabel}>
+          What's the song about?
+        </Label>
+        <Textarea
           id={`${id}-idea`}
-          className="textarea"
+          className="min-h-28 max-h-[28rem] text-base leading-normal"
           value={idea}
           onChange={(e) => setIdea(e.target.value)}
           onKeyDown={onKey}
@@ -98,11 +101,10 @@ export function IdeaForm({
           rows={3}
           aria-describedby={`${id}-hint`}
           aria-invalid={idea.length > MAX_IDEA}
-          // biome-ignore lint/a11y/noAutofocus: this is the page's one task
           autoFocus
         />
-        <div className="row">
-          <span className="field__hint grow" id={`${id}-hint`}>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className={cn(hint, "min-w-0 grow basis-[12rem]")} id={`${id}-hint`}>
             Describe a story, a feeling or a scene. Press Ctrl or ⌘ + Enter to start.
           </span>
           <EnhanceButton
@@ -113,28 +115,31 @@ export function IdeaForm({
             disabled={busy}
             onChange={setIdea}
           />
-          <span className="counter" data-near={idea.length > MAX_IDEA * 0.9 || undefined}>
+          <span className={counter(idea.length > MAX_IDEA * 0.9)}>
             {idea.length}/{MAX_IDEA}
           </span>
         </div>
-        <div className="chips" aria-label="Example ideas">
+        <fieldset className={cn(chips, "m-0 border-0 p-0")}>
+          <legend className="sr-only">Example ideas</legend>
           {EXAMPLES.map((ex) => (
-            <button type="button" className="chip" key={ex} onClick={() => setIdea(ex)}>
+            <Chip key={ex} onClick={() => setIdea(ex)}>
               {ex.split(":")[0]}
-            </button>
+            </Chip>
           ))}
-        </div>
+        </fieldset>
       </div>
 
       <Choice legend="Genre" options={GENRES} value={genre} onChange={setGenre} />
       <Choice legend="Mood" options={MOODS} value={mood} onChange={setMood} />
 
-      <div className="actions">
-        <button type="submit" className="btn btn--primary btn--lg" disabled={!valid || busy}>
-          {busy ? <span className="spinner" aria-hidden="true" /> : null}
+      <div className="flex flex-wrap items-center gap-4">
+        <Button type="submit" size="lg" disabled={!valid || busy}>
+          {busy ? <Spinner /> : null}
           Write my song
-        </button>
-        <span className="muted">You'll review the lyrics before any music is made.</span>
+        </Button>
+        <span className="text-muted-foreground">
+          You'll review the lyrics before any music is made.
+        </span>
       </div>
     </form>
   );

@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { panel } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { LanguageChoice, VoiceCatalog, VoiceChoice } from "@wd/contracts";
 import { Loader2 } from "lucide-react";
@@ -121,12 +123,7 @@ export function SpeechForm({
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={send}
-        className="card panel grid gap-6"
-        noValidate
-        aria-busy={busy || undefined}
-      >
+      <form onSubmit={send} className={cn(panel, "gap-6")} noValidate aria-busy={busy || undefined}>
         <FormField
           control={form.control}
           name="text"

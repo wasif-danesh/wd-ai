@@ -4,7 +4,7 @@ import type { Product } from "@/lib/products";
 export function ProductArt({ id }: { id: Product["id"] }) {
   return (
     <svg
-      className={`product-art product-art--${id}`}
+      className="aspect-[16/10] w-full rounded-[0.68rem] bg-muted"
       viewBox="0 0 320 190"
       aria-hidden="true"
       focusable="false"
@@ -38,14 +38,29 @@ function MusicArt() {
           <stop offset="1" stopColor="#a99bff" />
         </linearGradient>
       </defs>
-      <rect className="art-backdrop" width="320" height="190" fill="url(#music-art-bg)" />
-      <circle className="art-ring" cx="160" cy="88" r="63" />
-      <circle className="art-ring" cx="160" cy="88" r="89" />
+      <rect width="320" height="190" fill="url(#music-art-bg)" />
+      <circle
+        fill="none"
+        stroke="white"
+        strokeOpacity="0.13"
+        strokeWidth="1"
+        cx="160"
+        cy="88"
+        r="63"
+      />
+      <circle
+        fill="none"
+        stroke="white"
+        strokeOpacity="0.13"
+        strokeWidth="1"
+        cx="160"
+        cy="88"
+        r="89"
+      />
       {heights.map((h, i) => (
         <rect
           // biome-ignore lint/suspicious/noArrayIndexKey: a fixed decorative list
           key={i}
-          className={i % 3 === 0 ? "art-b" : "art-a"}
           x={82 + i * 12}
           y={88 - h / 2}
           width="5"

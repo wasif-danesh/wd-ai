@@ -2,6 +2,13 @@
 
 import { type MediaFormState, submitMedia } from "@/app/(site)/admin/media/actions";
 import { Notice } from "@/components/Notice";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
+import { actions, field, fieldLabel, hint, muted, panel } from "@/lib/styles";
+import { cn } from "@/lib/utils";
+
 import type { MediaBackend, MediaView } from "@wd/contracts";
 import { useActionState, useId, useState } from "react";
 
@@ -29,13 +36,14 @@ export function MediaForm({
   const secret = backend?.fields.find((f) => f.secret);
 
   return (
-    <form action={action} className="card stack model-form" aria-busy={pending}>
-      <div className="field">
-        <label htmlFor={`${id}-backend`}>Runs on</label>
-        <select
+    <form action={action} className={cn(panel, "gap-[0.9rem]")} aria-busy={pending}>
+      <div className={field}>
+        <Label htmlFor={`${id}-backend`} className={fieldLabel}>
+          Runs on
+        </Label>
+        <NativeSelect
           id={`${id}-backend`}
           name="backend"
-          className="input"
           value={backend?.id}
           onChange={(e) => setBackendId(e.target.value)}
         >
@@ -44,22 +52,22 @@ export function MediaForm({
               {b.label}
             </option>
           ))}
-        </select>
-        {backend ? <span className="field__hint">{backend.description}</span> : null}
+        </NativeSelect>
+        {backend ? <span className={hint}>{backend.description}</span> : null}
       </div>
 
       {backend?.fields
         .filter((f) => !f.secret)
         .map((f) => (
-          <div className="field" key={`${backend.id}-${f.name}`}>
-            <label htmlFor={`${id}-${f.name}`}>
+          <div className={field} key={`${backend.id}-${f.name}`}>
+            <Label htmlFor={`${id}-${f.name}`} className={fieldLabel}>
               {f.label}
               {f.required ? "" : " (optional)"}
-            </label>
-            <input
+            </Label>
+            <Input
               id={`${id}-${f.name}`}
               name={`cfg_${f.name}`}
-              className="input"
+              className="h-11"
               required={f.required}
               maxLength={300}
               defaultValue={same ? (item.config[f.name] ?? "") : ""}
@@ -67,21 +75,21 @@ export function MediaForm({
               autoComplete="off"
               spellCheck={false}
             />
-            {f.help ? <span className="field__hint">{f.help}</span> : null}
+            {f.help ? <span className={hint}>{f.help}</span> : null}
           </div>
         ))}
 
       {secret ? (
-        <div className="field" key={`${backend?.id}-key`}>
-          <label htmlFor={`${id}-key`}>
+        <div className={field} key={`${backend?.id}-key`}>
+          <Label htmlFor={`${id}-key`} className={fieldLabel}>
             {secret.label}
             {secret.required ? "" : " (optional)"}
-          </label>
-          <input
+          </Label>
+          <Input
             id={`${id}-key`}
             name="api_key"
             type="password"
-            className="input"
+            className="h-11"
             maxLength={512}
             autoComplete="off"
             spellCheck={false}
@@ -93,7 +101,7 @@ export function MediaForm({
                 : ""
             }
           />
-          <span className="field__hint" id={`${id}-key-hint`}>
+          <span className={hint} id={`${id}-key-hint`}>
             {secretsReady
               ? "Sent once, stored encrypted, and never shown again."
               : "Saving keys is off: set MEDIA_SECRETS_KEY (run make setup) and restart."}
@@ -101,36 +109,24 @@ export function MediaForm({
         </div>
       ) : null}
 
-      <div className="actions">
-        <button
-          type="submit"
-          name="intent"
-          value="test"
-          className="btn btn--ghost"
-          disabled={pending}
-        >
+      <div className={actions}>
+        <Button variant="outline" type="submit" name="intent" value="test" disabled={pending}>
           Test connection
-        </button>
-        <button
-          type="submit"
-          name="intent"
-          value="save"
-          className="btn btn--primary"
-          disabled={pending}
-        >
+        </Button>
+        <Button type="submit" name="intent" value="save" disabled={pending}>
           {pending ? "Working…" : "Save"}
-        </button>
+        </Button>
         {item.source === "custom" ? (
-          <button
+          <Button
+            variant="outline"
             type="submit"
             name="intent"
             value="reset"
-            className="btn btn--ghost"
             formNoValidate
             disabled={pending}
           >
             Reset to default
-          </button>
+          </Button>
         ) : null}
       </div>
       <Result state={state} />

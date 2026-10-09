@@ -4,6 +4,7 @@ import { UserMenu } from "@/components/shell/UserMenu";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getMe } from "@/lib/me";
+import { page } from "@/lib/styles";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 
@@ -18,7 +19,7 @@ export default async function ProductLayout({ children }: { children: ReactNode 
         <AppSidebar isAdmin={isAdmin} footer={<UserMenu />} />
         <SidebarInset>
           <TopBar />
-          <main id="main" className="page">
+          <main id="main" className={page}>
             {children}
           </main>
         </SidebarInset>

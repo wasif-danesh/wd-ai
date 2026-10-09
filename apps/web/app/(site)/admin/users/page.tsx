@@ -1,7 +1,9 @@
 import { Notice } from "@/components/Notice";
 import { Table } from "@/components/admin/Table";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
+import { muted, pager } from "@/lib/styles";
 import type { AdminUserPage } from "@wd/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -37,20 +39,22 @@ export default async function Users({
         empty={page.users.length ? undefined : "No users yet."}
       >
         {page.users.map((u) => (
-          <tr key={u.id}>
-            <th scope="row">{u.name ?? "—"}</th>
-            <td>
+          <TableRow key={u.id}>
+            <TableHead scope="row" className="font-semibold text-foreground">
+              {u.name ?? "—"}
+            </TableHead>
+            <TableCell>
               {u.email ?? "—"}
-              {u.email && !u.email_verified ? <small className="muted"> unverified</small> : null}
-            </td>
-            <td>{u.role}</td>
-            <td>{u.providers.join(", ")}</td>
-            <td>{fullDate(u.created_at)}</td>
-          </tr>
+              {u.email && !u.email_verified ? <small className={muted}> unverified</small> : null}
+            </TableCell>
+            <TableCell>{u.role}</TableCell>
+            <TableCell>{u.providers.join(", ")}</TableCell>
+            <TableCell>{fullDate(u.created_at)}</TableCell>
+          </TableRow>
         ))}
       </Table>
       {page.next_before ? (
-        <p className="pager">
+        <p className={pager}>
           <Link href={`/admin/users?before=${encodeURIComponent(page.next_before)}`}>Older</Link>
         </p>
       ) : null}

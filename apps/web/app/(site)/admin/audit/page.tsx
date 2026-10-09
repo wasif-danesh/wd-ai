@@ -1,5 +1,6 @@
 import { Notice } from "@/components/Notice";
 import { Table } from "@/components/admin/Table";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
 import type { AuditPage } from "@wd/contracts";
@@ -29,14 +30,16 @@ export default async function Audit() {
       empty={page.entries.length ? undefined : "Nothing recorded yet."}
     >
       {page.entries.map((e) => (
-        <tr key={e.id}>
-          <th scope="row">{e.created_at ? fullDate(e.created_at) : "—"}</th>
-          <td>{e.actor_user_id}</td>
-          <td>{e.action}</td>
-          <td>
+        <TableRow key={e.id}>
+          <TableHead scope="row" className="font-semibold text-foreground">
+            {e.created_at ? fullDate(e.created_at) : "—"}
+          </TableHead>
+          <TableCell>{e.actor_user_id}</TableCell>
+          <TableCell>{e.action}</TableCell>
+          <TableCell>
             <code>{JSON.stringify(e.detail ?? {})}</code>
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
       ))}
     </Table>
   );

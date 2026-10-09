@@ -1,7 +1,12 @@
 "use client";
 
 import { Notice } from "@/components/Notice";
+import { FailedNotice, WorkingCard } from "@/components/create/shared";
+import { Button } from "@/components/ui/button";
+import { Accent, PageHero } from "@/components/ui/page-hero";
 import { useSpeechFlow } from "@/hooks/use-speech-flow";
+import { actions, eyebrow, panel, player } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import type { VoiceCatalog } from "@wd/contracts";
 import Link from "next/link";
 import { useState } from "react";
@@ -27,12 +32,15 @@ export function CreateSpeech({ catalog }: { catalog: VoiceCatalog }) {
 
       {phase === "idle" || phase === "refused" ? (
         <>
-          <header className="hero">
-            <h1>
-              Turn text into <span className="gradient">speech</span>
-            </h1>
-            <p>Type or paste your text, choose a language and a voice, and listen.</p>
-          </header>
+          <PageHero
+            title={
+              <>
+                Turn text into <Accent>speech</Accent>
+              </>
+            }
+          >
+            Type or paste your text, choose a language and a voice, and listen.
+          </PageHero>
           {phase === "refused" && state.refusal ? (
             <Notice tone="warn" title="We can't make that one">
               {state.refusal.message}
@@ -43,84 +51,60 @@ export function CreateSpeech({ catalog }: { catalog: VoiceCatalog }) {
       ) : (
         <>
           {asked ? (
-            <section className="card panel" aria-label="Your text">
-              <span className="eyebrow">Your text</span>
+            <section className={panel} aria-label="Your text">
+              <span className={eyebrow}>Your text</span>
               <p lang={asked.language}>{asked.text}</p>
             </section>
           ) : null}
 
-          {working ? (
-            <section className="card progress panel" aria-label="Progress">
-              <div className="status">
-                <span className="spinner" aria-hidden="true" />
-                <span>{state.label || "Working"}</span>
-              </div>
-              <div className="actions">
-                <button type="button" className="btn btn--ghost" onClick={reset}>
-                  Cancel
-                </button>
-              </div>
-            </section>
-          ) : null}
+          {working ? <WorkingCard label={state.label || "Working"} onCancel={reset} /> : null}
 
           {phase === "done" && state.result ? (
             <>
               <Notice tone="ok" title="Your speech is ready">
                 It's saved in My creations, where you can listen and download it any time.
               </Notice>
-              <figure className="speech-result panel">
-                <figcaption className="muted">
+              <figure className={cn(panel, "m-0 gap-[0.6rem]")}>
+                <figcaption className="text-muted-foreground">
                   {state.result.voice} · {Math.round(state.result.seconds)} seconds
                 </figcaption>
                 {/* biome-ignore lint/a11y/useMediaCaption: the text that is spoken is shown above */}
-                <audio controls preload="auto" src={state.result.audioUrl} className="player">
+                <audio controls preload="auto" src={state.result.audioUrl} className={player}>
                   Your browser can't play this audio.
                 </audio>
               </figure>
-              <div className="actions">
+              <div className={actions}>
                 {state.result.speechId ? (
-                  <a
-                    className="btn btn--primary"
-                    href={`/api/products/wd-tts-ai/speeches/${state.result.speechId}/download`}
-                    download
-                  >
-                    Download MP3
-                  </a>
+                  <Button asChild>
+                    <a
+                      href={`/api/products/wd-tts-ai/speeches/${state.result.speechId}/download`}
+                      download
+                    >
+                      Download MP3
+                    </a>
+                  </Button>
                 ) : null}
-                <button type="button" className="btn btn--ghost" onClick={reset}>
+                <Button type="button" variant="outline" onClick={reset}>
                   Make another
-                </button>
+                </Button>
                 {state.result.speechId ? (
-                  <Link
-                    className="btn btn--ghost"
-                    href={`/text-to-speech/creations/${state.result.speechId}`}
-                  >
-                    Open in My creations
-                  </Link>
+                  <Button asChild variant="outline">
+                    <Link href={`/text-to-speech/creations/${state.result.speechId}`}>
+                      Open in My creations
+                    </Link>
+                  </Button>
                 ) : null}
               </div>
             </>
           ) : null}
 
           {phase === "error" && state.error ? (
-            <Notice
-              tone="error"
-              title="That didn't work"
-              actions={
-                <>
-                  {state.error.retryable ? (
-                    <button type="button" className="btn btn--primary" onClick={retry}>
-                      Try again
-                    </button>
-                  ) : null}
-                  <button type="button" className="btn btn--ghost" onClick={reset}>
-                    Start over
-                  </button>
-                </>
-              }
-            >
-              {state.error.message}
-            </Notice>
+            <FailedNotice
+              message={state.error.message}
+              retryable={state.error.retryable}
+              onRetry={retry}
+              onReset={reset}
+            />
           ) : null}
         </>
       )}

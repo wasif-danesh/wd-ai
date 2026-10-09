@@ -1,7 +1,12 @@
 "use client";
 
 import { Notice } from "@/components/Notice";
+import { FailedNotice, JobMeter, WorkingCard } from "@/components/create/shared";
+import { Button } from "@/components/ui/button";
+import { Accent, PageHero } from "@/components/ui/page-hero";
 import { useImageFlow } from "@/hooks/use-image-flow";
+import { actions, eyebrow, panel } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useState } from "react";
 import { ImageForm, type ImageFormValue } from "./ImageForm";
@@ -40,6 +45,7 @@ export function CreateImage() {
     });
   };
 
+  const job = jobText(state);
   return (
     <>
       <div className="sr-only" aria-live="polite">
@@ -48,12 +54,15 @@ export function CreateImage() {
 
       {phase === "idle" || phase === "refused" ? (
         <>
-          <header className="hero">
-            <h1>
-              Turn words into <span className="gradient">an image</span>
-            </h1>
-            <p>Describe a picture, or upload one and say what to change.</p>
-          </header>
+          <PageHero
+            title={
+              <>
+                Turn words into <Accent>an image</Accent>
+              </>
+            }
+          >
+            Describe a picture, or upload one and say what to change.
+          </PageHero>
           {phase === "refused" && state.refusal ? (
             <Notice tone="warn" title="We can't make that one">
               {state.refusal.message}
@@ -64,50 +73,23 @@ export function CreateImage() {
       ) : (
         <>
           {asked ? (
-            <section className="card panel" aria-label="Your request">
-              <span className="eyebrow">{asked.mode === "image" ? "Your edit" : "Your idea"}</span>
+            <section className={panel} aria-label="Your request">
+              <span className={eyebrow}>{asked.mode === "image" ? "Your edit" : "Your idea"}</span>
               <p>{asked.prompt}</p>
             </section>
           ) : null}
 
           {working ? (
-            <section className="card progress panel" aria-label="Progress">
-              <div className="status">
-                <span className="spinner" aria-hidden="true" />
-                <span>{state.label || "Working"}</span>
-              </div>
+            <WorkingCard label={state.label || "Working"} onCancel={reset}>
               {phase === "working" ? (
-                <div className="job">
-                  <div className="job__meta">
-                    <span>Painting your image</span>
-                    <span>{jobText(state).text}</span>
-                  </div>
-                  <progress
-                    className="sr-only"
-                    aria-label="Image progress"
-                    max={100}
-                    value={
-                      jobText(state).value === undefined
-                        ? undefined
-                        : Math.round((jobText(state).value ?? 0) * 100)
-                    }
-                  />
-                  <div
-                    className="bar"
-                    aria-hidden="true"
-                    data-indeterminate={jobText(state).value === undefined || undefined}
-                    style={{ ["--p" as string]: jobText(state).value ?? 0 }}
-                  >
-                    <i />
-                  </div>
-                </div>
+                <JobMeter
+                  title="Painting your image"
+                  text={job.text}
+                  value={job.value}
+                  label="Image progress"
+                />
               ) : null}
-              <div className="actions">
-                <button type="button" className="btn btn--ghost" onClick={reset}>
-                  Cancel
-                </button>
-              </div>
-            </section>
+            </WorkingCard>
           ) : null}
 
           {phase === "done" && state.result ? (
@@ -115,58 +97,47 @@ export function CreateImage() {
               <Notice tone="ok" title="Your image is ready">
                 It's saved in My creations, where you can download it any time.
               </Notice>
-              <figure className="image-result panel">
+              <figure className={cn(panel, "m-0 justify-items-center")}>
                 <img
+                  className="h-auto max-w-full rounded-xl shadow-card"
                   src={state.result.imageUrl}
                   alt={state.result.prompt}
                   width={state.result.width || undefined}
                   height={state.result.height || undefined}
                 />
               </figure>
-              <div className="actions">
+              <div className={actions}>
                 {state.result.imageId ? (
-                  <a
-                    className="btn btn--primary"
-                    href={`/api/products/wd-image-ai/images/${state.result.imageId}/download`}
-                    download
-                  >
-                    Download
-                  </a>
+                  <Button asChild>
+                    <a
+                      href={`/api/products/wd-image-ai/images/${state.result.imageId}/download`}
+                      download
+                    >
+                      Download
+                    </a>
+                  </Button>
                 ) : null}
-                <button type="button" className="btn btn--ghost" onClick={reset}>
+                <Button type="button" variant="outline" onClick={reset}>
                   Make another
-                </button>
+                </Button>
                 {state.result.imageId ? (
-                  <Link
-                    className="btn btn--ghost"
-                    href={`/image/creations/${state.result.imageId}`}
-                  >
-                    Open in My creations
-                  </Link>
+                  <Button asChild variant="outline">
+                    <Link href={`/image/creations/${state.result.imageId}`}>
+                      Open in My creations
+                    </Link>
+                  </Button>
                 ) : null}
               </div>
             </>
           ) : null}
 
           {phase === "error" && state.error ? (
-            <Notice
-              tone="error"
-              title="That didn't work"
-              actions={
-                <>
-                  {state.error.retryable ? (
-                    <button type="button" className="btn btn--primary" onClick={retry}>
-                      Try again
-                    </button>
-                  ) : null}
-                  <button type="button" className="btn btn--ghost" onClick={reset}>
-                    Start over
-                  </button>
-                </>
-              }
-            >
-              {state.error.message}
-            </Notice>
+            <FailedNotice
+              message={state.error.message}
+              retryable={state.error.retryable}
+              onRetry={retry}
+              onReset={reset}
+            />
           ) : null}
         </>
       )}

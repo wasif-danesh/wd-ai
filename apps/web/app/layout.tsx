@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import "./globals.css";
 import "./tailwind.css";
 
 export const metadata: Metadata = {
@@ -20,7 +19,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <a className="skip-link" href="#main">
+        <a
+          className="fixed top-3 left-3 z-[100] -translate-y-[200%] rounded-md bg-surface px-4 py-2 text-foreground focus:translate-y-0"
+          href="#main"
+        >
           Skip to content
         </a>
         {children}

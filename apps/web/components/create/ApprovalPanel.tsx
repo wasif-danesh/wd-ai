@@ -1,7 +1,15 @@
 "use client";
 
+import { Notice } from "@/components/Notice";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import { lyricProblems } from "@/lib/lyrics";
 import type { Draft } from "@/lib/song-flow";
+import { actions, eyebrow, field, fieldLabel, hint, panel } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import { useEffect, useId, useRef, useState } from "react";
 
 export type Edits = { title?: string; lyrics?: string; style?: string };
@@ -54,63 +62,70 @@ export function ApprovalPanel({
   }
 
   return (
-    <section className="card panel" aria-labelledby={`${id}-h`}>
-      <div className="stack">
-        <span className="eyebrow">Step 3 of 5</span>
-        <h2 id={`${id}-h`} ref={heading} tabIndex={-1}>
+    <section className={cn(panel, "gap-6")} aria-labelledby={`${id}-h`}>
+      <div className="grid gap-[0.9rem]">
+        <span className={eyebrow}>Step 3 of 5</span>
+        <h2
+          id={`${id}-h`}
+          ref={heading}
+          tabIndex={-1}
+          className="text-step-1 font-semibold tracking-[-0.02em] outline-none"
+        >
           Review your lyrics
         </h2>
-        <p className="muted">
+        <p className="text-muted-foreground">
           Change anything you like. When you approve, we start making the music, which takes a
           little while.
         </p>
       </div>
 
       {error ? (
-        <div className="notice" data-tone="warn" role="alert">
-          <span className="notice__icon" aria-hidden="true">
-            !
-          </span>
-          <h3>That didn't work</h3>
-          <p>{error}</p>
-        </div>
+        <Notice tone="warn" alert title="That didn't work">
+          {error}
+        </Notice>
       ) : null}
 
-      <div className="field">
-        <label htmlFor={`${id}-title`}>Title</label>
-        <input
+      <div className={field}>
+        <Label htmlFor={`${id}-title`} className={fieldLabel}>
+          Title
+        </Label>
+        <Input
           id={`${id}-title`}
-          className="input"
+          className="h-11"
           value={title}
           maxLength={80}
           onChange={(e) => setTitle(e.target.value)}
         />
       </div>
-      <div className="field">
-        <label htmlFor={`${id}-style`}>Style</label>
-        <input
+      <div className={field}>
+        <Label htmlFor={`${id}-style`} className={fieldLabel}>
+          Style
+        </Label>
+        <Input
           id={`${id}-style`}
-          className="input"
+          className="h-11"
           value={style}
           maxLength={200}
           onChange={(e) => setStyle(e.target.value)}
           aria-describedby={`${id}-style-hint`}
         />
-        <span className="field__hint" id={`${id}-style-hint`}>
+        <span className={hint} id={`${id}-style-hint`}>
           Music tags separated by commas, like "synth-pop, upbeat, female vocal".
         </span>
       </div>
-      <div className="field">
-        <label htmlFor={`${id}-lyrics`}>Lyrics</label>
-        <textarea
+      <div className={field}>
+        <Label htmlFor={`${id}-lyrics`} className={fieldLabel}>
+          Lyrics
+        </Label>
+        <Textarea
           id={`${id}-lyrics`}
-          className="textarea textarea--lyrics"
+          className="max-h-[28rem] min-h-64 font-serif text-[1.05rem] leading-[1.6]"
           value={lyrics}
           onChange={(e) => setLyrics(e.target.value)}
           aria-invalid={problems.length > 0}
           aria-describedby={`${id}-lyrics-hint`}
         />
-        <div className="field__hint" id={`${id}-lyrics-hint`} aria-live="polite">
+        <div className={hint} id={`${id}-lyrics-hint`} aria-live="polite">
           {problems.length === 0 ? (
             <>Section tags such as [verse] and [chorus] tell the singer where each part starts.</>
           ) : (
@@ -119,25 +134,20 @@ export function ApprovalPanel({
         </div>
       </div>
 
-      <div className="actions">
-        <button
-          type="button"
-          className="btn btn--primary btn--lg"
-          onClick={approve}
-          disabled={!ready}
-        >
-          {busy ? <span className="spinner" aria-hidden="true" /> : null}
+      <div className={actions}>
+        <Button type="button" size="lg" onClick={approve} disabled={!ready}>
+          {busy ? <Spinner /> : null}
           Approve & make the music
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="btn btn--ghost"
+          variant="outline"
           onClick={onRegenerate}
           disabled={busy || draft.regenerationsLeft <= 0}
         >
           Write a new draft
-        </button>
-        <span className="muted">
+        </Button>
+        <span className="text-muted-foreground">
           {draft.regenerationsLeft} new {draft.regenerationsLeft === 1 ? "draft" : "drafts"} left
         </span>
       </div>

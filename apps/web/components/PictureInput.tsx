@@ -1,8 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import type { Picture } from "@/hooks/use-picture";
 import { ACCEPTED_TYPES } from "@/lib/pictures";
+import { actions, field, fieldError, fieldLabel, hint } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import { useId, useRef } from "react";
+import { Bar } from "./create/Progress";
 
 /**
  * The picture field shared by the products that take one (ADR-0039): a button to choose, a place to drop,
@@ -31,8 +36,10 @@ export function PictureInput({
   const uploading = status === "uploading";
 
   return (
-    <div className="field">
-      <span className="field__label">Your picture</span>
+    <div className={field}>
+      <Label asChild className={fieldLabel}>
+        <span>Your picture</span>
+      </Label>
       <input
         ref={input}
         id={`${id}-file`}
@@ -50,55 +57,63 @@ export function PictureInput({
       />
 
       {picture ? (
-        <div className="picture" data-uploading={uploading || undefined}>
-          <img className="upload-preview" src={picture.previewUrl} alt="Preview of your upload" />
-          <div className="actions">
-            <button
+        <div
+          className="grid justify-items-start gap-[0.6rem]"
+          data-uploading={uploading || undefined}
+        >
+          <img
+            className={cn(
+              "max-h-64 max-w-[min(100%,22rem)] rounded-lg border object-contain",
+              uploading && "opacity-60",
+            )}
+            src={picture.previewUrl}
+            alt="Preview of your upload"
+          />
+          <div className={actions}>
+            <Button
               type="button"
-              className="btn btn--ghost"
+              variant="outline"
               onClick={() => input.current?.click()}
               disabled={uploading}
             >
               Replace
-            </button>
-            <button type="button" className="btn btn--ghost" onClick={onRemove}>
+            </Button>
+            <Button type="button" variant="outline" onClick={onRemove}>
               Remove
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
         <button
           type="button"
-          className="dropzone"
+          className="grid cursor-pointer justify-items-center gap-1 rounded-lg border-2 border-dashed bg-surface px-4 py-[1.6rem] text-center text-foreground transition-colors enabled:hover:border-primary enabled:hover:bg-accent disabled:cursor-progress disabled:opacity-60 data-[dragging]:border-primary data-[dragging]:bg-accent"
           data-dragging={dragging || undefined}
           aria-describedby={`${id}-hint`}
           onClick={() => input.current?.click()}
           disabled={uploading}
         >
-          <span className="dropzone__title">Choose a picture</span>
-          <span className="dropzone__sub">or drag one here, or paste it</span>
+          <span className="font-semibold">Choose a picture</span>
+          <span className={hint}>or drag one here, or paste it</span>
         </button>
       )}
 
       {uploading ? (
-        <output className="job">
-          <div className="job__meta">
+        <output className="grid gap-[0.6rem]">
+          <div className="flex justify-between gap-4 text-[0.95rem] text-muted-foreground">
             <span>Uploading your picture…</span>
-            <button type="button" className="link" onClick={onCancel}>
+            <Button type="button" variant="link" size="xs" onClick={onCancel}>
               Cancel
-            </button>
+            </Button>
           </div>
-          <div className="bar" aria-hidden="true" data-indeterminate>
-            <i />
-          </div>
+          <Bar />
         </output>
       ) : null}
 
-      <span className="field__hint" id={`${id}-hint`}>
+      <span className={hint} id={`${id}-hint`}>
         PNG, JPEG or WebP, up to 10 MB. Your picture is deleted once it has been used.
       </span>
       {error ? (
-        <span className="field__error" role="alert">
+        <span className={fieldError} role="alert">
           {error}
         </span>
       ) : null}

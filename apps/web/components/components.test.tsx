@@ -20,9 +20,9 @@ describe("LyricSheet", () => {
 
   it("shows a caret only while streaming, and a waiting line when empty", () => {
     const { container, rerender } = render(<LyricSheet text={LYRICS} streaming />);
-    expect(container.querySelector(".caret")).not.toBeNull();
+    expect(container.querySelector("[data-caret]")).not.toBeNull();
     rerender(<LyricSheet text={LYRICS} />);
-    expect(container.querySelector(".caret")).toBeNull();
+    expect(container.querySelector("[data-caret]")).toBeNull();
     rerender(<LyricSheet text="" streaming />);
     expect(screen.getByText(/waiting for the first line/i)).toBeInTheDocument();
   });

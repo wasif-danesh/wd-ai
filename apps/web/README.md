@@ -45,15 +45,15 @@ The event contract the UI builds against is in `products/wd-music-ai/README.md`.
 
 ## Styling
 
-Hand-written modern CSS in `app/globals.css`; no framework and no runtime dependency.
+Tailwind CSS and shadcn/ui (ADR-0045); `app/tailwind.css` is the only stylesheet and has no component classes.
 
-- **Design tokens** as OKLCH custom properties, with `light-dark()`, so dark mode follows the system
-  with no second stylesheet. The header theme control can override the system choice and remembers
-  that preference in the browser. `color-mix()` derives borders, tints and glows from the tokens.
-- **Cascade layers** (`reset, tokens, base, layout, components, utilities`) keep specificity predictable.
-- **Native nesting**, **container queries** (the stepper and the song layout adapt to the width of their
-  container, not the viewport), `@starting-style` entrance animations, `field-sizing: content` for
-  textareas, `@property` and fluid `clamp()` type.
+- **Design tokens** as OKLCH custom properties, with `light-dark()`, so dark mode follows the system with no second
+  stylesheet. The theme control can override the system choice (it sets `data-theme` on `<html>`, which the `dark:`
+  variant follows) and remembers that preference in the browser. `color-mix()` derives borders, tints and glows.
+- **Tailwind** turns the tokens into colours (`bg-surface`, `text-muted-foreground`, `bg-primary`), fluid type steps
+  (`text-step-2`) and animations; shared class strings are in `lib/styles.ts`.
+- **Container queries** (the stepper and the song layout adapt to their container's width), `starting:` entrance
+  animations and fluid `clamp()` sizes.
 - **Motion respects `prefers-reduced-motion`.**
 
 ## Accessibility
@@ -129,15 +129,14 @@ backend, and is never shown. Needs `MEDIA_SECRETS_KEY` (`make setup` creates it)
 ## UI components and the side panel (ADR-0045, ADR-0046)
 
 Controls and tables are shadcn/ui components in `components/ui/` (our source: edit them freely), react-hook-form with
-Zod for forms and TanStack Table for grids. Tailwind is loaded from `app/tailwind.css` with theme and utilities only (no
-preflight); its colour names map onto our CSS variables in `app/globals.css`, so there is one palette in light and dark.
-Migrate a screen when you touch it, and check keyboard use, Bengali and right-to-left text, dark and light colours, and
+Zod for forms and TanStack Table for grids. All styling is Tailwind utilities and these components; `app/tailwind.css` is the only stylesheet (design tokens as
+CSS variables, the theme that turns them into Tailwind colours, sizes and animations, and a few base styles). There are no
+component classes: shared class strings live in `lib/styles.ts`. Check keyboard use, Bengali and right-to-left text, dark and light colours, and
 320 px width.
 
 Adding a component: `pnpm dlx shadcn@latest add <name>`, then (1) the CLI writes `import { cn } from "cn"` and adds a
 `cn` package, so change it to `@/lib/utils` and `pnpm remove cn`; (2) it appends light/dark colour variables to
-`app/tailwind.css`, so delete those and keep our mapping; (3) run `pnpm exec biome check --write .`. Our old class names
-`.grid` (now `.tiles`) and `.table` clash with Tailwind utility names: do not reuse a Tailwind utility name for a legacy class.
+`app/tailwind.css`, so delete those and keep our mapping; (3) run `pnpm exec biome check --write .`.
 
 Routes are in two groups with the same URLs: `app/(product)/` (music, image, video, text-to-speech, creations) has the side
 panel and top bar (`components/shell/`: panel, breadcrumb, ⌘K search over My creations, "ready" notices); `app/(site)/`

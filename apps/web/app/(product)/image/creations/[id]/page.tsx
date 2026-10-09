@@ -2,6 +2,7 @@ import { ImageView } from "@/components/image/ImageView";
 import { ApiError, apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
 import { isUuid } from "@/lib/proxy";
+import { backLink } from "@/lib/styles";
 import type { ImageSummary } from "@wd/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -23,7 +24,7 @@ export default async function ImageDetail({ params }: Props) {
   }
   return (
     <>
-      <Link href="/creations" className="back">
+      <Link href="/creations" className={backLink}>
         <span aria-hidden="true">←</span> My creations
       </Link>
       <ImageView image={image} when={fullDate(image.created_at)} />

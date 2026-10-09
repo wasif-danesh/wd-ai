@@ -1,6 +1,7 @@
 import { VideoView } from "@/components/video/VideoView";
 import { ApiError, apiGet } from "@/lib/api";
 import { isUuid } from "@/lib/proxy";
+import { backLink } from "@/lib/styles";
 import type { VideoSummary } from "@wd/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -22,7 +23,7 @@ export default async function VideoDetail({ params }: Props) {
   }
   return (
     <>
-      <Link href="/creations" className="back">
+      <Link href="/creations" className={backLink}>
         <span aria-hidden="true">←</span> My creations
       </Link>
       <VideoView initial={video} />

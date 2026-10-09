@@ -1,6 +1,7 @@
 import { Notice } from "@/components/Notice";
 import { ModelForm } from "@/components/admin/ModelForm";
 import { apiGet } from "@/lib/api";
+import { muted, pager } from "@/lib/styles";
 import type { ModelList } from "@wd/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -34,12 +35,12 @@ export default async function EditModel({ params }: Params) {
   const current = list.providers.find((p) => p.id === model.provider)?.label ?? model.provider;
   return (
     <>
-      <p className="pager">
+      <p className={pager}>
         <Link href="/admin/models">← Models</Link>
       </p>
-      <header className="stack">
+      <header className="grid gap-[0.9rem]">
         <h2>{model.alias}</h2>
-        <p className="muted">{model.purpose}</p>
+        <p className={muted}>{model.purpose}</p>
         <p>
           Now served by{" "}
           <strong>

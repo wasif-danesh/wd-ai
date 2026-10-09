@@ -4,9 +4,14 @@ import { Equaliser } from "@/components/Logo";
 import { LyricSheet } from "@/components/LyricSheet";
 import { Notice } from "@/components/Notice";
 import { SongView } from "@/components/SongView";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Accent, PageHero } from "@/components/ui/page-hero";
 import { useSongFlow } from "@/hooks/use-song-flow";
 import { styleTags } from "@/lib/format";
 import type { SongInput } from "@/lib/run-client";
+import { actions, eyebrow, panel, tagRow } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useState } from "react";
 import { ApprovalPanel } from "./ApprovalPanel";
@@ -35,16 +40,17 @@ export function CreateSong() {
 
       {phase === "idle" || phase === "refused" ? (
         <>
-          <header className="hero">
-            <Equaliser />
-            <h1>
-              Turn an idea into <span className="gradient">a song</span>
-            </h1>
-            <p>
-              Describe it. We write the lyrics, you approve them, then we compose the music and
-              paint the cover.
-            </p>
-          </header>
+          <PageHero
+            icon={<Equaliser />}
+            title={
+              <>
+                Turn an idea into <Accent>a song</Accent>
+              </>
+            }
+          >
+            Describe it. We write the lyrics, you approve them, then we compose the music and paint
+            the cover.
+          </PageHero>
           {phase === "refused" && state.refusal ? (
             <Notice tone="warn" title="We can't make that one">
               {state.refusal.message}
@@ -55,15 +61,15 @@ export function CreateSong() {
       ) : (
         <>
           {asked ? (
-            <section className="card panel" aria-label="Your idea">
-              <span className="eyebrow">Your idea</span>
+            <section className={panel} aria-label="Your idea">
+              <span className={eyebrow}>Your idea</span>
               <p>{asked.idea}</p>
               {asked.genre || asked.mood ? (
-                <div className="tags">
+                <div className={tagRow}>
                   {styleTags([asked.genre, asked.mood].filter(Boolean).join(", ")).map((t) => (
-                    <span className="tag" key={t}>
+                    <Badge variant="tag" key={t}>
                       {t}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               ) : null}
@@ -73,7 +79,7 @@ export function CreateSong() {
           {phase !== "done" ? <Progress state={state} /> : null}
 
           {(phase === "writing" || phase === "checking") && state.lyrics ? (
-            <section className="card panel" aria-label="Lyrics so far">
+            <section className={panel} aria-label="Lyrics so far">
               <LyricSheet text={state.lyrics} streaming={phase === "writing"} />
             </section>
           ) : null}
@@ -89,8 +95,8 @@ export function CreateSong() {
           ) : null}
 
           {phase === "answering" || phase === "generating" ? (
-            <section className="card panel" aria-label="Your lyrics">
-              <span className="eyebrow">{state.draft?.title ?? "Your lyrics"}</span>
+            <section className={panel} aria-label="Your lyrics">
+              <span className={eyebrow}>{state.draft?.title ?? "Your lyrics"}</span>
               <LyricSheet text={state.lyrics} />
             </section>
           ) : null}
@@ -101,14 +107,14 @@ export function CreateSong() {
                 It's saved in My creations, where you can listen again any time.
               </Notice>
               <SongView song={state.result} />
-              <div className="actions">
-                <button type="button" className="btn btn--primary" onClick={reset}>
+              <div className={actions}>
+                <Button type="button" onClick={reset}>
                   Make another song
-                </button>
+                </Button>
                 {state.result.songId ? (
-                  <Link className="btn btn--ghost" href={`/music/songs/${state.result.songId}`}>
-                    Open song page
-                  </Link>
+                  <Button asChild variant="outline">
+                    <Link href={`/music/songs/${state.result.songId}`}>Open song page</Link>
+                  </Button>
                 ) : null}
               </div>
             </>
@@ -121,13 +127,13 @@ export function CreateSong() {
               actions={
                 <>
                   {state.error.retryable ? (
-                    <button type="button" className="btn btn--primary" onClick={retry}>
+                    <Button type="button" onClick={retry}>
                       Try again
-                    </button>
+                    </Button>
                   ) : null}
-                  <button type="button" className="btn btn--ghost" onClick={reset}>
+                  <Button type="button" variant="outline" onClick={reset}>
                     Start over
-                  </button>
+                  </Button>
                 </>
               }
             >
@@ -136,10 +142,10 @@ export function CreateSong() {
           ) : null}
 
           {working ? (
-            <div className="actions">
-              <button type="button" className="btn btn--ghost" onClick={reset}>
+            <div className={actions}>
+              <Button type="button" variant="outline" onClick={reset}>
                 Cancel
-              </button>
+              </Button>
             </div>
           ) : null}
         </>

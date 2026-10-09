@@ -1,9 +1,12 @@
 "use client";
 
 import { Notice } from "@/components/Notice";
+import { DeleteControls } from "@/components/create/shared";
+import { Button } from "@/components/ui/button";
 import { fullDate } from "@/lib/format";
+import { actions, eyebrow, panel } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import type { VideoSummary } from "@wd/contracts";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const POLL_MS = 10_000;
@@ -11,11 +14,7 @@ const POLL_MS = 10_000;
 /** One clip: the player and a download, or "being made" (it checks again until it is ready), or why it
  * failed. Deleting asks twice. */
 export function VideoView({ initial }: { initial: VideoSummary }) {
-  const router = useRouter();
   const [video, setVideo] = useState(initial);
-  const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (video.status !== "working") return;
@@ -30,27 +29,14 @@ export function VideoView({ initial }: { initial: VideoSummary }) {
     return () => clearInterval(timer);
   }, [video.id, video.status]);
 
-  async function remove() {
-    setBusy(true);
-    setFailed(false);
-    try {
-      const res = await fetch(`/api/products/wd-video-ai/videos/${video.id}`, { method: "DELETE" });
-      if (!res.ok && res.status !== 404) throw new Error(String(res.status));
-      router.push("/creations");
-      router.refresh();
-    } catch {
-      setFailed(true);
-      setBusy(false);
-    }
-  }
-
   const when = fullDate(video.created_at);
   return (
-    <article className="song-shell panel">
+    <article className={cn(panel, "@container")}>
       {video.status === "done" && video.video_url ? (
-        <figure className="video-result">
+        <figure className="m-0 grid justify-items-center">
           {/* biome-ignore lint/a11y/useMediaCaption: generated clips have no speech to caption */}
           <video
+            className="h-auto max-h-[70vh] max-w-full rounded-xl bg-black shadow-card"
             controls
             playsInline
             preload="metadata"
@@ -68,48 +54,28 @@ export function VideoView({ initial }: { initial: VideoSummary }) {
           {video.error ?? "Please try again."}
         </Notice>
       )}
-      <div className="stack">
-        <span className="eyebrow">
+      <div className="grid gap-[0.9rem]">
+        <span className={eyebrow}>
           {video.mode === "image" ? "From a picture" : "From text"} · {video.seconds} seconds ·{" "}
           {when}
         </span>
         <p>{video.prompt}</p>
-        <div className="actions">
+        <div className={actions}>
           {video.status === "done" ? (
-            <a
-              className="btn btn--primary"
-              href={`/api/products/wd-video-ai/videos/${video.id}/download`}
-              download
-            >
-              Download
-            </a>
+            <Button asChild>
+              <a href={`/api/products/wd-video-ai/videos/${video.id}/download`} download>
+                Download
+              </a>
+            </Button>
           ) : null}
-          {video.status === "working" ? null : confirming ? (
-            <>
-              <button type="button" className="btn btn--danger" onClick={remove} disabled={busy}>
-                {busy ? <span className="spinner" aria-hidden="true" /> : null}
-                Yes, delete it
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost"
-                onClick={() => setConfirming(false)}
-                disabled={busy}
-              >
-                Keep it
-              </button>
-            </>
-          ) : (
-            <button type="button" className="btn btn--ghost" onClick={() => setConfirming(true)}>
-              {video.status === "failed" ? "Remove" : "Delete"}
-            </button>
+          {video.status === "working" ? null : (
+            <DeleteControls
+              url={`/api/products/wd-video-ai/videos/${video.id}`}
+              noun="video"
+              label={video.status === "failed" ? "Remove" : "Delete"}
+            />
           )}
         </div>
-        {failed ? (
-          <Notice tone="error" title="Couldn't delete that video">
-            Try again in a moment.
-          </Notice>
-        ) : null}
       </div>
     </article>
   );

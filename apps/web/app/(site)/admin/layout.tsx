@@ -1,5 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { Notice } from "@/components/Notice";
+import { PageHero } from "@/components/ui/page-hero";
 import { getMe } from "@/lib/me";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
@@ -18,17 +19,19 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
   return (
     <>
-      <header className="hero">
-        <h1>Admin</h1>
-        <nav className="subnav" aria-label="Admin">
-          <NavLink href="/admin">Overview</NavLink>
+      <div className="grid gap-3">
+        <PageHero title="Admin" />
+        <nav className="flex flex-wrap gap-1" aria-label="Admin">
+          <NavLink href="/admin" exact>
+            Overview
+          </NavLink>
           <NavLink href="/admin/users">Users</NavLink>
           <NavLink href="/admin/songs">Songs</NavLink>
           <NavLink href="/admin/models">Models</NavLink>
           <NavLink href="/admin/media">Media</NavLink>
           <NavLink href="/admin/audit">Audit log</NavLink>
         </nav>
-      </header>
+      </div>
       {children}
     </>
   );

@@ -1,6 +1,7 @@
 import { Notice } from "@/components/Notice";
 import { MediaForm } from "@/components/admin/MediaForm";
 import { apiGet } from "@/lib/api";
+import { muted, pager } from "@/lib/styles";
 import type { MediaList } from "@wd/contracts";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -35,14 +36,14 @@ export default async function EditMedia({ params }: Params) {
   const current = list.backends.find((b) => b.id === item.backend)?.label ?? item.backend;
   return (
     <>
-      <p className="pager">
+      <p className={pager}>
         <Link href="/admin/media">← Media</Link>
       </p>
-      <header className="stack">
+      <header className="grid gap-[0.9rem]">
         <h2>
           {item.product_id} · {item.capability}
         </h2>
-        <p className="muted">
+        <p className={muted}>
           {item.workflow ? `The product's ComfyUI workflow is ${item.workflow}. ` : ""}Other
           services run the same workflow where they can, or work from the prompt alone.
         </p>

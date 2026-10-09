@@ -1,4 +1,5 @@
 import { auth, signOut } from "@/auth";
+import { Button } from "@/components/ui/button";
 import { authEnabled } from "@/lib/auth-mode";
 import { getMe } from "@/lib/me";
 import Link from "next/link";
@@ -15,10 +16,13 @@ export async function Header() {
   const isAdmin = signedIn && (await getMe())?.role === "admin";
   const who = session?.user?.name ?? session?.user?.email;
   return (
-    <header className="header">
-      <div className="header__inner">
+    <header className="sticky top-0 z-20 border-b bg-background">
+      <div className="mx-auto flex min-h-15 w-[min(100%-2rem,70rem)] flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2 sm:w-[min(100%-3rem,70rem)] md:gap-x-4 md:py-1.5">
         <Logo />
-        <nav className="nav" aria-label="Main">
+        <nav
+          className="order-3 flex w-full min-w-0 gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] md:order-none md:w-auto [&::-webkit-scrollbar]:hidden"
+          aria-label="Main"
+        >
           <NavLink href="/" exact>
             Explore
           </NavLink>
@@ -34,30 +38,31 @@ export async function Header() {
           {signedIn && <NavLink href="/creations">My creations</NavLink>}
           {isAdmin && <NavLink href="/admin">Admin</NavLink>}
         </nav>
-        <div className="header__actions">
+        <div className="ms-auto flex items-center justify-end gap-3 max-[420px]:gap-2">
           <VideoActivity enabled={signedIn} />
           <ThemeToggle />
           {who ? (
             <form
-              className="account"
+              className="flex items-center gap-2.5"
               action={async () => {
                 "use server";
                 await signOut({ redirectTo: "/signin" });
               }}
             >
-              <span className="account__name" title={session?.user?.email ?? undefined}>
+              <span
+                className="hidden max-w-[12ch] truncate text-[0.9rem] text-muted-foreground md:inline"
+                title={session?.user?.email ?? undefined}
+              >
                 {who}
               </span>
-              <button type="submit" className="btn btn--ghost">
+              <Button type="submit" variant="outline" size="sm">
                 Sign out
-              </button>
+              </Button>
             </form>
           ) : !signedIn ? (
-            <span className="account">
-              <Link href="/signin" className="btn btn--primary">
-                Sign in
-              </Link>
-            </span>
+            <Button asChild size="sm">
+              <Link href="/signin">Sign in</Link>
+            </Button>
           ) : null}
         </div>
       </div>

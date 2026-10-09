@@ -1,6 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { HttpError, enhancePrompt } from "@/lib/run-client";
+import { fieldError } from "@/lib/styles";
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -75,10 +78,11 @@ export function EnhanceButton({
   }
 
   return (
-    <span className="enhance">
-      <button
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <Button
         type="button"
-        className="btn btn--ghost btn--sm"
+        variant="outline"
+        size="sm"
         onClick={enhance}
         disabled={blocked}
         aria-busy={busy}
@@ -88,21 +92,17 @@ export function EnhanceButton({
             : "Rewrite your text into a better prompt"
         }
       >
-        {busy ? (
-          <span className="spinner" aria-hidden="true" />
-        ) : (
-          <span aria-hidden="true">✨</span>
-        )}
+        {busy ? <Spinner /> : <span aria-hidden="true">✨</span>}
         {busy ? "Enhancing…" : "Enhance"}
-      </button>
+      </Button>
       {original !== null && !busy ? (
-        <button type="button" className="link" onClick={undo}>
+        <Button type="button" variant="link" size="sm" onClick={undo}>
           Undo
-        </button>
+        </Button>
       ) : null}
       <output className="sr-only">{note}</output>
       {error ? (
-        <span className="field__error" role="alert">
+        <span className={fieldError} role="alert">
           {error}
         </span>
       ) : null}

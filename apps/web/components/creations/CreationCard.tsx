@@ -1,100 +1,161 @@
 import { Equaliser } from "@/components/Logo";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import type { Entry } from "@/lib/creations";
 import { styleTags, timeAgo } from "@/lib/format";
+import { coverTile } from "@/lib/styles";
+import { cn } from "@/lib/utils";
 import type { VideoSummary } from "@wd/contracts";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
-/** One card in My creations: a song, an image or a video, each linking to its own page. */
+/** One card in My creations: a cover, what kind it is, a title, a few tags and when it was made. */
+function Card({
+  href,
+  kind,
+  cover,
+  title,
+  tags,
+  when,
+  lang,
+  status,
+}: {
+  href: string;
+  kind: string;
+  cover: ReactNode;
+  title: string;
+  tags?: ReactNode;
+  when: string;
+  lang?: string;
+  status?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      data-status={status}
+      className="relative grid h-full grid-rows-[auto_1fr] gap-3 overflow-hidden rounded-lg border bg-surface p-[0.8rem] text-foreground no-underline transition-[translate,box-shadow,border-color] duration-300 ease-out-soft hover:-translate-y-1 hover:border-primary/45 hover:text-foreground hover:shadow-card"
+    >
+      {cover}
+      <span className="absolute start-[1.15rem] top-[1.15rem] rounded-full border border-white/20 bg-[oklch(20%_0.02_280/0.72)] px-[0.6rem] py-[0.3rem] text-[0.7rem] font-bold tracking-[0.04em] text-white uppercase backdrop-blur-[10px]">
+        {kind}
+      </span>
+      <div className="grid h-28 min-h-0 grid-rows-[auto_auto_1fr] gap-[0.9rem] px-[0.15rem] pt-[0.1rem] pb-[0.2rem]">
+        <h3 className="line-clamp-2 text-[1.05rem] leading-tight" lang={lang}>
+          {title}
+        </h3>
+        <div className="flex flex-nowrap gap-[0.35rem] overflow-hidden [&>*]:shrink-0">{tags}</div>
+        <time dateTime={when} className="mt-auto pt-[0.3rem] text-step--1 text-muted-foreground">
+          {timeAgo(when)}
+        </time>
+      </div>
+    </Link>
+  );
+}
+
+const picture = cn(coverTile, "rounded-lg");
+
+/** One card in My creations: a song, an image, a video or speech, each linking to its own page. */
 export function CreationCard({ entry, note }: { entry: Entry; note?: string }) {
+  const noteTag = note ? <Badge variant="tag">{note}</Badge> : null;
   if (entry.kind === "speech") {
     const { speech } = entry;
     return (
-      <Link href={`/text-to-speech/creations/${speech.id}`} className="song-card creation-card">
-        <div className="song-card__cover cover-placeholder speech-placeholder" aria-hidden="true">
-          <Equaliser still />
-        </div>
-        <span className="creation-kind">Speech</span>
-        <div className="stack creation-card__details">
-          <h3 className="clamp" lang={speech.language}>
-            {speech.text}
-          </h3>
-          <div className="tags">
-            <span className="tag">{speech.language_name}</span>
-            <span className="tag">{speech.gender === "male" ? "Male" : "Female"}</span>
-            {note ? <span className="tag">{note}</span> : null}
+      <Card
+        href={`/text-to-speech/creations/${speech.id}`}
+        kind="Speech"
+        cover={
+          <div
+            className={cn(picture, "grid place-items-center p-4 text-primary-foreground")}
+            aria-hidden="true"
+          >
+            <Equaliser still />
           </div>
-          <time dateTime={speech.created_at}>{timeAgo(speech.created_at)}</time>
-        </div>
-      </Link>
+        }
+        title={speech.text}
+        lang={speech.language}
+        tags={
+          <>
+            <Badge variant="tag">{speech.language_name}</Badge>
+            <Badge variant="tag">{speech.gender === "male" ? "Male" : "Female"}</Badge>
+            {noteTag}
+          </>
+        }
+        when={speech.created_at}
+      />
     );
   }
   if (entry.kind === "video") return <VideoCard video={entry.video} note={note} />;
   if (entry.kind === "image") {
     return (
-      <Link href={`/image/creations/${entry.id}`} className="song-card creation-card">
-        <img src={entry.image.thumb_url} alt="" loading="lazy" />
-        <span className="creation-kind">Image</span>
-        <div className="stack creation-card__details">
-          <h3 className="clamp">{entry.image.prompt}</h3>
-          {note ? <span className="tag">{note}</span> : null}
-          <time dateTime={entry.createdAt}>{timeAgo(entry.createdAt)}</time>
-        </div>
-      </Link>
+      <Card
+        href={`/image/creations/${entry.id}`}
+        kind="Image"
+        cover={<img className={picture} src={entry.image.thumb_url} alt="" loading="lazy" />}
+        title={entry.image.prompt}
+        tags={noteTag}
+        when={entry.createdAt}
+      />
     );
   }
   return (
-    <Link href={`/music/songs/${entry.id}`} className="song-card creation-card">
-      {entry.song.cover_url ? (
-        <img src={entry.song.cover_url} alt="" loading="lazy" />
-      ) : (
-        <div className="song-card__cover cover-placeholder" aria-hidden="true" />
-      )}
-      <span className="creation-kind">Song</span>
-      <div className="stack creation-card__details">
-        <h3>{entry.song.title}</h3>
-        <div className="tags">
+    <Card
+      href={`/music/songs/${entry.id}`}
+      kind="Song"
+      cover={
+        entry.song.cover_url ? (
+          <img className={picture} src={entry.song.cover_url} alt="" loading="lazy" />
+        ) : (
+          <div className={picture} aria-hidden="true" />
+        )
+      }
+      title={entry.song.title}
+      tags={
+        <>
           {styleTags(entry.song.style)
             .slice(0, 3)
             .map((tag) => (
-              <span className="tag" key={tag}>
+              <Badge variant="tag" key={tag}>
                 {tag}
-              </span>
+              </Badge>
             ))}
-          {note ? <span className="tag">{note}</span> : null}
-        </div>
-        <time dateTime={entry.createdAt}>{timeAgo(entry.createdAt)}</time>
-      </div>
-    </Link>
+          {noteTag}
+        </>
+      }
+      when={entry.createdAt}
+    />
   );
 }
 
 /** A clip: its poster when ready, a "making" card while it is, and the reason when it failed. */
 function VideoCard({ video, note }: { video: VideoSummary; note?: string }) {
   return (
-    <Link
+    <Card
       href={`/video/creations/${video.id}`}
-      className="song-card creation-card"
-      data-status={video.status}
-    >
-      {video.status === "done" && video.poster_url ? (
-        <img src={video.poster_url} alt="" loading="lazy" />
-      ) : (
-        <div className="song-card__cover cover-placeholder video-placeholder" aria-hidden="true">
-          {video.status === "working" ? <span className="spinner" /> : null}
-        </div>
-      )}
-      <span className="creation-kind">Video</span>
-      <div className="stack creation-card__details">
-        <h3 className="clamp">{video.prompt}</h3>
-        {video.status === "working" ? (
-          <span className="tag">Making your video…</span>
+      kind="Video"
+      status={video.status}
+      cover={
+        video.status === "done" && video.poster_url ? (
+          <img className={picture} src={video.poster_url} alt="" loading="lazy" />
+        ) : (
+          <div
+            className={cn(picture, "grid place-items-center text-primary-foreground")}
+            aria-hidden="true"
+          >
+            {video.status === "working" ? <Spinner /> : null}
+          </div>
+        )
+      }
+      title={video.prompt}
+      tags={
+        video.status === "working" ? (
+          <Badge variant="tag">Making your video…</Badge>
         ) : video.status === "failed" ? (
-          <span className="tag">Couldn't be made</span>
+          <Badge variant="tag">Couldn't be made</Badge>
         ) : note ? (
-          <span className="tag">{note}</span>
-        ) : null}
-        <time dateTime={video.created_at}>{timeAgo(video.created_at)}</time>
-      </div>
-    </Link>
+          <Badge variant="tag">{note}</Badge>
+        ) : null
+      }
+      when={video.created_at}
+    />
   );
 }

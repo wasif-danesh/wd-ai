@@ -1,5 +1,6 @@
 import { Notice } from "@/components/Notice";
 import { CreationsList } from "@/components/creations/CreationsList";
+import { PageHero } from "@/components/ui/page-hero";
 import { apiGet } from "@/lib/api";
 import { PRODUCT } from "@/lib/run-client";
 import type { ImagePage, SongPage, SpeechPage, VideoPage } from "@wd/contracts";
@@ -30,13 +31,13 @@ export default async function Creations({
 
   return (
     <>
-      <header className="hero creations-hero">
-        <span className="eyebrow">YOUR LIBRARY</span>
-        <h1>My creations</h1>
-        <p>
-          Your songs, images, videos and speech, all together. Pick up where inspiration left off.
-        </p>
-      </header>
+      <PageHero
+        eyebrow="YOUR LIBRARY"
+        title="My creations"
+        className="pt-[clamp(1.5rem,4vw,3rem)] pb-4 [&_p]:max-w-[34rem]"
+      >
+        Your songs, images, videos and speech, all together. Pick up where inspiration left off.
+      </PageHero>
       {songs || images || videos || speeches ? (
         <>
           {songsResult.status === "rejected" ? (
