@@ -12,7 +12,7 @@ from wd_platform_sdk import (
     reset_context,
     set_context,
 )
-from wd_tts_ai.routes import build_routes, file_name
+from wd_tts_ai.routes import build_routes, content_disposition, file_name
 from wd_tts_ai.speeches import InMemorySpeechStore, SpeechRecord
 from wd_tts_ai.voices import load_catalog
 
@@ -119,7 +119,9 @@ def test_download_is_an_mp3_attachment_and_other_users_files_are_never_served(cl
         and r.content == b"MP3DATA"
         and r.headers["content-type"] == "audio/mpeg"
     )
-    assert r.headers["content-disposition"] == 'attachment; filename="speech-number-1.mp3"'
+    assert r.headers["content-disposition"] == (
+        "attachment; filename=\"speech-number-1.mp3\"; filename*=UTF-8''speech-number-1.mp3"
+    )
     assert r.headers["cache-control"] == "private, no-store"
     assert client.get(f"{BASE}/speeches/{uid(5)}/download").status_code == 404
     assert client.get(f"{BASE}/speeches/{uid(3)}/download").status_code == 404  # file missing
@@ -137,4 +139,10 @@ def test_delete_removes_the_file_the_row_and_the_search_entry(client):
 def test_file_names_are_safe_in_any_language():
     assert file_name("Hello there, world!", "mp3") == "hello-there-world.mp3"
     assert file_name("../../etc/passwd", "mp3") == "etc-passwd.mp3"
-    assert file_name("नमस्ते", "mp3") == "speech.mp3" and file_name("", "mp3") == "speech.mp3"
+    assert file_name("नमस्ते दुनिया", "mp3") == "नमस्ते-दुनिया.mp3"
+    assert file_name("", "mp3") == "speech.mp3" and file_name("!!!", "mp3") == "speech.mp3"
+    header = content_disposition("নমস্কার", "mp3")
+    assert (
+        header.startswith('attachment; filename="speech.mp3"')
+        and "filename*=UTF-8''%E0%A6" in header
+    )

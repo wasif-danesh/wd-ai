@@ -3,8 +3,9 @@
 
 Every query is scoped by tenant, product and user, and every link is signed fresh."""
 
-import re
+import unicodedata
 from datetime import datetime
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
@@ -53,9 +54,20 @@ class SpeechPage(BaseModel):
 
 
 def file_name(text: str, ext: str) -> str:
-    """A safe, readable file name from the words: letters, digits and hyphens only."""
-    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:48].strip("-") or "speech"
+    """A safe, readable file name from the words: letters, marks and digits of any script, joined by
+    hyphens (so a Bengali text gives a Bengali name)."""
+    kept = "".join(c if unicodedata.category(c)[0] in "LMN" else " " for c in text.lower())
+    slug = "-".join(kept.split())[:48].strip("-") or "speech"
     return f"{slug}.{ext}"
+
+
+def content_disposition(text: str, ext: str) -> str:
+    """The header that makes a browser save the file: an ASCII name for old clients and the real
+    name (UTF-8, percent-encoded) for the rest (RFC 6266)."""
+    name = file_name(text, ext)
+    plain = "".join(c for c in name.rsplit(".", 1)[0] if c.isascii() and (c.isalnum() or c == "-"))
+    ascii_name = f"{plain.strip('-') or 'speech'}.{ext}"
+    return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name)}"
 
 
 def build_routes(
@@ -135,7 +147,7 @@ def build_routes(
             data,
             media_type="audio/mpeg",
             headers={
-                "Content-Disposition": f'attachment; filename="{file_name(speech.text, "mp3")}"',
+                "Content-Disposition": content_disposition(speech.text, "mp3"),
                 "Cache-Control": "private, no-store",
                 "X-Content-Type-Options": "nosniff",
             },
