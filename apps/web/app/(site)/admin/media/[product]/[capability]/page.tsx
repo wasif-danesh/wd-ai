@@ -1,10 +1,10 @@
 import { Notice } from "@/components/Notice";
 import { MediaForm } from "@/components/admin/MediaForm";
+import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
 import { muted, pager } from "@/lib/styles";
 import type { MediaList } from "@wd/contracts";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -37,10 +37,10 @@ export default async function EditMedia({ params }: Params) {
   return (
     <>
       <p className={pager}>
-        <Link href="/admin/media">← Media</Link>
+        <TextLink href="/admin/media">← Media</TextLink>
       </p>
       <header className="grid gap-[0.9rem]">
-        <h2>
+        <h2 className="text-step-1 font-semibold">
           {item.product_id} · {item.capability}
         </h2>
         <p className={muted}>

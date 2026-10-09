@@ -3,10 +3,16 @@
 import { type MediaFormState, submitMedia } from "@/app/(site)/admin/media/actions";
 import { Notice } from "@/components/Notice";
 import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
-import { actions, field, fieldLabel, hint, muted, panel } from "@/lib/styles";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { panel } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 
 import type { MediaBackend, MediaView } from "@wd/contracts";
@@ -36,80 +42,78 @@ export function MediaForm({
   const secret = backend?.fields.find((f) => f.secret);
 
   return (
-    <form action={action} className={cn(panel, "gap-[0.9rem]")} aria-busy={pending}>
-      <div className={field}>
-        <Label htmlFor={`${id}-backend`} className={fieldLabel}>
-          Runs on
-        </Label>
-        <NativeSelect
-          id={`${id}-backend`}
-          name="backend"
-          value={backend?.id}
-          onChange={(e) => setBackendId(e.target.value)}
-        >
-          {allowed.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.label}
-            </option>
-          ))}
-        </NativeSelect>
-        {backend ? <span className={hint}>{backend.description}</span> : null}
-      </div>
+    <form action={action} className={cn(panel, "gap-6")} aria-busy={pending}>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor={`${id}-backend`}>Runs on</FieldLabel>
+          <Select name="backend" value={backend?.id} onValueChange={setBackendId}>
+            <SelectTrigger id={`${id}-backend`} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {allowed.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {backend ? <FieldDescription>{backend.description}</FieldDescription> : null}
+        </Field>
 
-      {backend?.fields
-        .filter((f) => !f.secret)
-        .map((f) => (
-          <div className={field} key={`${backend.id}-${f.name}`}>
-            <Label htmlFor={`${id}-${f.name}`} className={fieldLabel}>
-              {f.label}
-              {f.required ? "" : " (optional)"}
-            </Label>
+        {backend?.fields
+          .filter((f) => !f.secret)
+          .map((f) => (
+            <Field key={`${backend.id}-${f.name}`}>
+              <FieldLabel htmlFor={`${id}-${f.name}`}>
+                {f.label}
+                {f.required ? "" : " (optional)"}
+              </FieldLabel>
+              <Input
+                id={`${id}-${f.name}`}
+                name={`cfg_${f.name}`}
+                required={f.required}
+                maxLength={300}
+                defaultValue={same ? (item.config[f.name] ?? "") : ""}
+                placeholder={f.placeholder}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {f.help ? <FieldDescription>{f.help}</FieldDescription> : null}
+            </Field>
+          ))}
+
+        {secret ? (
+          <Field key={`${backend?.id}-key`}>
+            <FieldLabel htmlFor={`${id}-key`}>
+              {secret.label}
+              {secret.required ? "" : " (optional)"}
+            </FieldLabel>
             <Input
-              id={`${id}-${f.name}`}
-              name={`cfg_${f.name}`}
-              className="h-11"
-              required={f.required}
-              maxLength={300}
-              defaultValue={same ? (item.config[f.name] ?? "") : ""}
-              placeholder={f.placeholder}
+              id={`${id}-key`}
+              name="api_key"
+              type="password"
+              maxLength={512}
               autoComplete="off"
               spellCheck={false}
+              disabled={!secretsReady}
+              aria-describedby={`${id}-key-hint`}
+              placeholder={
+                same && item.key_set
+                  ? "A key is saved. Leave empty to keep it, or enter a new one."
+                  : ""
+              }
             />
-            {f.help ? <span className={hint}>{f.help}</span> : null}
-          </div>
-        ))}
+            <FieldDescription id={`${id}-key-hint`}>
+              {secretsReady
+                ? "Sent once, stored encrypted, and never shown again."
+                : "Saving keys is off: set MEDIA_SECRETS_KEY (run make setup) and restart."}
+            </FieldDescription>
+          </Field>
+        ) : null}
+      </FieldGroup>
 
-      {secret ? (
-        <div className={field} key={`${backend?.id}-key`}>
-          <Label htmlFor={`${id}-key`} className={fieldLabel}>
-            {secret.label}
-            {secret.required ? "" : " (optional)"}
-          </Label>
-          <Input
-            id={`${id}-key`}
-            name="api_key"
-            type="password"
-            className="h-11"
-            maxLength={512}
-            autoComplete="off"
-            spellCheck={false}
-            disabled={!secretsReady}
-            aria-describedby={`${id}-key-hint`}
-            placeholder={
-              same && item.key_set
-                ? "A key is saved. Leave empty to keep it, or enter a new one."
-                : ""
-            }
-          />
-          <span className={hint} id={`${id}-key-hint`}>
-            {secretsReady
-              ? "Sent once, stored encrypted, and never shown again."
-              : "Saving keys is off: set MEDIA_SECRETS_KEY (run make setup) and restart."}
-          </span>
-        </div>
-      ) : null}
-
-      <div className={actions}>
+      <div className="flex flex-wrap items-center gap-2.5">
         <Button variant="outline" type="submit" name="intent" value="test" disabled={pending}>
           Test connection
         </Button>

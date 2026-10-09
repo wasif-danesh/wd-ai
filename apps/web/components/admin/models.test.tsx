@@ -50,6 +50,12 @@ function form(fields: Record<string, string>) {
   return f;
 }
 
+/** Pick an option of a Radix select: open it by its label, then click the option. */
+async function choose(label: string, option: RegExp) {
+  await userEvent.click(screen.getByRole("combobox", { name: label }));
+  await userEvent.click(await screen.findByRole("option", { name: option }));
+}
+
 describe("submitModel (the server action)", () => {
   const fields = { provider: "gemini", model: "gemini-2.5-flash", api_key: KEY, api_base: "" };
 
@@ -140,7 +146,7 @@ describe("ModelForm", () => {
     await renderForm(model());
     expect(screen.getByLabelText("Server address")).toBeInTheDocument();
     expect(screen.queryByLabelText("API key")).not.toBeInTheDocument();
-    await userEvent.selectOptions(screen.getByLabelText("Provider"), "gemini");
+    await choose("Provider", /Gemini/);
     expect(screen.getByLabelText("API key")).toHaveAttribute("type", "password");
     expect(screen.queryByLabelText("Server address")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Model")).toHaveAttribute("placeholder", "gemini-2.5-flash");

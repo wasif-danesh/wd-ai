@@ -1,10 +1,10 @@
 import { Notice } from "@/components/Notice";
 import { Table } from "@/components/admin/Table";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
 import { pager } from "@/lib/styles";
 import type { UsageReport } from "@wd/contracts";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -35,9 +35,13 @@ export default async function Overview({
       <p className={pager}>
         Last{" "}
         {PERIODS.map((p) => (
-          <Link key={p} href={`/admin?days=${p}`} aria-current={p === days ? "true" : undefined}>
+          <TextLink
+            key={p}
+            href={`/admin?days=${p}`}
+            aria-current={p === days ? "true" : undefined}
+          >
             {p === 1 ? "24 hours" : `${p} days`}
-          </Link>
+          </TextLink>
         ))}
       </p>
       <Table

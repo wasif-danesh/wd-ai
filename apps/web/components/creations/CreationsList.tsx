@@ -280,7 +280,7 @@ export function CreationsList({
 
       {search.status === "done" && search.entries.length === 0 ? (
         <div className={cn(panel, empty, "mt-4 mb-8")}>
-          <h2>Nothing matched “{search.query}”</h2>
+          <h2 className="text-step-1 font-semibold">Nothing matched “{search.query}”</h2>
           <p>Try other words, or describe what it was about.</p>
           <Button type="button" variant="outline" onClick={() => setQuery("")}>
             Clear the search

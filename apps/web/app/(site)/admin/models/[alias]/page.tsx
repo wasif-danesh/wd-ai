@@ -1,10 +1,10 @@
 import { Notice } from "@/components/Notice";
 import { ModelForm } from "@/components/admin/ModelForm";
+import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
 import { muted, pager } from "@/lib/styles";
 import type { ModelList } from "@wd/contracts";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -36,10 +36,10 @@ export default async function EditModel({ params }: Params) {
   return (
     <>
       <p className={pager}>
-        <Link href="/admin/models">← Models</Link>
+        <TextLink href="/admin/models">← Models</TextLink>
       </p>
       <header className="grid gap-[0.9rem]">
-        <h2>{model.alias}</h2>
+        <h2 className="text-step-1 font-semibold">{model.alias}</h2>
         <p className={muted}>{model.purpose}</p>
         <p>
           Now served by{" "}

@@ -1,12 +1,12 @@
 import { Notice } from "@/components/Notice";
 import { Table } from "@/components/admin/Table";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
 import { muted } from "@/lib/styles";
 import type { MediaList } from "@wd/contracts";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = { title: "Media" };
 export const dynamic = "force-dynamic";
@@ -60,7 +60,7 @@ export default async function Media() {
               {m.updated_at && m.source === "custom" ? fullDate(m.updated_at) : "—"}
             </TableCell>
             <TableCell>
-              <Link href={`/admin/media/${m.product_id}/${m.capability}`}>Edit</Link>
+              <TextLink href={`/admin/media/${m.product_id}/${m.capability}`}>Edit</TextLink>
             </TableCell>
           </TableRow>
         ))}

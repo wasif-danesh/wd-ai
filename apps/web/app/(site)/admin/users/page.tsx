@@ -1,12 +1,12 @@
 import { Notice } from "@/components/Notice";
 import { Table } from "@/components/admin/Table";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
 import { muted, pager } from "@/lib/styles";
 import type { AdminUserPage } from "@wd/contracts";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = { title: "Users" };
 export const dynamic = "force-dynamic";
@@ -55,7 +55,9 @@ export default async function Users({
       </Table>
       {page.next_before ? (
         <p className={pager}>
-          <Link href={`/admin/users?before=${encodeURIComponent(page.next_before)}`}>Older</Link>
+          <TextLink href={`/admin/users?before=${encodeURIComponent(page.next_before)}`}>
+            Older
+          </TextLink>
         </p>
       ) : null}
     </>

@@ -100,6 +100,12 @@ function form(fields: Record<string, string>) {
   return f;
 }
 
+/** Pick an option of a Radix select: open it by its label, then click the option. */
+async function choose(label: string, option: RegExp) {
+  await userEvent.click(screen.getByRole("combobox", { name: label }));
+  await userEvent.click(await screen.findByRole("option", { name: option }));
+}
+
 describe("submitMedia (the server action)", () => {
   it("sends the settings and the key once, and never echoes the key back", async () => {
     apiSend.mockResolvedValue({ status: 200, data: { ok: true, message: "fine", latency_ms: 5 } });
@@ -188,9 +194,9 @@ describe("MediaForm", () => {
     await renderForm(item());
     expect(screen.getByLabelText(/Server address/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/API key/)).not.toBeInTheDocument();
-    await userEvent.selectOptions(screen.getByLabelText("Runs on"), "comfy-api");
+    await choose("Runs on", /Comfy Cloud/);
     expect(screen.getByLabelText(/API key/)).toHaveAttribute("type", "password");
-    await userEvent.selectOptions(screen.getByLabelText("Runs on"), "openai-images");
+    await choose("Runs on", /OpenAI/);
     expect(screen.getByLabelText(/^Model/)).toBeRequired();
     expect(screen.getByLabelText(/API key \(optional\)/)).toBeInTheDocument();
   });
@@ -199,7 +205,8 @@ describe("MediaForm", () => {
     await renderForm(
       item({ capability: "music.generate", allowed_backends: ["comfyui-local", "comfy-api"] }),
     );
-    const options = screen.getAllByRole("option").map((o) => o.textContent);
+    await userEvent.click(screen.getByRole("combobox", { name: "Runs on" }));
+    const options = (await screen.findAllByRole("option")).map((o) => o.textContent);
     expect(options).toEqual(["ComfyUI (local or self-hosted)", "Comfy Cloud / Comfy API (v2)"]);
   });
 

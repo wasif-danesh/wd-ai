@@ -1,12 +1,12 @@
 import { Notice } from "@/components/Notice";
 import { Table } from "@/components/admin/Table";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
 import { muted } from "@/lib/styles";
 import type { ModelList } from "@wd/contracts";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = { title: "Models" };
 export const dynamic = "force-dynamic";
@@ -53,7 +53,7 @@ export default async function Models() {
               {m.updated_at && m.source === "custom" ? fullDate(m.updated_at) : "—"}
             </TableCell>
             <TableCell>
-              <Link href={`/admin/models/${m.alias}`}>Edit</Link>
+              <TextLink href={`/admin/models/${m.alias}`}>Edit</TextLink>
             </TableCell>
           </TableRow>
         ))}

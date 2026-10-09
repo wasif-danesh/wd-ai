@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
+      <body className="min-h-dvh bg-background font-sans text-step-0 leading-[1.55] text-foreground antialiased selection:bg-primary/35">
         <a
           className="fixed top-3 left-3 z-[100] -translate-y-[200%] rounded-md bg-surface px-4 py-2 text-foreground focus:translate-y-0"
           href="#main"

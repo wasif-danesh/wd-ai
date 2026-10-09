@@ -1,12 +1,12 @@
 import { Notice } from "@/components/Notice";
 import { Table } from "@/components/admin/Table";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
 import { pager } from "@/lib/styles";
 import type { AdminSongPage } from "@wd/contracts";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = { title: "Songs" };
 export const dynamic = "force-dynamic";
@@ -51,7 +51,9 @@ export default async function Songs({
       </Table>
       {page.next_before ? (
         <p className={pager}>
-          <Link href={`/admin/songs?before=${encodeURIComponent(page.next_before)}`}>Older</Link>
+          <TextLink href={`/admin/songs?before=${encodeURIComponent(page.next_before)}`}>
+            Older
+          </TextLink>
         </p>
       ) : null}
     </>

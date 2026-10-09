@@ -3,10 +3,16 @@
 import { type FormState, submitModel } from "@/app/(site)/admin/models/actions";
 import { Notice } from "@/components/Notice";
 import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
-import { actions, field, fieldLabel, hint, muted, panel } from "@/lib/styles";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { panel } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 
 import type { ModelView, ProviderView } from "@wd/contracts";
@@ -30,92 +36,83 @@ export function ModelForm({
   const showKey = provider ? provider.needs_key || providerId === "openai_compatible" : true;
 
   return (
-    <form action={action} className={cn(panel, "gap-[0.9rem]")} aria-busy={pending}>
-      <div className={field}>
-        <Label htmlFor={`${id}-provider`} className={fieldLabel}>
-          Provider
-        </Label>
-        <NativeSelect
-          id={`${id}-provider`}
-          name="provider"
-          value={providerId}
-          onChange={(e) => setProviderId(e.target.value)}
-        >
-          {providers.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </NativeSelect>
-      </div>
-      <div className={field}>
-        <Label htmlFor={`${id}-model`} className={fieldLabel}>
-          Model
-        </Label>
-        <Input
-          id={`${id}-model`}
-          name="model"
-          className="h-11"
-          required
-          maxLength={200}
-          defaultValue={model.provider === providerId ? (model.model ?? "") : ""}
-          placeholder={provider?.model_hint}
-          key={providerId}
-          autoComplete="off"
-          spellCheck={false}
-        />
-      </div>
-      {showBase ? (
-        <div className={field}>
-          <Label htmlFor={`${id}-base`} className={fieldLabel}>
-            Server address
-          </Label>
+    <form action={action} className={cn(panel, "gap-6")} aria-busy={pending}>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor={`${id}-provider`}>Provider</FieldLabel>
+          <Select name="provider" value={providerId} onValueChange={setProviderId}>
+            <SelectTrigger id={`${id}-provider`} className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {providers.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor={`${id}-model`}>Model</FieldLabel>
           <Input
-            id={`${id}-base`}
-            name="api_base"
-            className="h-11"
-            required={provider?.needs_base}
-            maxLength={300}
-            defaultValue={model.provider === providerId ? (model.api_base ?? "") : ""}
-            placeholder="http://host.containers.internal:11434"
-            key={`base-${providerId}`}
+            id={`${id}-model`}
+            name="model"
+            required
+            maxLength={200}
+            defaultValue={model.provider === providerId ? (model.model ?? "") : ""}
+            placeholder={provider?.model_hint}
+            key={providerId}
             autoComplete="off"
             spellCheck={false}
           />
-        </div>
-      ) : null}
-      {showKey ? (
-        <div className={field}>
-          <Label htmlFor={`${id}-key`} className={fieldLabel}>
-            API key
-          </Label>
-          <Input
-            id={`${id}-key`}
-            name="api_key"
-            type="password"
-            className="h-11"
-            maxLength={512}
-            autoComplete="off"
-            spellCheck={false}
-            aria-describedby={`${id}-key-hint`}
-            placeholder={model.key_set ? "A key is saved. Enter it again to save changes." : ""}
-          />
-          <span className={hint} id={`${id}-key-hint`}>
-            Keys are sent once, stored encrypted by the model gateway, and never shown again.
-            {providerId === "openai_compatible" ? " Leave empty for a server without a key." : ""}
-          </span>
-        </div>
-      ) : null}
+        </Field>
+        {showBase ? (
+          <Field>
+            <FieldLabel htmlFor={`${id}-base`}>Server address</FieldLabel>
+            <Input
+              id={`${id}-base`}
+              name="api_base"
+              required={provider?.needs_base}
+              maxLength={300}
+              defaultValue={model.provider === providerId ? (model.api_base ?? "") : ""}
+              placeholder="http://host.containers.internal:11434"
+              key={`base-${providerId}`}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+        ) : null}
+        {showKey ? (
+          <Field>
+            <FieldLabel htmlFor={`${id}-key`}>API key</FieldLabel>
+            <Input
+              id={`${id}-key`}
+              name="api_key"
+              type="password"
+              maxLength={512}
+              autoComplete="off"
+              spellCheck={false}
+              aria-describedby={`${id}-key-hint`}
+              placeholder={model.key_set ? "A key is saved. Enter it again to save changes." : ""}
+            />
+            <FieldDescription id={`${id}-key-hint`}>
+              Keys are sent once, stored encrypted by the model gateway, and never shown again.
+              {providerId === "openai_compatible" ? " Leave empty for a server without a key." : ""}
+            </FieldDescription>
+          </Field>
+        ) : null}
+      </FieldGroup>
 
       {model.protected ? (
-        <p className={muted}>
+        <p className="text-muted-foreground">
           This model decides what the guardrail allows. Saving runs the guardrail test cases on the
           new model first and only changes it if every must-refuse case is refused. It takes about a
           minute.
         </p>
       ) : null}
 
-      <div className={actions}>
+      <div className="flex flex-wrap items-center gap-2.5">
         <Button variant="outline" type="submit" name="intent" value="test" disabled={pending}>
           Test connection
         </Button>
