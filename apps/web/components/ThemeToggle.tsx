@@ -7,6 +7,7 @@ const STORAGE_KEY = "wd-ai-theme";
 
 function applyColorScheme(theme: Theme) {
   document.documentElement.style.colorScheme = theme;
+  document.documentElement.dataset.theme = theme; // the dark: classes of the shadcn components follow this
   const color = theme === "dark" ? "#111214" : "#f4f3ef";
   const metaTags = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
   for (let index = 0; index < metaTags.length; index += 1) {

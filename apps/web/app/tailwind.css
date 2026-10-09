@@ -1,0 +1,81 @@
+/* Tailwind CSS for the shadcn/ui components (ADR-0045). Only theme and utilities are loaded: no preflight, because
+   globals.css has its own reset and the old screens must not change. The `theme` layer comes first (see the layer
+   order in globals.css), so our own tokens win when a name is the same. The colours below map shadcn's names onto
+   our design tokens, so there is one palette in light and dark. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* dark: follows the browser setting, unless the theme toggle has chosen one (it sets data-theme on <html>) */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:not(:where([data-theme="light"], [data-theme="light"] *)) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface-solid);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--on-accent);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--accent-soft);
+  --color-accent-foreground: var(--text);
+  --color-destructive: var(--danger);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: color-mix(in oklch, var(--accent) 60%, transparent);
+  --color-sidebar: var(--surface);
+  --color-sidebar-foreground: var(--text);
+  --color-sidebar-primary: var(--accent);
+  --color-sidebar-primary-foreground: var(--on-accent);
+  --color-sidebar-accent: var(--accent-soft);
+  --color-sidebar-accent-foreground: var(--text);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: color-mix(in oklch, var(--accent) 60%, transparent);
+  --radius-md: var(--radius-sm);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius-lg);
+}
+
+/* What Tailwind's preflight would normally reset, scoped to shadcn components (they all carry data-slot) so
+   the old screens are untouched: no browser button face, a one-pixel solid border that starts at zero width,
+   and the border colour from our tokens. */
+@layer base {
+  [data-slot] {
+    border-color: var(--border);
+  }
+  button[data-slot],
+  input[data-slot],
+  textarea[data-slot],
+  select[data-slot] {
+    background-color: transparent;
+    border-width: 0;
+    border-style: solid;
+  }
+}
+
+/* The old stylesheet colours and underlines every link and bullets every list; inside the side panel
+   links and lists should look like the panel, not like page text. */
+@layer base {
+  [data-slot="sidebar"] a {
+    color: inherit;
+    text-decoration: none;
+  }
+  [data-slot="sidebar"] ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+}

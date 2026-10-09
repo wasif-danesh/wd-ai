@@ -3,7 +3,7 @@
    Cascade layers keep specificity predictable; native nesting keeps components readable.
    Everything that moves is switched off under prefers-reduced-motion. */
 
-@layer reset, tokens, base, layout, components, utilities;
+@layer theme, reset, tokens, base, layout, components, utilities;
 
 /* ------------------------------------------------------------------ reset */
 @layer reset {
@@ -1180,7 +1180,7 @@
   }
 
   /* ---- song grid */
-  .grid {
+  .tiles {
     display: grid;
     gap: 1rem;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));

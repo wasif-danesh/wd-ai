@@ -2,13 +2,16 @@
 
 import { Equaliser } from "@/components/Logo";
 import { Notice } from "@/components/Notice";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCreationSearch } from "@/hooks/use-creation-search";
 import type { Entry, Filter } from "@/lib/creations";
 import { PRODUCT } from "@/lib/run-client";
 import type { ImagePage, SongPage, SpeechPage, VideoPage } from "@wd/contracts";
+import { LayoutGrid, Table2 } from "lucide-react";
 import Link from "next/link";
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { CreationCard } from "./CreationCard";
+import { CreationsTable } from "./CreationsTable";
 
 const PAGE = 12;
 const FILTERS: { value: Filter; label: string }[] = [
@@ -24,11 +27,13 @@ export function CreationsList({
   images: imagePage,
   videos: videoPage = null,
   speeches: speechPage = null,
+  initialFilter = "all",
 }: {
   songs: SongPage | null;
   images: ImagePage | null;
   videos?: VideoPage | null;
   speeches?: SpeechPage | null;
+  initialFilter?: Filter;
 }) {
   const [songs, setSongs] = useState(songPage?.songs ?? []);
   const [images, setImages] = useState(imagePage?.images ?? []);
@@ -38,7 +43,7 @@ export function CreationsList({
   const [imageNext, setImageNext] = useState(imagePage?.next_before ?? null);
   const [videoNext, setVideoNext] = useState(videoPage?.next_before ?? null);
   const [speechNext, setSpeechNext] = useState(speechPage?.next_before ?? null);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>(initialFilter);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -154,6 +159,24 @@ export function CreationsList({
             ? Boolean(videoNext)
             : Boolean(speechNext);
 
+  const [view, setView] = useState<"cards" | "table">("cards");
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("creations-view") === "table") setView("table");
+    } catch {
+      // storage can be blocked; the cards view is the default
+    }
+  }, []);
+  function chooseView(next: string) {
+    if (next !== "cards" && next !== "table") return; // clicking the chosen one again clears it; ignore
+    setView(next);
+    try {
+      localStorage.setItem("creations-view", next);
+    } catch {
+      // not remembered, still works
+    }
+  }
+
   const [query, setQuery] = useState("");
   const searchId = useId();
   const search = useCreationSearch(query, filter);
@@ -204,6 +227,21 @@ export function CreationsList({
             </button>
           ))}
         </fieldset>
+        <ToggleGroup
+          type="single"
+          value={view}
+          onValueChange={chooseView}
+          variant="outline"
+          size="sm"
+          aria-label="How to show your creations"
+        >
+          <ToggleGroupItem value="cards" aria-label="Cards">
+            <LayoutGrid aria-hidden="true" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="table" aria-label="Table">
+            <Table2 aria-hidden="true" />
+          </ToggleGroupItem>
+        </ToggleGroup>
         <span className="creations-count" aria-live="polite">
           {search.status === "searching" ? (
             "Searching…"
@@ -264,13 +302,15 @@ export function CreationsList({
           </div>
         </div>
       ) : search.status === "searching" ? (
-        <ul className="grid creations-grid" aria-busy="true" aria-label="Searching">
+        <ul className="tiles creations-grid" aria-busy="true" aria-label="Searching">
           {[0, 1, 2].map((i) => (
             <li key={i} className="skeleton" style={{ aspectRatio: "3 / 4" }} />
           ))}
         </ul>
+      ) : view === "table" ? (
+        <CreationsTable entries={shown} />
       ) : (
-        <ul className="grid creations-grid">
+        <ul className="tiles creations-grid">
           {shown.map((entry) => (
             <li key={`${entry.kind}-${entry.id}`}>
               <CreationCard

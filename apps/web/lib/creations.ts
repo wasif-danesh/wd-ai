@@ -21,3 +21,57 @@ export function kindOf(filter: Filter): Entry["kind"] | undefined {
   const kinds = { songs: "song", images: "image", videos: "video", speeches: "speech" } as const;
   return filter === "all" ? undefined : kinds[filter];
 }
+
+export type Row = {
+  key: string;
+  kind: Entry["kind"];
+  kindLabel: string;
+  title: string;
+  detail: string;
+  href: string;
+  createdAt: string;
+  status: "done" | "working" | "failed";
+};
+
+/** One entry as a table row: what it is, what it says, where it opens and whether it is ready. */
+export function toRow(entry: Entry): Row {
+  const base = { key: `${entry.kind}:${entry.id}`, kind: entry.kind, createdAt: entry.createdAt };
+  switch (entry.kind) {
+    case "song":
+      return {
+        ...base,
+        kindLabel: "Song",
+        title: entry.song.title,
+        detail: entry.song.style ?? "",
+        href: `/music/songs/${entry.id}`,
+        status: "done",
+      };
+    case "image":
+      return {
+        ...base,
+        kindLabel: "Image",
+        title: entry.image.prompt,
+        detail: "",
+        href: `/image/creations/${entry.id}`,
+        status: "done",
+      };
+    case "video":
+      return {
+        ...base,
+        kindLabel: "Video",
+        title: entry.video.prompt,
+        detail: "",
+        href: `/video/creations/${entry.id}`,
+        status: entry.video.status,
+      };
+    case "speech":
+      return {
+        ...base,
+        kindLabel: "Speech",
+        title: entry.speech.text,
+        detail: `${entry.speech.language_name} · ${entry.speech.gender === "male" ? "Male" : "Female"}, ${entry.speech.voice}`,
+        href: `/text-to-speech/creations/${entry.id}`,
+        status: "done",
+      };
+  }
+}

@@ -1,7 +1,30 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { LanguageChoice, VoiceCatalog, VoiceChoice } from "@wd/contracts";
-import { type FormEvent, type KeyboardEvent, useId, useState } from "react";
+import { Loader2 } from "lucide-react";
+import type { KeyboardEvent } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 export const MAX_TEXT = 2000;
 const GENDERS = [
@@ -27,6 +50,18 @@ export type SpeechFormValue = {
   voice?: string;
 };
 
+const schema = z.object({
+  text: z
+    .string()
+    .trim()
+    .min(1, "Type the words you want spoken.")
+    .max(MAX_TEXT, `Please keep it to ${MAX_TEXT} characters or fewer.`),
+  language: z.string().min(1),
+  gender: z.string().min(1),
+  voice: z.string().optional(),
+});
+type Values = z.infer<typeof schema>;
+
 /** The voices a language has for one gender (an empty list is a gap, shown as such). */
 function voicesOf(lang: LanguageChoice | undefined, gender: string): VoiceChoice[] {
   return (lang?.genders as Record<string, VoiceChoice[]> | undefined)?.[gender] ?? [];
@@ -43,148 +78,191 @@ export function SpeechForm({
   initial?: Partial<SpeechFormValue>;
   busy?: boolean;
 }) {
-  const id = useId();
-  const [language, setLanguage] = useState(initial?.language ?? catalog.languages[0]?.id ?? "");
-  const [gender, setGender] = useState(initial?.gender ?? "female");
-  const [voice, setVoice] = useState<string | undefined>(initial?.voice);
-  const [text, setText] = useState(initial?.text ?? "");
-
+  const form = useForm<Values>({
+    resolver: zodResolver(schema),
+    mode: "onSubmit",
+    defaultValues: {
+      text: initial?.text ?? "",
+      language: initial?.language ?? catalog.languages[0]?.id ?? "",
+      gender: initial?.gender ?? "female",
+      voice: initial?.voice,
+    },
+  });
+  const { language, gender, voice, text } = form.watch();
   const lang = catalog.languages.find((l) => l.id === language);
   const options = voicesOf(lang, gender);
   const chosen = options.find((v) => v.id === voice) ?? options.find((v) => v.default);
-  const trimmed = text.trim();
-  const valid = trimmed.length > 0 && text.length <= MAX_TEXT && options.length > 0;
+  const canSubmit = text.trim().length > 0 && options.length > 0 && !busy;
 
   function pickLanguage(next: string) {
     const l = catalog.languages.find((x) => x.id === next);
-    setLanguage(next);
-    setVoice(undefined);
+    form.setValue("language", next);
+    form.setValue("voice", undefined);
     // keep the gender if the new language has it; otherwise move to the one it has
     if (voicesOf(l, gender).length === 0) {
       const other = GENDERS.find((g) => voicesOf(l, g.id).length > 0);
-      if (other) setGender(other.id);
+      if (other) form.setValue("gender", other.id);
     }
   }
 
-  function submit(e?: FormEvent) {
-    e?.preventDefault();
-    if (!valid || busy) return;
-    onSubmit({ text: trimmed, language, gender, ...(voice ? { voice } : {}) });
-  }
+  const send = form.handleSubmit((values) => {
+    if (options.length === 0 || busy) return;
+    onSubmit({
+      text: values.text,
+      language: values.language,
+      gender: values.gender,
+      ...(values.voice ? { voice: values.voice } : {}),
+    });
+  });
 
   function onKey(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void send();
   }
 
   return (
-    <form className="card panel" onSubmit={submit}>
-      <div className="field">
-        <label htmlFor={`${id}-text`}>What should it say?</label>
-        <textarea
-          id={`${id}-text`}
-          className="textarea"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={onKey}
-          placeholder={EXAMPLES[language] ?? EXAMPLES["en-US"]}
-          rows={5}
-          lang={lang?.id}
-          aria-describedby={`${id}-hint`}
-          aria-invalid={text.length > MAX_TEXT}
+    <Form {...form}>
+      <form
+        onSubmit={send}
+        className="card panel grid gap-6"
+        noValidate
+        aria-busy={busy || undefined}
+      >
+        <FormField
+          control={form.control}
+          name="text"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>What should it say?</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  onKeyDown={onKey}
+                  placeholder={EXAMPLES[language] ?? EXAMPLES["en-US"]}
+                  rows={5}
+                  lang={lang?.id}
+                  className="min-h-32 text-base"
+                />
+              </FormControl>
+              <div className="flex flex-wrap items-center gap-2">
+                <FormDescription className="basis-full sm:grow sm:basis-auto">
+                  Write it in the language you chose. Press Ctrl or ⌘ + Enter to start.
+                </FormDescription>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    form.setValue("text", EXAMPLES[language] ?? EXAMPLES["en-US"] ?? "", {
+                      shouldValidate: true,
+                    })
+                  }
+                >
+                  Use an example
+                </Button>
+                <span
+                  className={`text-sm tabular-nums ${text.length > MAX_TEXT * 0.9 ? "text-destructive" : "text-muted-foreground"}`}
+                >
+                  {text.length}/{MAX_TEXT}
+                </span>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <div className="row">
-          <span className="field__hint grow" id={`${id}-hint`}>
-            Write it in the language you chose. Press Ctrl or ⌘ + Enter to start.
-          </span>
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => setText(EXAMPLES[language] ?? EXAMPLES["en-US"] ?? "")}
-          >
-            Use an example
-          </button>
-          <span className="counter" data-near={text.length > MAX_TEXT * 0.9 || undefined}>
-            {text.length}/{MAX_TEXT}
-          </span>
-        </div>
-      </div>
 
-      <div className="field">
-        <label htmlFor={`${id}-language`}>Language</label>
-        <select
-          id={`${id}-language`}
-          className="input"
-          value={language}
-          onChange={(e) => pickLanguage(e.target.value)}
-        >
-          {catalog.languages.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name === l.english ? l.name : `${l.name} · ${l.english}`}
-            </option>
-          ))}
-        </select>
-      </div>
+        <FormField
+          control={form.control}
+          name="language"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Language</FormLabel>
+              <Select value={field.value} onValueChange={pickLanguage}>
+                <FormControl>
+                  <SelectTrigger className="w-full sm:w-72">
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {catalog.languages.map((l) => (
+                    <SelectItem key={l.id} value={l.id} lang={l.id}>
+                      {l.name === l.english ? l.name : `${l.name} · ${l.english}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
 
-      <fieldset className="field" style={{ border: 0, padding: 0 }}>
-        <legend className="field__label">Voice</legend>
-        <div className="chips">
-          {GENDERS.map((g) => {
-            const count = voicesOf(lang, g.id).length;
-            return (
-              <button
-                type="button"
-                className="chip"
-                key={g.id}
-                aria-pressed={gender === g.id}
-                disabled={count === 0}
-                onClick={() => {
-                  setGender(g.id);
-                  setVoice(undefined);
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Voice</FormLabel>
+              <RadioGroup
+                value={field.value}
+                onValueChange={(v) => {
+                  field.onChange(v);
+                  form.setValue("voice", undefined);
                 }}
+                className="flex flex-wrap gap-2"
+                aria-label="Male or female voice"
               >
-                {g.label}
-              </button>
-            );
-          })}
-        </div>
-        {options.length === 0 ? (
-          <output className="field__hint">
-            There is no {gender} voice for {lang?.english ?? "this language"} yet.
-          </output>
-        ) : null}
-        {options.length > 1 ? (
-          <div className="field">
-            <label htmlFor={`${id}-voice`} className="sr-only">
-              Which voice
-            </label>
-            <select
-              id={`${id}-voice`}
-              className="input"
-              value={chosen?.id}
-              onChange={(e) => setVoice(e.target.value)}
-            >
-              {options.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
-        {chosen?.quality === "limited" ? (
-          <output className="field__hint">
-            Voices for this language are still limited and may sound less natural.
-          </output>
-        ) : null}
-      </fieldset>
+                {GENDERS.map((g) => {
+                  const disabled = voicesOf(lang, g.id).length === 0;
+                  return (
+                    <label
+                      key={g.id}
+                      htmlFor={`gender-${g.id}`}
+                      className="flex cursor-pointer items-center gap-2 rounded-md border bg-card px-4 py-2 text-sm has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent has-[[data-disabled]]:cursor-not-allowed has-[[data-disabled]]:opacity-50"
+                    >
+                      <RadioGroupItem id={`gender-${g.id}`} value={g.id} disabled={disabled} />
+                      {g.label}
+                    </label>
+                  );
+                })}
+              </RadioGroup>
+              {options.length === 0 ? (
+                <FormDescription aria-live="polite">
+                  There is no {gender} voice for {lang?.english ?? "this language"} yet.
+                </FormDescription>
+              ) : null}
+              {options.length > 1 ? (
+                <div className="pt-1">
+                  <Select value={chosen?.id} onValueChange={(v) => form.setValue("voice", v)}>
+                    <SelectTrigger className="w-full sm:w-72" aria-label="Which voice">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
+              {chosen?.quality === "limited" ? (
+                <FormDescription aria-live="polite">
+                  Voices for this language are still limited and may sound less natural.
+                </FormDescription>
+              ) : null}
+            </FormItem>
+          )}
+        />
 
-      <div className="actions">
-        <button type="submit" className="btn btn--primary btn--lg" disabled={!valid || busy}>
-          {busy ? <span className="spinner" aria-hidden="true" /> : null}
-          Create speech
-        </button>
-        <span className="muted">Takes a few seconds.</span>
-      </div>
-    </form>
+        <div className="flex flex-wrap items-center gap-4">
+          <Button type="submit" size="lg" disabled={!canSubmit}>
+            {busy ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+            Create speech
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {language === "bn" ? "Bengali takes a little longer." : "Takes a few seconds."}
+          </span>
+        </div>
+      </form>
+    </Form>
   );
 }
