@@ -93,9 +93,18 @@ services:
     environment:
       HF_TOKEN: ${HF_TOKEN:-}
     restart: unless-stopped
+  # IndicConformer for speech to text in the Indian languages (ADR-0043). Our own adapter; the gated model
+  # is downloaded into the volume on first use with HF_TOKEN (only that variable is passed in).
+  stt-indic:
+    build: { context: ., dockerfile: services/stt-indic/Containerfile }
+    volumes: ["sttmodels:/models"]
+    ports: ["8102:8000"]
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    restart: unless-stopped
   web:
     build: { context: ., dockerfile: apps/web/Containerfile }
     env_file: .env
     depends_on: [api]
     ports: ["3000:3000"]
-volumes: { pgdata: {}, seaweeddata: {}, speechmodels: {}, indicmodels: {} }
+volumes: { pgdata: {}, seaweeddata: {}, speechmodels: {}, indicmodels: {}, sttmodels: {} }

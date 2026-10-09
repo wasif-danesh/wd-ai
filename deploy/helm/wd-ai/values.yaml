@@ -143,6 +143,16 @@ speechIndic:
     requests: { cpu: "2", memory: 5Gi }
     limits: { memory: 8Gi }
 
+# IndicConformer for speech to text in the Indian languages (ADR-0043); same Hugging Face token Secret as speechIndic.
+sttIndic:
+  enabled: false
+  hfTokenSecret: { name: hf-token, key: token }
+  storage: 10Gi
+  storageClass: ""
+  resources:
+    requests: { cpu: "2", memory: 4Gi }
+    limits: { memory: 6Gi }
+
 redis:
   enabled: true
   image: redis:7

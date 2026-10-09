@@ -86,7 +86,7 @@ jobs:
         with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
       - run: |
           sudo apt-get update && sudo apt-get install -y buildah
-          for s in services/api services/media-worker apps/web; do
+          for s in services/api services/media-worker services/speech-indic services/stt-indic apps/web; do
             n=$(basename $s)
             buildah build --platform linux/arm64,linux/amd64 --manifest ghcr.io/${{ github.repository }}/$n:${{ github.sha }} -f $s/Containerfile .
             buildah manifest push --all ghcr.io/${{ github.repository }}/$n:${{ github.sha }} docker://ghcr.io/${{ github.repository }}/$n:${{ github.sha }}
