@@ -103,13 +103,13 @@ describe("LipSyncForm", () => {
     await user.click(screen.getByRole("button", { name: "Female" }));
   });
 
-  it("uses an uploaded voice instead of a script, and says it can be 15 seconds at most", async () => {
+  it("uses an uploaded voice instead of a script, and says how long it can be", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup({ applyAccept: false });
     render(<LipSyncForm catalog={catalog} onSubmit={onSubmit} />);
     await pickPicture(user);
     await user.click(screen.getByRole("tab", { name: /upload audio/i }));
-    expect(screen.getByText(/up to 15 seconds/i)).toBeInTheDocument();
+    expect(screen.getByText(/up to 5 minutes/i)).toBeInTheDocument();
     const go = screen.getByRole("button", { name: /make my lip sync/i });
     expect(go).toBeDisabled();
     fetchMock.mockResolvedValueOnce(

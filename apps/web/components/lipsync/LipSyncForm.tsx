@@ -29,11 +29,11 @@ import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { Bar } from "../create/Progress";
 
 export const PRODUCT = "wd-lipsync-ai";
-export const MAX_SCRIPT = 300;
+export const MAX_SCRIPT = 1000;
 export const MAX_STYLE = 120;
-/** A lip sync is at most 15 seconds in this version: the model is slow and the limit is for cost. */
-export const MAX_SECONDS = 15;
-const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+/** A lip sync is at most 5 minutes (a song). It takes about six times as long as the clip. */
+export const MAX_SECONDS = 300;
+const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
 const GENDERS = [
   { id: "female", label: "Female" },
   { id: "male", label: "Male" },
@@ -155,8 +155,8 @@ export function LipSyncForm({
           onCancel={pic.cancel}
         />
         <span className={hint}>
-          Use an illustration, a cartoon, a 3D character or an animal with a clear face. Photographs
-          of real people may be refused.
+          Use a clear, front-facing face, looking at the camera. Only the mouth moves. Photographs
+          of real people may be refused when the safeguards are on.
         </span>
       </div>
 
@@ -186,7 +186,7 @@ export function LipSyncForm({
                 }}
               />
               <span className={hint}>
-                {script.length}/{MAX_SCRIPT} · about {MAX_SECONDS} seconds of speech at most.
+                {script.length}/{MAX_SCRIPT} · a long script makes a long clip.
               </span>
             </div>
             <div className="flex flex-wrap items-end gap-4">
@@ -277,7 +277,9 @@ export function LipSyncForm({
                 disabled={uploading}
               >
                 <span className="font-semibold">Choose a voice or a song</span>
-                <span className={hint}>An audio or video file of up to {MAX_SECONDS} seconds</span>
+                <span className={hint}>
+                  An audio or video file of up to {MAX_SECONDS / 60} minutes
+                </span>
               </button>
             )}
           </TabsContent>
@@ -285,7 +287,7 @@ export function LipSyncForm({
           <TabsContent value="record" className="pt-3">
             <Recorder recorder={recorder} onDiscard={discardRecording} uploading={uploading} />
             <span className={cn(hint, "mt-2 block")}>
-              Up to {MAX_SECONDS} seconds: a longer recording is refused.
+              Up to {MAX_SECONDS / 60} minutes: a longer recording is refused.
             </span>
           </TabsContent>
         </Tabs>
