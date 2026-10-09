@@ -1,6 +1,6 @@
 # ADR-0043: Speech to Text
 
-- **Status:** Proposed
+- **Status:** Accepted for the Whisper and IndicConformer slices (chunked search and an MLX server are still Proposed)
 - **Date:** 2026-10-09
 
 ## Context
@@ -57,7 +57,7 @@ decides the language by itself or takes a language hint.
 - **Graph.** `check_request` (the upload is the caller's, language choice valid, quota), `start_job` (creates the
   row), `await_job` (progress is audio seconds done), `finalise` (stores the transcript, deletes the audio, writes
   a usage event `transcript.created` with the minutes).
-- **Language.** "Detect the language" is the default; the user can choose one from the list of Whisper's
+- **Language.** "Detect the language" is the default (see the results: detection uses large-v3 on the first 30 seconds); the user can choose one from the list of Whisper's
   languages to fix a wrong guess. The detected language is stored and shown.
 - **The result.** Text with timestamps per segment, the language and the length. Views and downloads: plain
   text, **SRT**, **VTT** and JSON. Copy to clipboard. Table `transcripts` (migration 0014: id, tenant, product,
@@ -90,6 +90,136 @@ decides the language by itself or takes a language hint.
 3. **Upload hardening:** the decoder is tried on malformed, truncated, huge-duration and mislabelled files
    (a text file named `.mp3`, a video with no audio, a zip bomb of silence) and must refuse or finish within the
    limits.
+
+## Results of the Whisper evaluation (2026-10-09, development Mac)
+
+Method: 100 real recordings, 10 for each of 10 languages (the first ten clips of each FLEURS test split, read
+speech with a reference text; FLEURS is CC-BY-4.0, Conneau et al. 2022), transcribed by each model with the
+language detected and with the language given. Script: `services/api/evals/transcribe/`, raw outputs in its
+`results/` folder. Error is the word error rate (character error rate for Chinese and Japanese) over all the
+clips of a language. This is read speech with a clean reference, so it is the **best case**: phone audio, noise
+and two speakers will be worse, and a test on real recordings of that kind is still to do.
+
+| Language | turbo, language given | large-v3, language given (5 clips) | turbo, same 5 clips | language detected: turbo | language detected: large-v3 |
+|---|---|---|---|---|---|
+| Bengali | **0.80** | **0.67** | 0.76 | 2 of 10 right (the rest read as Hindi) | 5 of 5 |
+| Hindi | 0.29 | 0.29 | 0.33 | 7 of 10 | 4 of 5 |
+| English | 0.06 | 0.05 | 0.05 | 10 of 10 | 5 of 5 |
+| Spanish | 0.02 | 0.02 | 0.02 | 10 of 10 | 5 of 5 |
+| French | 0.10 | 0.11 | 0.11 | 10 of 10 | 5 of 5 |
+| German | 0.03 | 0.04 | 0.04 | 10 of 10 | 5 of 5 |
+| Arabic | 0.19 | 0.15 | 0.15 | 10 of 10 | 5 of 5 |
+| Russian | 0.03 | 0.00 | 0.00 | 10 of 10 | 5 of 5 |
+| Japanese | 0.07 | 0.06 | 0.08 | 10 of 10 | 5 of 5 |
+| Chinese | 0.08 | 0.04 | 0.05 | 10 of 10 | 5 of 5 |
+
+**Speed** (seconds of compute per second of audio, 20 minutes of audio; lower is faster):
+
+| Runtime | Real-time factor | A 30-minute upload takes |
+|---|---|---|
+| faster-whisper turbo, CPU in a container (Speaches) | 0.4 to 0.7 | 12 to 21 minutes |
+| faster-whisper large-v3, CPU in a container | 0.7 to 1.2 (Bengali 1.3 to 2.9) | 20 to 36 minutes |
+| **mlx-whisper turbo, Apple GPU** | **0.02 to 0.05 (about 30 times faster than real time)** | about 1 minute |
+
+What this decides:
+
+- **Turbo is the default model.** It matches large-v3 within noise for eight of the ten languages and is about twice
+  as fast, so large-v3 is not offered as a second quality tier. Whisper is fine for English, Spanish, German,
+  Russian, Chinese, Japanese and French (French is the weakest of those at about 10 percent), and usable for Arabic
+  (about 15 to 19 percent).
+- **Bengali and Hindi are weak with every Whisper model**: Bengali words come out close in sound but misspelt (word
+  error 0.67 to 0.80, even with the language given), Hindi 0.29. Whisper is not a good enough engine for Bengali,
+  which the project needs, so a dedicated Indic engine was evaluated (next section).
+- **"Detect the language" is not safe for Bengali with turbo**: it called eight of ten Bengali clips Hindi, and a
+  transcript in the wrong language is wrong throughout. large-v3 detected all of them. So detection is done by large-v3
+  on the first 30 seconds of the audio (about 35 seconds on a CPU), the full transcription is then made by turbo
+  with that language given, and the detected language is shown with "Wrong language? Choose it". A user who picks a
+  language skips detection.
+- **On a Mac the CPU container is too slow for long files; Apple's GPU is about 15 times faster.** The product talks
+  to an OpenAI-compatible server by address (see the decision above), so a native Apple-silicon server (MLX) can be set as
+  that address on a Mac exactly as Ollama and ComfyUI are, and a CUDA Speaches serves a GPU host. Until an MLX server is
+  set up, the CPU container with turbo is the default and the 30-minute limit means a wait of up to about 20 minutes,
+  which the page says. An MLX server (for example `mlx-audio`, to be licence-checked) is a small follow-up.
+- **Indian languages use IndicConformer** (next section), and Whisper handles the rest.
+- **Still to do from the plan:** upload hardening tests (point 3), and a test on real recordings with noise.
+
+### IndicConformer for Bengali and the other Indian languages
+
+IndicConformer-600M-Multilingual (AI4Bharat, **MIT licence**, 22 Indian languages: Assamese, Bengali, Bodo, Dogri,
+Gujarati, Hindi, Kannada, Konkani, Kashmiri, Maithili, Malayalam, Manipuri, Marathi, Nepali, Odia, Punjabi, Sanskrit,
+Santali, Sindhi, Tamil, Telugu, Urdu) was run on the same 20 Bengali and Hindi FLEURS clips, on the CPU, with the
+language given. The model is gated (accept the terms on its Hugging Face page, a token is needed to download it, as
+for Indic Parler-TTS). Its repository's Python file only loads the ONNX parts and a TorchScript audio preprocessor; it
+was read before running.
+
+| Language | Whisper turbo | Whisper large-v3 | **IndicConformer, CTC** | **IndicConformer, RNN-T** |
+|---|---|---|---|---|
+| Bengali | 0.80 | 0.67 | **0.15** | **0.13** |
+| Hindi | 0.29 | 0.29 | **0.09** | **0.07** |
+| Speed on the CPU (real-time factor) | 0.4 to 0.7 | 0.7 to 2.9 | **0.02** | 0.03 |
+
+Word error against the FLEURS reference, over 10 clips per language. Bengali improves from about 0.7 to about 0.14
+and Hindi from 0.29 to 0.07 to 0.09, and the model runs about 20 times faster than Whisper on the same CPU (a
+30-minute file in about a minute). Two caveats: it needs the language to be given (it does not detect it), and it
+was trained on short utterances, so a long file must be cut into pieces of about 30 seconds or less (the same
+splitting the text-to-speech worker does for text). The other 20 languages were not scored (there are no clips of
+them in this set).
+
+What this decides:
+
+- **A second engine, `stt-indic`**: a small server of our own in `services/stt-indic/`, like `speech-indic`, that
+  loads IndicConformer once and answers `/v1/audio/transcriptions` the way the media worker expects. Speaches does
+  not serve it. The product picks the engine by the language: the 22 Indian languages go to IndicConformer, every
+  other language to Whisper turbo.
+- **Language choice and detection**: because IndicConformer needs the language, detection (large-v3 on the first 30
+  seconds, see above) runs first when the user did not choose a language; its answer routes the file. A confident
+  Indic answer goes to IndicConformer. A long file is split on silence into pieces of up to about 30 seconds.
+- **Bengali and Hindi are no longer "limited"** for speech to text once this is built; the other Indic languages are
+  listed as "not yet scored" until clips for them are measured.
+- **Not chosen: Indic-Transcribe** (`bodhan-ai/indic-transcribe-core`, 25 languages, built on NVIDIA Canary). Its
+  licence is a custom one that has not been read, so it stays out until it is checked.
+
+## What the first slice built (2026-10-09)
+
+- **Media upload endpoint** `POST /products/{id}/uploads/media`: raw body, 100 MB cap while it streams, the type
+  from the first bytes, ffmpeg in a child process (120 s and 2 GB limits where the system allows, only the `file`
+  protocol, the demuxer named, no tags, one audio stream) writing a 16 kHz mono WAV, 30 minute limit, 60 uploads an
+  hour, migration 0013 (`uploads.kind`, `uploads.seconds`). Hostile files are tested: a text file called `.mp3`,
+  a WAV header with junk, a picture, an empty body, an over-long recording, an over-size body.
+- **The product** `wd-stt-ai`: graph, `transcripts` table (migration 0014), routes (languages, list, one, download
+  in text, SRT, WebVTT and JSON, delete), the daily 120 minutes from usage events, one recording at a time.
+- **Worker**: `OpenAITranscriptionRunner` with detection by large-v3 on the first 30 seconds, then transcription by turbo.
+- **Web**: `/speech-to-text` with upload, drag and drop, paste and the microphone recorder (level meter, pause,
+  stop, play back, record again), language choice with the quality noted, the transcript page, My creations cards
+  and table, search, and the top bar's "Transcribing…" badge and notice (the badge hook is now shared with video).
+- **Measured end to end** on the development Mac: a 10.6 second English clip in 18 seconds including loading, a
+  16 second Bengali clip detected as Bengali (the text is poor: Whisper) in 46 seconds.
+
+Not built yet: chunked search (the first 6000 characters of a transcript are indexed), a native MLX server and the
+multi-minute noisy-recording test.
+
+## What the second slice built: the Indian-languages engine (2026-10-09)
+
+- **`services/stt-indic`**: a small server of our own on IndicConformer-600M (MIT), answering `POST
+  /v1/audio/transcriptions` for short 16 kHz mono pieces (up to 40 seconds) with the language given. It uses only the
+  CTC decoder and does **not** run the model repository's Python code: the few lines that load the ONNX parts and decode
+  are in the server, so only model files come from the Hub, at one pinned revision (`2a77d30`, changed on purpose).
+  The model is gated: `HF_TOKEN` is passed to that one container, and the files (about 2.5 GB, 6 minutes the first
+  time) go to a volume. On the CPU it takes 0.7 seconds for 14 seconds of audio and holds about 2.7 GB.
+- **Routing** (in the media worker): the language is chosen, or found by large-v3 on the first 30 seconds; if it is one
+  of the 22 the product lists (`indic_languages`) and the server is configured (`indic-stt=` in `SPEECH_SERVERS`),
+  the work goes there; everything else, and any Indian language when that server is not running, stays on Whisper.
+- **Long recordings**: the worker cuts the recording at its quietest moments into pieces of 4 to 15 seconds (tested:
+  the cuts fall inside the pauses, nothing is lost between pieces), sends each piece, and every piece becomes one
+  timed segment, so the subtitles are line-sized.
+- **Catalog**: the 12 Indian languages that Whisper does not know (Assamese, Nepali, Odia, Sanskrit, Sindhi, Kashmiri,
+  Maithili, Dogri, Bodo, Konkani, Manipuri, Santali) are offered (51 in all). They cannot be detected by Whisper, so the
+  user chooses them; they are listed as "unrated" until measured. Bengali is now "fair" (0.13 to 0.15 word error) and
+  Hindi "good" (0.07 to 0.09).
+- **Measured end to end through the real API** on the development Mac: a 16 second Bengali clip, language detected
+  as Bengali, transcribed almost word for word in 43 seconds (30 of them are the large-v3 language check); a 14 second Hindi clip in 14 seconds. Choosing
+  the language skips the check.
+- Helm: `sttIndic.enabled` adds the deployment and the `indic-stt` address; CI builds and pushes both Indic images.
 
 ## Consequences
 

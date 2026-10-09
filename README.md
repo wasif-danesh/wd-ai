@@ -7,10 +7,10 @@ streaming, a stateful agent runtime, a model gateway, GPU media workers, storage
 auth, and (later) billing and observability. Each **product** is a thin layer on top: a few
 LangGraph graphs, a Next.js UI and a config file.
 
-> **Status: prototype.** The platform and four products work end to end on a laptop: **music**
+> **Status: prototype.** The platform and five products work end to end on a laptop: **music**
 > (lyrics you approve, a 60-second track and a cover), **images** (text to image, image to image),
 > **video** (text to video, image to video, made in the background) and **text to speech** (eight
-> languages including Bengali, a male and a female voice each). Everything made lands in one
+> languages including Bengali, a male and a female voice each) and **speech to text** (upload or record, 51 languages). Everything made lands in one
 > library, **My creations**, which you can search by meaning in any language. Models run through
 > Ollama, ComfyUI and open speech servers. It runs in containers and installs on a local
 > Kubernetes cluster from a Helm chart. Still to come: Speech to Text and Lip Sync (designed, not
@@ -76,6 +76,7 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | Song downloads: the MP3 with its cover and lyrics inside, the cover, and a video of the cover with the song playing ([ADR-0034](docs/decisions/0034-song-downloads.md)) | Working |
 | Studio home ("WD AI Studio") with a card per product; inside a product a **side panel** (products, library, admin, breadcrumb, ⌘K search); `wd-music-ai` under `/music`, `wd-image-ai` under `/image`, `wd-video-ai` under `/video`, `wd-tts-ai` under `/text-to-speech` | Working ([ADR-0033](docs/decisions/0033-studio-home-and-product-urls.md), [ADR-0046](docs/decisions/0046-product-side-panel.md)) |
 | **My creations** (`/creations`): songs, images, clips and speech together, as cards or a sortable table, with multilingual semantic search | Working ([ADR-0040](docs/decisions/0040-one-library.md), [ADR-0041](docs/decisions/0041-semantic-search.md)) |
+| **Speech to text**: upload or record, 39 languages (Whisper turbo, language found by large-v3), transcripts with timestamps, as text, SRT, VTT or JSON | Working; Bengali and Hindi are weak with Whisper, the Indian-languages engine is next ([ADR-0043](docs/decisions/0043-speech-to-text.md)) |
 | **Text to speech**: eight languages, a male and a female voice each (Kokoro; Bengali with Indic Parler-TTS), MP3 download | Working; Bengali was reviewed by a native listener and is slow on a CPU; Japanese and Chinese are not offered yet ([ADR-0042](docs/decisions/0042-text-to-speech.md)) |
 | Web UI built from shadcn/ui, Tailwind CSS and TanStack Table, in light and dark | Working ([ADR-0045](docs/decisions/0045-ui-components.md)) |
 | Sign-in (Auth.js with Google, GitHub, Microsoft; signed API tokens; users table) | Working; verified with a real GitHub login. Google and Microsoft are wired but not tried ([ADR-0030](docs/decisions/0030-authentication.md)) |
@@ -91,7 +92,8 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
 | [`wd-image-ai`](products/wd-image-ai/README.md) | Working | Text to image and image to image on FLUX.2 klein 4B, with secure uploads |
 | [`wd-video-ai`](products/wd-video-ai/README.md) | Working | Text to video and image to video (2 or 5 seconds) on LTX-Video 2B, made in the background |
 | [`wd-tts-ai`](products/wd-tts-ai/README.md) | Working | Text to speech in eight languages with a male and a female voice (Kokoro; Bengali with Indic Parler-TTS) |
-| Speech to Text, Lip Sync | Designed ([ADR-0043](docs/decisions/0043-speech-to-text.md), [ADR-0044](docs/decisions/0044-lip-sync.md)) | Shown as "Coming soon" on the home page |
+| [`wd-stt-ai`](products/wd-stt-ai/README.md) | Working (first slice) | Speech to text: upload or record, 51 languages (Whisper, and IndicConformer for the Indian languages), transcripts with timestamps as text, SRT, VTT or JSON |
+| Lip Sync | Designed ([ADR-0044](docs/decisions/0044-lip-sync.md)) | Shown as "Coming soon" on the home page |
 
 A product is a folder under `products/` with its `product.yaml`, graphs, prompts and ComfyUI
 workflows. Adding a product adds no API endpoints: the graph registry exposes registered
@@ -235,7 +237,7 @@ missing and points back to `make setup`.
 | API (FastAPI) | http://localhost:8000 (`/health`, `/docs`) |
 | LiteLLM | http://localhost:4000 |
 | Object storage (S3 API) | http://localhost:8333 |
-| Speech servers: Kokoro and Whisper (Speaches) / Indic Parler-TTS | http://localhost:8100 / http://localhost:8101 |
+| Speech servers: Kokoro and Whisper (Speaches) / Indic Parler-TTS / IndicConformer | http://localhost:8100 / :8101 / :8102 |
 | Postgres / Redis | `localhost:5432` / `localhost:6379` |
 
 `make logs` follows container logs, and `make down` stops everything.
@@ -289,6 +291,7 @@ Without a valid token every route except `/health` answers `401`. Responses for 
 | `POST /products/{id}/prompt/enhance` | Rewrite the user's prompt for the product's model ([ADR-0038](docs/decisions/0038-prompt-enhancement.md)) |
 | `DELETE /products/{id}/uploads/images/{upload_id}` | Take back an uploaded picture ([ADR-0039](docs/decisions/0039-picture-input.md)) |
 | `GET /products/wd-tts-ai/voices`, `GET /products/wd-tts-ai/speeches`, `GET/DELETE /products/wd-tts-ai/speeches/{id}`, `.../download` | The voice catalog (languages, male and female voices), and the signed-in user's speech with an MP3 download ([ADR-0042](docs/decisions/0042-text-to-speech.md)) |
+| `POST /products/wd-stt-ai/uploads/media` (raw body), `GET /products/wd-stt-ai/languages`, `GET /products/wd-stt-ai/transcripts`, `GET/DELETE .../transcripts/{id}`, `.../download?format=txt\|srt\|vtt\|json` | A recording or video becomes a clean WAV; the languages; the signed-in user's transcripts ([ADR-0043](docs/decisions/0043-speech-to-text.md)) |
 | `GET /products/wd-video-ai/videos`, `GET/DELETE /products/wd-video-ai/videos/{id}`, `.../download` | The signed-in user's clips, including ones still being made ([ADR-0037](docs/decisions/0037-video-product.md)) |
 | `GET /products/wd-image-ai/images`, `GET/DELETE /products/wd-image-ai/images/{id}`, `.../download` | The signed-in user's images ([ADR-0036](docs/decisions/0036-image-product.md)) |
 | `GET /products/wd-music-ai/songs`, `GET /products/wd-music-ai/songs/{id}` | The signed-in user's songs, with presigned audio and cover links (product-provided routes, [ADR-0023](docs/decisions/0023-product-provided-routes.md)) |
@@ -331,7 +334,8 @@ wd-ai/
 ├─ services/
 │  ├─ api/                   # FastAPI + LangGraph runtime (graphs, runs, identity, migrations)
 │  ├─ media-worker/          # Redis consumer that drives ComfyUI and the speech servers (stub or real mode)
-│  └─ speech-indic/          # small speech server for Indic Parler-TTS (Bengali)
+│  ├─ speech-indic/          # small speech server for Indic Parler-TTS (Bengali)
+│  └─ stt-indic/             # small transcription server for IndicConformer (Indian languages)
 ├─ packages/
 │  ├─ contracts/             # Pydantic models: SSE events and request bodies (source of truth)
 │  ├─ contracts-ts/          # TypeScript types generated from the OpenAPI schema
@@ -448,6 +452,7 @@ The same container images run in all three. Only infrastructure and configuratio
 | [`wd-image-ai`](products/wd-image-ai/README.md) | Text to image and image to image |
 | [`wd-video-ai`](products/wd-video-ai/README.md) | Text to video and image to video |
 | [`wd-tts-ai`](products/wd-tts-ai/README.md) | Text to speech |
+| [`wd-stt-ai`](products/wd-stt-ai/README.md) | Speech to text |
 | [`apps/web`](apps/web/README.md) | The web app: components, side panel, styling, sign-in |
 
 ## Principles
@@ -468,10 +473,10 @@ The same container images run in all three. Only infrastructure and configuratio
 | 3 | Platform core: capability layer, storage, usage events, RAG | Done |
 | 4 | Media pipeline: Redis queue, worker, ComfyUI, GPU sharing | Done except GPU on k3s (needs the lab) |
 | 5 | `wd-music-ai` MVP: song graph, auth, quota, UI, real models | Done |
-| 5b | Image, video and text-to-speech products, one searchable library, shadcn/ui front end | Done; Speech to Text and Lip Sync designed, not built |
+| 5b | Image, video, text-to-speech and speech-to-text products, one searchable library, shadcn/ui front end | Done; Lip Sync designed, not built |
 | 6 | Production on GCP | Planned |
 
-Planned next: Speech to Text ([ADR-0043](docs/decisions/0043-speech-to-text.md)) and Lip Sync
+Planned next: long transcripts in search and a native Mac speed-up for Speech to Text ([ADR-0043](docs/decisions/0043-speech-to-text.md)), and Lip Sync
 ([ADR-0044](docs/decisions/0044-lip-sync.md)), the other Indic languages for text to speech, and the proposed ADRs: SEO, first-party analytics and
 Google Analytics ([0026](docs/decisions/0026-seo.md), [0027](docs/decisions/0027-first-party-analytics.md),
 [0028](docs/decisions/0028-google-analytics-and-consent.md)), and billing with Stripe

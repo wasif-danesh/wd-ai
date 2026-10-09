@@ -181,6 +181,10 @@ an engine name to its address (`kokoro=http://speech:8000`). `compose.yaml` runs
 (Speaches, CPU image) with `WHISPER__COMPUTE_TYPE=int8`, which keeps Whisper inside a 6 GB machine. In Helm,
 `speech.enabled=true` adds the same service and sets the variable. The voice model is downloaded once into
 the `speechmodels` volume: `curl -X POST localhost:8100/v1/models/speaches-ai%2FKokoro-82M-v1.0-ONNX`.
+Speech to text uses the same server under the engine name `whisper` (`whisper=http://speech:8000`): Whisper
+large-v3-turbo transcribes and large-v3 finds the language, both downloaded into the volume on first use. The 22 Indian
+languages go to `stt-indic` instead (`indic-stt=http://stt-indic:8000`: IndicConformer, our adapter; needs `HF_TOKEN`
+for its gated model, about 2.7 GB of memory; in Helm `sttIndic.enabled=true`).
 Bengali uses a second server, `speech-indic` (our adapter for Indic Parler-TTS, `indic-parler=http://speech-indic:8000`).
 Its model is gated: accept the terms on Hugging Face and put a read token in `.env` as `HF_TOKEN`. It needs about
 4.5 GB of memory, more than the default 6 GB Podman VM can give next to the other services. In Helm,

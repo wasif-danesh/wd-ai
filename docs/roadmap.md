@@ -105,6 +105,9 @@ See [product spec](../products/wd-music-ai/README.md).
 - [x] Text to Speech (ADR-0042): Kokoro in 7 languages and Bengali by Indic Parler-TTS, in My creations and search.
       Known gaps: the other Indic languages, Japanese and Chinese (Speaches cannot make them), no male French voice, Spanish and
       Portuguese voices are graded low, no `/admin/media` entry for the speech server
+- [x] Speech to Text, first slice (ADR-0043): upload or record, Whisper with language detection, transcripts in My
+      creations and search; IndicConformer (`stt-indic`) for the 22 Indian languages. Next: chunked search for long
+      transcripts, a native MLX server, a test on noisy recordings
 - [ ] Speech products, in this order, each designed by an ADR and each shown as a Coming-soon card on the home
       page: Text to Speech (ADR-0042, introduces the speech runtime), Speech to Text (ADR-0043, adds audio and
       video upload and recording, and chunked search), Lip Sync (ADR-0044, needs both; its safety policy needs
