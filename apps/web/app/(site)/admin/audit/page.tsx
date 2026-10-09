@@ -1,5 +1,5 @@
 import { Notice } from "@/components/Notice";
-import { Table } from "@/components/admin/Table";
+import { AuditTable } from "@/components/admin/tables";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { apiGet } from "@/lib/api";
 import { fullDate } from "@/lib/format";
@@ -24,23 +24,15 @@ export default async function Audit() {
     );
   }
   return (
-    <Table
-      caption="Admin actions, newest first"
-      head={["When", "Who", "Action", "Detail"]}
-      empty={page.entries.length ? undefined : "Nothing recorded yet."}
-    >
-      {page.entries.map((e) => (
-        <TableRow key={e.id}>
-          <TableHead scope="row" className="font-semibold text-foreground">
-            {e.created_at ? fullDate(e.created_at) : "—"}
-          </TableHead>
-          <TableCell>{e.actor_user_id}</TableCell>
-          <TableCell>{e.action}</TableCell>
-          <TableCell>
-            <code>{JSON.stringify(e.detail ?? {})}</code>
-          </TableCell>
-        </TableRow>
-      ))}
-    </Table>
+    <AuditTable
+      rows={page.entries.map((e) => ({
+        id: e.id,
+        when: e.created_at ? fullDate(e.created_at) : "—",
+        whenAt: e.created_at ?? "",
+        who: e.actor_user_id,
+        action: e.action,
+        detail: JSON.stringify(e.detail ?? {}),
+      }))}
+    />
   );
 }

@@ -1,5 +1,5 @@
 import { Notice } from "@/components/Notice";
-import { Table } from "@/components/admin/Table";
+import { MediaTable } from "@/components/admin/tables";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
@@ -38,33 +38,17 @@ export default async function Media() {
           need no key still work.
         </Notice>
       )}
-      <Table
-        caption="Media capabilities"
-        head={["Product", "Capability", "Runs on", "Source", "Changed", ""]}
-      >
-        {list.items.map((m) => (
-          <TableRow key={`${m.product_id}/${m.capability}`}>
-            <TableHead scope="row" className="font-semibold text-foreground">
-              {m.product_id}
-            </TableHead>
-            <TableCell>
-              {m.capability}
-              {m.workflow ? <small className={muted}> {m.workflow}</small> : null}
-            </TableCell>
-            <TableCell>
-              {label.get(m.backend) ?? m.backend}
-              {m.key_set ? <small className={muted}> key saved</small> : null}
-            </TableCell>
-            <TableCell>{m.source}</TableCell>
-            <TableCell>
-              {m.updated_at && m.source === "custom" ? fullDate(m.updated_at) : "—"}
-            </TableCell>
-            <TableCell>
-              <TextLink href={`/admin/media/${m.product_id}/${m.capability}`}>Edit</TextLink>
-            </TableCell>
-          </TableRow>
-        ))}
-      </Table>
+      <MediaTable
+        rows={list.items.map((m) => ({
+          product: m.product_id,
+          capability: m.capability,
+          workflow: m.workflow ?? "",
+          runsOn: label.get(m.backend) ?? m.backend,
+          keySaved: m.key_set,
+          source: m.source,
+          changed: m.updated_at && m.source === "custom" ? fullDate(m.updated_at) : "—",
+        }))}
+      />
     </>
   );
 }

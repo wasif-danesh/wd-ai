@@ -1,5 +1,5 @@
 import { Notice } from "@/components/Notice";
-import { Table } from "@/components/admin/Table";
+import { SongsTable } from "@/components/admin/tables";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
@@ -33,29 +33,23 @@ export default async function Songs({
   }
   return (
     <>
-      <Table
-        caption="Songs from all users, newest first"
-        head={["Title", "Product", "User", "Made"]}
-        empty={page.songs.length ? undefined : "No songs yet."}
-      >
-        {page.songs.map((s) => (
-          <TableRow key={s.id}>
-            <TableHead scope="row" className="font-semibold text-foreground">
-              {s.title}
-            </TableHead>
-            <TableCell>{s.product_id}</TableCell>
-            <TableCell>{s.user_email ?? s.user_id}</TableCell>
-            <TableCell>{fullDate(s.created_at)}</TableCell>
-          </TableRow>
-        ))}
-      </Table>
-      {page.next_before ? (
-        <p className={pager}>
-          <TextLink href={`/admin/songs?before=${encodeURIComponent(page.next_before)}`}>
-            Older
-          </TextLink>
-        </p>
-      ) : null}
+      <SongsTable
+        rows={page.songs.map((s) => ({
+          id: s.id,
+          title: s.title,
+          product: s.product_id,
+          user: s.user_email ?? s.user_id,
+          made: fullDate(s.created_at),
+          madeAt: s.created_at,
+        }))}
+        footer={
+          page.next_before ? (
+            <TextLink href={`/admin/songs?before=${encodeURIComponent(page.next_before)}`}>
+              Older
+            </TextLink>
+          ) : null
+        }
+      />
     </>
   );
 }

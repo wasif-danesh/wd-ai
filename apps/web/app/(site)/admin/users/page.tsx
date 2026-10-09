@@ -1,5 +1,5 @@
 import { Notice } from "@/components/Notice";
-import { Table } from "@/components/admin/Table";
+import { UsersTable } from "@/components/admin/tables";
 import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
@@ -33,33 +33,25 @@ export default async function Users({
   }
   return (
     <>
-      <Table
-        caption="Users, newest first"
-        head={["Name", "Email", "Role", "Sign-in", "Joined"]}
-        empty={page.users.length ? undefined : "No users yet."}
-      >
-        {page.users.map((u) => (
-          <TableRow key={u.id}>
-            <TableHead scope="row" className="font-semibold text-foreground">
-              {u.name ?? "—"}
-            </TableHead>
-            <TableCell>
-              {u.email ?? "—"}
-              {u.email && !u.email_verified ? <small className={muted}> unverified</small> : null}
-            </TableCell>
-            <TableCell>{u.role}</TableCell>
-            <TableCell>{u.providers.join(", ")}</TableCell>
-            <TableCell>{fullDate(u.created_at)}</TableCell>
-          </TableRow>
-        ))}
-      </Table>
-      {page.next_before ? (
-        <p className={pager}>
-          <TextLink href={`/admin/users?before=${encodeURIComponent(page.next_before)}`}>
-            Older
-          </TextLink>
-        </p>
-      ) : null}
+      <UsersTable
+        rows={page.users.map((u) => ({
+          id: u.id,
+          name: u.name ?? "—",
+          email: u.email ?? "—",
+          unverified: Boolean(u.email && !u.email_verified),
+          role: u.role,
+          providers: u.providers.join(", "),
+          joined: fullDate(u.created_at),
+          joinedAt: u.created_at,
+        }))}
+        footer={
+          page.next_before ? (
+            <TextLink href={`/admin/users?before=${encodeURIComponent(page.next_before)}`}>
+              Older
+            </TextLink>
+          ) : null
+        }
+      />
     </>
   );
 }

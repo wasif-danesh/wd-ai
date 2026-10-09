@@ -1,6 +1,5 @@
 import { Notice } from "@/components/Notice";
-import { Table } from "@/components/admin/Table";
-import { TableCell, TableHead, TableRow } from "@/components/ui/table";
+import { DailyEventsTable, UsageTotalsTable } from "@/components/admin/tables";
 import { TextLink } from "@/components/ui/text-link";
 import { apiGet } from "@/lib/api";
 import { pager } from "@/lib/styles";
@@ -44,37 +43,11 @@ export default async function Overview({
           </TextLink>
         ))}
       </p>
-      <Table
+      <UsageTotalsTable
         caption={`Usage, last ${days} day${days === 1 ? "" : "s"}`}
-        head={["Kind", "Events", "Quantity", "Unit"]}
-        empty={report.totals.length ? undefined : "No usage in this period."}
-      >
-        {report.totals.map((t) => (
-          <TableRow key={`${t.kind}-${t.unit}`}>
-            <TableHead scope="row" className="font-semibold text-foreground">
-              {t.kind}
-            </TableHead>
-            <TableCell>{t.events.toLocaleString("en")}</TableCell>
-            <TableCell>{t.quantity.toLocaleString("en", { maximumFractionDigits: 2 })}</TableCell>
-            <TableCell>{t.unit}</TableCell>
-          </TableRow>
-        ))}
-      </Table>
-      <Table
-        caption="Events per day"
-        head={["Day", "Kind", "Events"]}
-        empty={report.daily.length ? undefined : "Nothing yet."}
-      >
-        {report.daily.map((d) => (
-          <TableRow key={`${d.day}-${d.kind}`}>
-            <TableHead scope="row" className="font-semibold text-foreground">
-              {d.day}
-            </TableHead>
-            <TableCell>{d.kind}</TableCell>
-            <TableCell>{d.events.toLocaleString("en")}</TableCell>
-          </TableRow>
-        ))}
-      </Table>
+        rows={report.totals}
+      />
+      <DailyEventsTable rows={report.daily} />
     </>
   );
 }

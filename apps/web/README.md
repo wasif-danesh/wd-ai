@@ -138,6 +138,8 @@ Adding a component: `pnpm dlx shadcn@latest add <name>`, then (1) the CLI writes
 `cn` package, so change it to `@/lib/utils` and `pnpm remove cn`; (2) it appends light/dark colour variables to
 `app/tailwind.css`, so delete those and keep our mapping; (3) run `pnpm exec biome check --write .`.
 
+Data grids use `components/ui/data-table.tsx` (TanStack Table: sorting, a filter box, paging; a server that pages by cursor passes its own "Older" link as `footer`). The admin pages build their tables in `components/admin/tables.tsx`: a server page passes plain rows (dates already formatted) because column definitions cannot cross from a server component.
+
 Routes are in two groups with the same URLs: `app/(product)/` (music, image, video, text-to-speech, creations) has the side
 panel and top bar (`components/shell/`: panel, breadcrumb, ⌘K search over My creations, "ready" notices); `app/(site)/`
 (home, sign-in, admin, coming-soon pages) keeps the plain header. A product's panel entry and views come from
