@@ -119,6 +119,30 @@ comfyui:
   nodeSelector: {}
   tolerations: []
 
+# Speech (ADR-0042): Speaches serving Kokoro for text to speech (and Whisper for ADR-0043). Off by default;
+# the voices and Whisper are downloaded into the volume on first use (see docs/configuration.md).
+speech:
+  enabled: false
+  image: ghcr.io/speaches-ai/speaches:latest-cpu   # pin to a version before relying on it
+  whisperComputeType: int8
+  storage: 10Gi
+  storageClass: ""
+  resources:
+    requests: { cpu: "1", memory: 2Gi }
+    limits: { memory: 6Gi }
+
+# Indic Parler-TTS for Bengali (ADR-0042). Needs a Secret holding a Hugging Face token (read access to the
+# gated model): kubectl create secret generic hf-token --from-literal=token=... Off by default.
+speechIndic:
+  enabled: false
+  dtype: float32            # bfloat16 halves the memory and is about 4 times slower on a CPU
+  hfTokenSecret: { name: hf-token, key: token }
+  storage: 10Gi
+  storageClass: ""
+  resources:
+    requests: { cpu: "2", memory: 5Gi }
+    limits: { memory: 8Gi }
+
 redis:
   enabled: true
   image: redis:7
