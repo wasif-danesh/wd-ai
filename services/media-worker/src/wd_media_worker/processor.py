@@ -16,6 +16,7 @@ from wd_platform_sdk import (
     Storage,
     UsageEvent,
     UsageRecorder,
+    input_audio_name,
     input_image_name,
     object_key,
 )
@@ -90,6 +91,9 @@ class ComfyRunner:
         if files and "image" in files:
             name = input_image_name(job.job_id)
             graph = use_picture(graph, name, await self._client.upload_image(name, files["image"]))
+        if files and "audio" in files:  # a voice for a lip sync: ComfyUI's upload takes any file
+            name = input_audio_name(job.job_id)
+            graph = use_picture(graph, name, await self._client.upload_image(name, files["audio"]))
         outputs = await self._client.run(graph, job.job_id, on_progress, self._timeout)
         produced: Files = {}
         for name, spec in job.outputs.items():

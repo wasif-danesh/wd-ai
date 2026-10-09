@@ -129,9 +129,8 @@ def process_audio(data: bytes, max_seconds: int = 1800) -> ProcessedAudio:
     wav = decode(data, max_seconds, container)
     seconds = wav_seconds(wav)
     if seconds > max_seconds:
-        raise UploadError(
-            422, f"That recording is longer than the limit of {max_seconds // 60} minutes."
-        )
+        limit = f"{max_seconds // 60} minutes" if max_seconds >= 60 else f"{max_seconds} seconds"
+        raise UploadError(422, f"That recording is longer than the limit of {limit}.")
     if seconds < 0.3:
         raise UploadError(422, "That recording is empty or too short.")
     return ProcessedAudio(with_sizes(wav), round(seconds, 2), container)

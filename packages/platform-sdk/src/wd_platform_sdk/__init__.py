@@ -31,6 +31,7 @@ from wd_platform_sdk.jobs import (
     JobResult,
     JobSink,
     await_job,
+    input_audio_name,
     input_image_name,
 )
 from wd_platform_sdk.media_backends import (
@@ -92,6 +93,7 @@ from wd_platform_sdk.usage_postgres import PostgresUsageRecorder
 from wd_platform_sdk.usage_queries import start_of_day_utc, sum_usage
 
 __all__ = [
+    "input_audio_name",
     "input_image_name",
     "UPLOAD_CREATED",
     "InMemoryUploadLimiter",

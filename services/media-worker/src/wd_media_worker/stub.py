@@ -6,9 +6,11 @@ import hashlib
 import json
 import math
 import struct
+import tempfile
 import wave
 import zlib
 from io import BytesIO
+from pathlib import Path
 
 from wd_media_worker.comfy import ProgressFn
 
@@ -52,6 +54,24 @@ def placeholder_wav(seed: str, seconds: float = 2.0, rate: int = 16000) -> bytes
     return buf.getvalue()
 
 
+async def placeholder_mp4(seconds: float = 3.0) -> bytes:
+    """A small test-pattern clip with a tone, made by ffmpeg, so graphs that read a video (the
+    poster, the size) work without a model."""
+    import imageio_ffmpeg
+
+    with tempfile.TemporaryDirectory(prefix="wd-stub-") as tmp:
+        out = Path(tmp) / "stub.mp4"
+        proc = await asyncio.create_subprocess_exec(
+            imageio_ffmpeg.get_ffmpeg_exe(), "-hide_banner", "-loglevel", "error", "-y",
+            "-f", "lavfi", "-i", f"testsrc2=size=320x320:rate=25:duration={seconds}",
+            "-f", "lavfi", "-i", f"sine=frequency=220:duration={seconds}",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", str(out),
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        )  # fmt: skip
+        await proc.wait()
+        return out.read_bytes() if out.exists() else b""
+
+
 async def run_stub(
     job_id: str, outputs: dict[str, dict], on_progress: ProgressFn, steps: int = 5
 ) -> dict[str, tuple[bytes, str, str]]:
@@ -71,6 +91,8 @@ async def run_stub(
                 ],
             }
             made[name] = (json.dumps(sample).encode(), "application/json", "json")
+        elif kind == "video":
+            made[name] = (await placeholder_mp4(), "video/mp4", "mp4")
         elif kind == "audio":
             made[name] = (placeholder_wav(job_id), "audio/wav", "wav")
         else:

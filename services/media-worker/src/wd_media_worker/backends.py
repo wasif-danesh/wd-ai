@@ -17,6 +17,7 @@ from wd_platform_sdk import (
     MediaBindingStore,
     SecretBox,
     SecretsUnavailable,
+    input_audio_name,
     input_image_name,
 )
 
@@ -89,6 +90,9 @@ class ComfyApiRunner:
         if files and "image" in files:
             name = input_image_name(job.job_id)
             graph = use_picture(graph, name, await self._upload(name, files["image"]))
+        if files and "audio" in files:
+            name = input_audio_name(job.job_id)
+            graph = use_picture(graph, name, await self._upload(name, files["audio"]))
         r = await self._http.post(
             f"{self._base}/api/v2/jobs", json={"workflow": graph}, headers=self._headers
         )
