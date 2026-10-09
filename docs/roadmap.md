@@ -98,6 +98,10 @@ See [product spec](../products/wd-music-ai/README.md).
 
 ## Backlog (not yet scheduled)
 
+- [ ] Long transcripts in search (ADR-0043): index a long transcript in several pieces (a `chunk` column on the index,
+      about 1500 characters with overlap, results grouped by item, the exact-word check over every piece), instead of
+      only its first 6000 characters. Also helps long lyrics
+
 - [x] Every screen is built from shadcn/ui and Tailwind (ADR-0045); the old hand-written stylesheet is deleted and
       `app/tailwind.css` holds only the tokens, the theme and a few base styles
 - [ ] Side panel follow-ups (ADR-0046): pinning and reordering, a shared prompt bar for the creation products (needs its own ADR)

@@ -23,9 +23,6 @@ export async function Header() {
           className="order-3 flex w-full min-w-0 gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] md:order-none md:w-auto [&::-webkit-scrollbar]:hidden"
           aria-label="Main"
         >
-          <NavLink href="/" exact>
-            Explore
-          </NavLink>
           <NavLink href="/music" exact>
             Music
           </NavLink>
