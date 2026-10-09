@@ -20,6 +20,7 @@ came from.
 | `AUTH_SECRET` | web | Auth.js cookie encryption |
 | `API_AUTH_SECRET` | api, web | Shared secret (at least 32 bytes) for the BFF-to-API token; the API refuses to start in `jwt` mode without it |
 | `AUTH_<PROVIDER>_ID` / `_SECRET` | web | One OAuth app per provider and environment (see `apps/web/README.md`) |
+| `SAFEGUARDS_FORCE_ON` | api | `true` in production (Helm `safeguards.forceOn`): moderation and quotas always apply and Admin > Safeguards is read-only. Unset elsewhere: off by default, an admin switches it (ADR-0047) |
 | `ADMIN_EMAILS` | api | Comma-separated; only a verified email becomes admin |
 
 ## Precedence

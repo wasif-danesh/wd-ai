@@ -107,6 +107,8 @@ def build_song_graph(caps: Capabilities, checkpointer: Any, songs: SongStore, qu
     limit = (caps.config.quotas.get("songs_per_user_per_day") if caps.config else None) or None
 
     async def over_quota() -> bool:
+        if not await caps.safeguards_on():  # ADR-0047: quotas apply only with safeguards
+            return False
         return bool(limit and quota and await quota.used_today(require_context()) >= limit)
 
     def quota_message() -> str:
@@ -142,11 +144,12 @@ def build_song_graph(caps: Capabilities, checkpointer: Any, songs: SongStore, qu
         if await over_quota():  # before any LLM or GPU work
             return refuse_with("quota_exceeded", quota_message())
 
-        verdict = await guardrail.judge(
-            caps, "song request", "\n".join(filter(None, [idea, genre, mood]))
-        )
-        if not verdict.allowed:
-            return refuse_with(verdict.category, guardrail.refusal_message(verdict.category))
+        if await caps.safeguards_on():  # ADR-0047
+            verdict = await guardrail.judge(
+                caps, "song request", "\n".join(filter(None, [idea, genre, mood]))
+            )
+            if not verdict.allowed:
+                return refuse_with(verdict.category, guardrail.refusal_message(verdict.category))
         return {
             "idea": idea,
             "genre": genre,

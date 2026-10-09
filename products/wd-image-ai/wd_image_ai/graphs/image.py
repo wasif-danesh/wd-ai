@@ -102,6 +102,8 @@ def build_image_graph(
     limit = (caps.config.quotas.get("images_per_user_per_day") if caps.config else None) or None
 
     async def over_quota() -> bool:
+        if not await caps.safeguards_on():  # ADR-0047: quotas apply only with safeguards
+            return False
         return bool(limit and quota and await quota.used_today(require_context()) >= limit)
 
     def quota_message() -> str:
@@ -171,6 +173,8 @@ def build_image_graph(
         if await over_quota():  # before any LLM or GPU work
             return await refused("quota_exceeded", quota_message())
 
+        if not await caps.safeguards_on():  # ADR-0047: no moderation while they are off
+            return out
         kind = "image description" if mode == "text" else "edit instruction"
         verdict = await guardrail.judge_text(caps, kind, prompt)
         if not verdict.allowed:

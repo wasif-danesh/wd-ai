@@ -89,6 +89,8 @@ def build_speech_graph(
     limit = (caps.config.quotas.get("speeches_per_user_per_day") if caps.config else None) or None
 
     async def over_quota() -> bool:
+        if not await caps.safeguards_on():  # ADR-0047: quotas apply only with safeguards
+            return False
         return bool(limit and quota and await quota.used_today(require_context()) >= limit)
 
     def quota_message() -> str:
@@ -126,9 +128,10 @@ def build_speech_graph(
             return refuse_with("no_voice", exc.message)
         if await over_quota():  # before any LLM or model work
             return refuse_with("quota_exceeded", quota_message())
-        verdict = await guardrail.judge_text(caps, text)
-        if not verdict.allowed:
-            return refuse_with(verdict.category, guardrail.refusal_message(verdict.category))
+        if await caps.safeguards_on():  # ADR-0047
+            verdict = await guardrail.judge_text(caps, text)
+            if not verdict.allowed:
+                return refuse_with(verdict.category, guardrail.refusal_message(verdict.category))
         return {
             "text": text,
             "language": state["language"],

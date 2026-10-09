@@ -166,6 +166,19 @@ async def test_the_daily_quota_is_checked_before_any_model_is_asked(tmp_path, ct
     assert rig.moderator_calls() == [] and rig.sink.submitted == []
 
 
+async def test_with_the_safeguards_off_nothing_is_moderated_and_no_quota_applies(tmp_path, ctx):
+    """ADR-0047: the moderator is never asked and the daily quota is not enforced."""
+    rig = make_rig(tmp_path, moderate=[verdict(False, "hate")])
+
+    async def off() -> bool:
+        return False
+
+    rig.caps.safeguards = off
+    s = await Story(rig, quota=FixedQuota(30)).start(REQUEST)
+    assert s.waiting.get("kind") == "job" and rig.moderator_calls() == []
+    assert len(rig.sink.submitted) == 1
+
+
 async def test_a_failed_job_ends_the_run_and_saves_nothing(tmp_path, ctx):
     rig = make_rig(tmp_path)
     s = await Story(rig).start(REQUEST)

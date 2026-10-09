@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     search_reconcile_every_s: int = 300
     search_reconcile_batch: int = 200  # items embedded per check: about 3 seconds of work
 
+    # ADR-0047: true in production: the safeguards are always on and the admin cannot turn them off.
+    safeguards_force_on: bool = False
+
     products_dir: str = "products"
     product_env: str = ""  # selects products/<id>/product.<env>.yaml overlays
 

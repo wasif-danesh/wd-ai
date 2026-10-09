@@ -85,6 +85,8 @@ imagePullSecrets:
   value: {{ .Values.env.COMFYUI_VIDEO_BASE_URL | quote }}
 - name: LOG_LEVEL
   value: {{ .Values.env.LOG_LEVEL | quote }}
+- name: SAFEGUARDS_FORCE_ON
+  value: {{ .Values.safeguards.forceOn | quote }}
 {{ include "wd.mediaSecretsEnv" . }}
 - name: AUTH_MODE
   value: {{ .Values.auth.mode | quote }}

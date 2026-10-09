@@ -96,7 +96,7 @@ def build_transcribe_graph(
     limit = (caps.config.quotas.get("minutes_per_user_per_day") if caps.config else None) or None
 
     async def over_quota(extra_minutes: float = 0.0) -> bool:
-        if not (limit and quota):
+        if not (limit and quota) or not await caps.safeguards_on():  # ADR-0047
             return False
         used = await quota.used_minutes_today(require_context())
         return used + extra_minutes > limit
