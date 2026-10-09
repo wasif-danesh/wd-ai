@@ -126,6 +126,14 @@ or, for images, an **OpenAI-compatible image API**, enter its address and key, t
 answers; it does not generate anything) or **Save**. The next job uses it. A saved key is kept when you save again for the same
 backend, and is never shown. Needs `MEDIA_SECRETS_KEY` (`make setup` creates it) before a key can be saved.
 
+## UI components (ADR-0045, ADR-0046: decided, not built yet)
+
+New and changed screens will use shadcn/ui components added with its CLI into `components/ui/` (they are our source),
+react-hook-form with Zod for forms and TanStack Table for grids. Our CSS variables in `app/globals.css` stay the design
+tokens and are mapped into the Tailwind theme, so there is one palette. Migrate a screen when you touch it, and check
+keyboard use, Bengali and right-to-left text, dark and light colours, and 320 px width. Inside a product the side panel
+(ADR-0046) lists the products from `lib/products.ts`; the home page keeps its cards.
+
 ## Not done yet
 
 - Only GitHub sign-in has been tried with a real login; Google and Microsoft are wired the same way.

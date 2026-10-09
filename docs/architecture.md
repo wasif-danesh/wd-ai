@@ -108,7 +108,9 @@ A product is a folder under `products/` containing:
 Adding a product adds no endpoints for running it: the API's graph registry exposes registered
 graphs through generic `/products/{product_id}/runs` routes (ADR-0003). A product may add
 authenticated read routes for its own data under `/products/{product_id}/` (ADR-0023). Product UIs
-live in one shared Next.js app, `apps/web` (ADR-0014).
+live in one shared Next.js app, `apps/web` (ADR-0014). Controls and data grids use shadcn/ui and TanStack Table
+(ADR-0045), and inside a product the user navigates with a side panel while the home page keeps its cards (ADR-0046);
+both are decided and will be built screen by screen.
 
 ## Capabilities
 
