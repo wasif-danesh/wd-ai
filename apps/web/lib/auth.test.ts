@@ -90,7 +90,7 @@ describe("auth mode and redirects", () => {
 });
 
 describe("which pages need a session", () => {
-  it.each(["/", "/signin", "/lip-sync", "/lip-sync/"])("%s is public", (path) => {
+  it.each(["/", "/signin"])("%s is public", (path) => {
     expect(isPublicPath(path)).toBe(true);
   });
 

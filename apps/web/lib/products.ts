@@ -11,7 +11,7 @@ export type Product = {
   /** The product's own views in the side panel (ADR-0046); the first is where the product starts. */
   views: { label: string; href: string }[];
   /** The kind it makes in My creations, used for the "My creations" link in its views. */
-  library?: "songs" | "images" | "videos" | "speeches" | "transcripts";
+  library?: "songs" | "images" | "videos" | "speeches" | "transcripts" | "lipsyncs";
 };
 
 export const PRODUCTS: Product[] = [
@@ -90,7 +90,11 @@ export const PRODUCTS: Product[] = [
       "Give a character image a voice, a song or a script, and watch it speak or sing in sync.",
     action: "Create lip sync",
     href: "/lip-sync",
-    status: "soon",
-    views: [{ label: "Create", href: "/lip-sync" }],
+    status: "live",
+    views: [
+      { label: "Create", href: "/lip-sync" },
+      { label: "In My creations", href: "/creations?show=lipsyncs" },
+    ],
+    library: "lipsyncs",
   },
 ];

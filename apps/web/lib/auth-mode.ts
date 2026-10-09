@@ -11,13 +11,8 @@ export function safeNext(value: string | null | undefined): string {
   return value;
 }
 
-/** Pages anyone may open without signing in: the home page, the sign-in page and the "coming soon" product pages. */
-const PUBLIC_PATHS = new Set([
-  "/",
-  "/signin",
-  // pages for products that are not built yet (ADR-0044): public until they are real
-  "/lip-sync",
-]);
+/** Pages anyone may open without signing in: the home page and the sign-in page. */
+const PUBLIC_PATHS = new Set(["/", "/signin"]);
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.has(pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname);
@@ -36,6 +31,9 @@ export function signInReason(next: string): string {
   }
   if (next === "/speech-to-text" || next.startsWith("/speech-to-text/")) {
     return "Sign in to transcribe recordings and keep the transcripts.";
+  }
+  if (next === "/lip-sync" || next.startsWith("/lip-sync/")) {
+    return "Sign in to make lip syncs and keep them.";
   }
   if (next === "/video" || next.startsWith("/video/")) {
     return "Sign in to create videos and keep them.";

@@ -4,6 +4,7 @@ import type { Entry, Filter } from "@/lib/creations";
 import { kindOf, longEnough } from "@/lib/creations";
 import type {
   ImagePage,
+  LipSyncPage,
   SearchResponse,
   SongPage,
   SpeechPage,
@@ -44,7 +45,7 @@ async function cards(response: SearchResponse, signal: AbortSignal): Promise<Ent
     by(kind)
       .map((r) => r.id)
       .join(",");
-  const [songs, images, videos, speeches, transcripts] = await Promise.all([
+  const [songs, images, videos, speeches, transcripts, lipsyncs] = await Promise.all([
     by("song").length
       ? getJson<SongPage>(`/api/products/wd-music-ai/songs?ids=${ids("song")}`, signal)
       : null,
@@ -62,6 +63,9 @@ async function cards(response: SearchResponse, signal: AbortSignal): Promise<Ent
           `/api/products/wd-stt-ai/transcripts?ids=${ids("transcript")}`,
           signal,
         )
+      : null,
+    by("lipsync").length
+      ? getJson<LipSyncPage>(`/api/products/wd-lipsync-ai/lipsyncs?ids=${ids("lipsync")}`, signal)
       : null,
   ]);
   const found = new Map<string, Entry>();
@@ -98,6 +102,14 @@ async function cards(response: SearchResponse, signal: AbortSignal): Promise<Ent
       id: transcript.id,
       createdAt: transcript.created_at,
       transcript,
+    });
+  }
+  for (const lipsync of lipsyncs?.lipsyncs ?? []) {
+    found.set(`lipsync:${lipsync.id}`, {
+      kind: "lipsync",
+      id: lipsync.id,
+      createdAt: lipsync.created_at,
+      lipsync,
     });
   }
   return response.results.flatMap((r) => found.get(`${r.kind}:${r.id}`) ?? []);

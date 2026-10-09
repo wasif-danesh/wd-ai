@@ -3,6 +3,7 @@ import { clock } from "./format";
 // What My creations shows: one entry per song, image or video, whatever product made it (ADR-0040).
 import type {
   ImageSummary,
+  LipSyncSummary,
   SongSummary,
   SpeechSummary,
   TranscriptSummary,
@@ -14,9 +15,17 @@ export type Entry =
   | { kind: "image"; id: string; createdAt: string; image: ImageSummary }
   | { kind: "video"; id: string; createdAt: string; video: VideoSummary }
   | { kind: "speech"; id: string; createdAt: string; speech: SpeechSummary }
-  | { kind: "transcript"; id: string; createdAt: string; transcript: TranscriptSummary };
+  | { kind: "transcript"; id: string; createdAt: string; transcript: TranscriptSummary }
+  | { kind: "lipsync"; id: string; createdAt: string; lipsync: LipSyncSummary };
 
-export type Filter = "all" | "songs" | "images" | "videos" | "speeches" | "transcripts";
+export type Filter =
+  | "all"
+  | "songs"
+  | "images"
+  | "videos"
+  | "speeches"
+  | "transcripts"
+  | "lipsyncs";
 
 /** A search needs two characters, except in Chinese, Japanese and Korean, where one character can be a
  * whole word (龙 is "dragon"). The API applies the same rule. */
@@ -33,6 +42,7 @@ export function kindOf(filter: Filter): Entry["kind"] | undefined {
     videos: "video",
     speeches: "speech",
     transcripts: "transcript",
+    lipsyncs: "lipsync",
   } as const;
   return filter === "all" ? undefined : kinds[filter];
 }
@@ -98,6 +108,15 @@ export function toRow(entry: Entry): Row {
           .join(" · "),
         href: `/speech-to-text/creations/${entry.id}`,
         status: entry.transcript.status,
+      };
+    case "lipsync":
+      return {
+        ...base,
+        kindLabel: "Lip sync",
+        title: entry.lipsync.text || entry.lipsync.style || "Lip sync",
+        detail: clock(entry.lipsync.seconds),
+        href: `/lip-sync/creations/${entry.id}`,
+        status: entry.lipsync.status,
       };
   }
 }

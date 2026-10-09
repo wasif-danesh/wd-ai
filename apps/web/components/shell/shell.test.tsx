@@ -1,6 +1,7 @@
-// @vitest-environment jsdom
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+// @vitest-environment jsdom
+import { PRODUCTS } from "@/lib/products";
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AppSidebar } from "./AppSidebar";
@@ -42,10 +43,24 @@ describe("the side panel", () => {
 
   it("shows products that are not built yet as disabled, with a Soon tag", () => {
     path = "/music";
-    panel();
-    const soon = screen.getByRole("link", { name: /Lip Sync/ });
-    expect(soon).toHaveAttribute("aria-disabled", "true");
-    expect(within(soon).getByText("Soon")).toBeInTheDocument();
+    // every product is built now: add one that is not, for the length of this test
+    PRODUCTS.push({
+      id: "lip-sync",
+      title: "Future Studio",
+      blurb: "Not built yet.",
+      action: "Make",
+      href: "/future",
+      status: "soon",
+      views: [{ label: "Create", href: "/future" }],
+    });
+    try {
+      panel();
+      const soon = screen.getByRole("link", { name: /Future Studio/ });
+      expect(soon).toHaveAttribute("aria-disabled", "true");
+      expect(within(soon).getByText("Soon")).toBeInTheDocument();
+    } finally {
+      PRODUCTS.pop();
+    }
   });
 
   it("shows My creations, and the admin group only to admins", () => {

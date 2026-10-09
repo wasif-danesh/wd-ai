@@ -5,7 +5,7 @@ import type { Entry } from "@/lib/creations";
 import { clock, styleTags, timeAgo } from "@/lib/format";
 import { clamp2, coverTile } from "@/lib/styles";
 import { cn } from "@/lib/utils";
-import type { VideoSummary } from "@wd/contracts";
+import type { LipSyncSummary, VideoSummary } from "@wd/contracts";
 import { Mic } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -119,6 +119,7 @@ export function CreationCard({ entry, note }: { entry: Entry; note?: string }) {
       />
     );
   }
+  if (entry.kind === "lipsync") return <LipSyncCard lipsync={entry.lipsync} note={note} />;
   if (entry.kind === "video") return <VideoCard video={entry.video} note={note} />;
   if (entry.kind === "image") {
     return (
@@ -191,6 +192,42 @@ function VideoCard({ video, note }: { video: VideoSummary; note?: string }) {
         ) : null
       }
       when={video.created_at}
+    />
+  );
+}
+
+function LipSyncCard({ lipsync, note }: { lipsync: LipSyncSummary; note?: string }) {
+  return (
+    <Card
+      href={`/lip-sync/creations/${lipsync.id}`}
+      kind="Lip sync"
+      status={lipsync.status}
+      cover={
+        lipsync.status === "done" && lipsync.poster_url ? (
+          <img className={picture} src={lipsync.poster_url} alt="" loading="lazy" />
+        ) : (
+          <div
+            className={cn(picture, "grid place-items-center text-primary-foreground")}
+            aria-hidden="true"
+          >
+            {lipsync.status === "working" ? <Spinner /> : null}
+          </div>
+        )
+      }
+      title={lipsync.text || lipsync.style || "Lip sync"}
+      tags={
+        lipsync.status === "working" ? (
+          <Badge variant="tag">Making your lip sync…</Badge>
+        ) : lipsync.status === "failed" ? (
+          <Badge variant="tag">Couldn't be made</Badge>
+        ) : (
+          <>
+            <Badge variant="tag">{clock(lipsync.seconds)}</Badge>
+            {note ? <Badge variant="tag">{note}</Badge> : null}
+          </>
+        )
+      }
+      when={lipsync.created_at}
     />
   );
 }

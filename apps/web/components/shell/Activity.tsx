@@ -2,13 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useLipSyncActivity } from "@/hooks/use-lipsync-activity";
 import { useTranscriptActivity } from "@/hooks/use-transcript-activity";
 import { useVideoActivity } from "@/hooks/use-video-activity";
 import { clamp2 } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-type Kind = "video" | "transcript";
+type Kind = "video" | "transcript" | "lipsync";
 type Notice = { id: string; status: "done" | "failed"; prompt: string; error?: string };
 
 const WORDS: Record<
@@ -30,6 +31,14 @@ const WORDS: Record<
     again: "/video",
     verb: "Watch it",
   },
+  lipsync: {
+    working: "Making your lip sync…",
+    ready: "Your lip sync is ready",
+    failed: "Your lip sync couldn't be made",
+    open: (id) => `/lip-sync/creations/${id}`,
+    again: "/lip-sync",
+    verb: "Watch it",
+  },
   transcript: {
     working: "Transcribing…",
     ready: "Your transcript is ready",
@@ -40,18 +49,28 @@ const WORDS: Record<
   },
 };
 
+const SHOW: Record<Kind, string> = {
+  video: "videos",
+  transcript: "transcripts",
+  lipsync: "lipsyncs",
+};
+
 /** The top bar's "being made" badges and the notice when something finishes (ADR-0037, ADR-0043). */
 export function Activity({ enabled }: { enabled: boolean }) {
   const video = useVideoActivity(enabled);
   const transcript = useTranscriptActivity(enabled);
+  const lipsync = useLipSyncActivity(enabled);
   const shown: { kind: Kind; notice: Notice; dismiss: () => void } | null = video.notice
     ? { kind: "video", notice: video.notice, dismiss: video.dismiss }
     : transcript.notice
       ? { kind: "transcript", notice: transcript.notice, dismiss: transcript.dismiss }
-      : null;
+      : lipsync.notice
+        ? { kind: "lipsync", notice: lipsync.notice, dismiss: lipsync.dismiss }
+        : null;
   const badges: { kind: Kind; show: boolean }[] = [
     { kind: "video", show: video.working.length > 0 },
     { kind: "transcript", show: transcript.working.length > 0 },
+    { kind: "lipsync", show: lipsync.working.length > 0 },
   ];
   return (
     <>
@@ -60,7 +79,7 @@ export function Activity({ enabled }: { enabled: boolean }) {
         .map(({ kind }) => (
           <Link
             key={kind}
-            href={`/creations?show=${kind === "video" ? "videos" : "transcripts"}`}
+            href={`/creations?show=${SHOW[kind]}`}
             title="Open My creations"
             className="inline-flex items-center gap-2 rounded-full border bg-accent px-3 py-1.5 text-step--1 whitespace-nowrap text-foreground no-underline hover:text-foreground"
           >
