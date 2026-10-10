@@ -19,3 +19,7 @@ ollama:
 
 postgres:
   storage: 1Gi
+
+# No GPU on a laptop cluster: ComfyUI (when enabled) must not ask for one.
+comfyui:
+  gpuResources: null

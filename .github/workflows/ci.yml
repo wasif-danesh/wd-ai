@@ -61,6 +61,7 @@ jobs:
       # No Ollama in CI: the smoke test accepts a clean `error` event, which still proves
       # web -> BFF -> API -> LiteLLM wiring, migrations and readiness.
       OLLAMA_EXTERNAL_URL: http://127.0.0.1:11434
+      KIND_MODE: light   # a hosted runner is too small for the models; `full` is for a workstation
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4

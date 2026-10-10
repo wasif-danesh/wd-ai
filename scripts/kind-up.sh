@@ -5,6 +5,11 @@ set -euo pipefail
 cd "$ROOT"
 
 CLUSTER=wd-ai; NS=wd-ai; TAG=dev; REG=localhost/wd-ai
+# KIND_MODE=full (the default): every service runs as a pod, nothing native: Ollama with its models, the CPU
+#   speech servers, the lip sync server and ComfyUI. Needs a Podman VM of about 24 GB and a few tens of GB of
+#   model downloads on first start; no GPU, so the GPU media models are placeholders (stub mode).
+# KIND_MODE=light: the small cluster CI uses: Ollama, the speech and lip sync servers are native or absent.
+MODE="${KIND_MODE:-full}"
 [ "$CONTAINER_ENGINE" = "podman" ] && export KIND_EXPERIMENTAL_PROVIDER=podman
 
 step "Checking tools"
@@ -25,7 +30,9 @@ if [ "$PLATFORM" = "linux" ] && [ "$CONTAINER_ENGINE" = "podman" ] && [ "$(id -u
 fi
 
 step "Building images"
-for pair in "api:services/api" "media-worker:services/media-worker" "web:apps/web"; do
+IMAGES=("api:services/api" "media-worker:services/media-worker" "web:apps/web")
+[ "$MODE" = "full" ] && IMAGES+=("lipsync-musetalk:services/lipsync-musetalk" "comfyui:services/comfyui")
+for pair in "${IMAGES[@]}"; do
   name="${pair%%:*}"; dir="${pair##*:}"
   "$CONTAINER_ENGINE" build -q -f "$dir/Containerfile" -t "$REG/$name:$TAG" . >/dev/null
   ok "built $REG/$name:$TAG"
@@ -40,8 +47,8 @@ fi
 kubectl config use-context "kind-$CLUSTER" >/dev/null
 
 step "Loading images into the cluster"
-for name in api media-worker web; do
-  img="$REG/$name:$TAG"
+for pair in "${IMAGES[@]}"; do
+  name="${pair%%:*}"; img="$REG/$name:$TAG"
   if [ "$CONTAINER_ENGINE" = "podman" ]; then
     tar="$(mktemp -t wd-ai-image).tar"
     "$CONTAINER_ENGINE" save -o "$tar" "$img" >/dev/null
@@ -55,24 +62,27 @@ done
 step "Secrets"
 scripts/k8s-secrets.sh "$NS"
 
-# Where can pods reach the Ollama running natively on this machine?
-OLLAMA_EXTERNAL_URL="${OLLAMA_EXTERNAL_URL:-}"
-if [ -z "$OLLAMA_EXTERNAL_URL" ]; then
-  node="$CLUSTER-control-plane"
-  host="host.containers.internal"; [ "$CONTAINER_ENGINE" = "docker" ] && host="host.docker.internal"
-  ip="$("$CONTAINER_ENGINE" exec "$node" getent hosts "$host" 2>/dev/null | awk '{print $1; exit}')"
-  [ -n "$ip" ] && OLLAMA_EXTERNAL_URL="http://$ip:11434" || OLLAMA_EXTERNAL_URL="http://127.0.0.1:11434"
-fi
-ok "Ollama URL for pods: $OLLAMA_EXTERNAL_URL"
+OLLAMA_EXTERNAL_URL="${OLLAMA_EXTERNAL_URL:-}"; LIPSYNC_EXTERNAL_URL="${LIPSYNC_EXTERNAL_URL:-}"
+if [ "$MODE" = "light" ]; then
+  # Where can pods reach the Ollama running natively on this machine?
+  OLLAMA_EXTERNAL_URL="${OLLAMA_EXTERNAL_URL:-}"
+  if [ -z "$OLLAMA_EXTERNAL_URL" ]; then
+    node="$CLUSTER-control-plane"
+    host="host.containers.internal"; [ "$CONTAINER_ENGINE" = "docker" ] && host="host.docker.internal"
+    ip="$("$CONTAINER_ENGINE" exec "$node" getent hosts "$host" 2>/dev/null | awk '{print $1; exit}')"
+    [ -n "$ip" ] && OLLAMA_EXTERNAL_URL="http://$ip:11434" || OLLAMA_EXTERNAL_URL="http://127.0.0.1:11434"
+  fi
+  ok "Ollama URL for pods: $OLLAMA_EXTERNAL_URL"
 
-# The lip sync server runs natively on the Mac (its GPU is not reachable from a container): if it answers on
-# this machine, point the worker at it by the same host address as Ollama.
-LIPSYNC_EXTERNAL_URL="${LIPSYNC_EXTERNAL_URL:-}"
-if [ -z "$LIPSYNC_EXTERNAL_URL" ] && curl -fsS -m 3 "http://127.0.0.1:8191/health" >/dev/null 2>&1; then
-  LIPSYNC_EXTERNAL_URL="http://${OLLAMA_EXTERNAL_URL#http://}"; LIPSYNC_EXTERNAL_URL="${LIPSYNC_EXTERNAL_URL%:*}:8191"
+  # The lip sync server runs natively on the Mac (its GPU is not reachable from a container): if it answers on
+  # this machine, point the worker at it by the same host address as Ollama.
+  LIPSYNC_EXTERNAL_URL="${LIPSYNC_EXTERNAL_URL:-}"
+  if [ -z "$LIPSYNC_EXTERNAL_URL" ] && curl -fsS -m 3 "http://127.0.0.1:8191/health" >/dev/null 2>&1; then
+    LIPSYNC_EXTERNAL_URL="http://${OLLAMA_EXTERNAL_URL#http://}"; LIPSYNC_EXTERNAL_URL="${LIPSYNC_EXTERNAL_URL%:*}:8191"
+  fi
+  if [ -n "$LIPSYNC_EXTERNAL_URL" ]; then ok "Lip sync server for pods: $LIPSYNC_EXTERNAL_URL"
+  else warn "No lip sync server on 127.0.0.1:8191 (make dev or scripts/lipsync-server.sh start): lip sync is a placeholder"; fi
 fi
-if [ -n "$LIPSYNC_EXTERNAL_URL" ]; then ok "Lip sync server for pods: $LIPSYNC_EXTERNAL_URL"
-else warn "No lip sync server on 127.0.0.1:8191 (make dev or scripts/lipsync-server.sh start): lip sync is a placeholder"; fi
 
 # KIND_SPEECH=1 runs the CPU speech servers (Kokoro and Whisper, about 6 GB of memory and a few GB of model
 # downloads on first use) for real; KIND_SPEECH=all adds the Indic ones (needs the hf-token Secret).
@@ -84,12 +94,30 @@ esac
 [ "${KIND_SAFEGUARDS:-0}" = "1" ] && extra+=(--set safeguards.forceOn=true)
 
 step "Installing the chart"
-helm upgrade --install wd-ai deploy/helm/wd-ai -n "$NS" \
-  -f deploy/helm/wd-ai/values/local.yaml \
-  --set "ollama.externalUrl=$OLLAMA_EXTERNAL_URL" \
-  ${LIPSYNC_EXTERNAL_URL:+--set "lipsync.serverUrl=$LIPSYNC_EXTERNAL_URL"} \
-  ${extra[@]+"${extra[@]}"} \
-  --wait --timeout 10m
+if [ "$MODE" = "full" ]; then
+  # nothing native: every service is a pod
+  helm upgrade --install wd-ai deploy/helm/wd-ai -n "$NS" \
+    -f deploy/helm/wd-ai/values/local.yaml \
+    --set ollama.enabled=true --set ollama.externalUrl= \
+    --set speech.enabled=true --set mediaWorker.speechMode=real \
+    --set lipsync.enabled=true \
+    --set comfyui.enabled=true --set "comfyui.image=$REG/comfyui:$TAG" \
+    --set env.PRODUCT_ENV=kind \
+    ${extra[@]+"${extra[@]}"} \
+    --wait --timeout 90m
+else
+  helm upgrade --install wd-ai deploy/helm/wd-ai -n "$NS" \
+    -f deploy/helm/wd-ai/values/local.yaml \
+    --set "ollama.externalUrl=$OLLAMA_EXTERNAL_URL" \
+    ${LIPSYNC_EXTERNAL_URL:+--set "lipsync.serverUrl=$LIPSYNC_EXTERNAL_URL"} \
+    ${extra[@]+"${extra[@]}"} \
+    --wait --timeout 10m
+fi
+
+if [ "$MODE" = "full" ]; then
+  step "Waiting for the model downloads (Ollama, speech, lip sync: a first start takes a while)"
+  kubectl -n "$NS" wait --for=condition=complete job --all --timeout=90m
+fi
 
 printf '\n%sReady.%s Open %shttp://localhost:3000%s. Check with: make kind-test. Remove with: make kind-down\n' \
   "$GREEN" "$RESET" "$BOLD" "$RESET"

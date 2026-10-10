@@ -37,6 +37,10 @@ spec:
       containers:
         - name: comfyui
           image: {{ $image }}
+          {{- if hasKey .Values.comfyui "args" }}
+          env:
+            - { name: COMFYUI_ARGS, value: {{ .Values.comfyui.args | quote }} }   # the image defaults to --cpu
+          {{- end }}
           ports: [{ name: http, containerPort: {{ .Values.comfyui.port }} }]
           readinessProbe:
             httpGet: { path: /system_stats, port: http }

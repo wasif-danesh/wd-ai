@@ -31,8 +31,10 @@ spec:
             {{- with .Values.mediaWorker.speechMode }}
             - { name: SPEECH_MODE, value: {{ . | quote }} }
             {{- end }}
-            {{- with .Values.lipsync.serverUrl }}
-            - { name: LIPSYNC_SERVER_URL, value: {{ . | quote }} }
+            {{- if .Values.lipsync.enabled }}
+            - { name: LIPSYNC_SERVER_URL, value: "http://{{ .Release.Name }}-lipsync:8000" }
+            {{- else if .Values.lipsync.serverUrl }}
+            - { name: LIPSYNC_SERVER_URL, value: {{ .Values.lipsync.serverUrl | quote }} }
             {{- end }}
             # Lets the worker free the GPU of LLMs before each generation job.
             - { name: OLLAMA_BASE_URL, value: {{ include "wd.ollamaUrl" . | quote }} }

@@ -15,6 +15,7 @@ secrets:
 
 env:
   LOG_LEVEL: INFO
+  PRODUCT_ENV: ""                        # selects products/<id>/product.<env>.yaml overlays (the kind overlay: kind)
   COMFYUI_BASE_URL: ""                   # Phase 4
   COMFYUI_VIDEO_BASE_URL: ""             # a separate ComfyUI for video (ADR-0037); empty = the one above
 
@@ -116,6 +117,7 @@ comfyui:
   enabled: false
   image: ""
   port: 8188
+  # Extra arguments for ComfyUI. The image defaults to --cpu; on a GPU host set args: "" (see services/comfyui).
   storage: 40Gi             # models and outputs
   storageClass: ""
   gpuResources: { nvidia.com/gpu: 1 }
@@ -129,7 +131,17 @@ comfyui:
 # natively (scripts/lipsync-server.sh); scripts/kind-up.sh sets this to an address the cluster can reach. Empty:
 # a lip sync is a placeholder clip.
 lipsync:
-  serverUrl: ""
+  enabled: false            # run the server as a pod (image lipsync-musetalk); otherwise set serverUrl
+  serverUrl: ""             # a server outside the cluster (used when enabled=false)
+  device: cpu               # cuda on a GPU host (with gpuResources)
+  storage: 12Gi             # the model files, about 4 GB
+  storageClass: ""
+  resources:
+    requests: { cpu: "2", memory: 6Gi }
+    limits: { memory: 12Gi }
+  gpuResources: {}          # e.g. { nvidia.com/gpu: 1 } in a cloud overlay
+  nodeSelector: {}
+  tolerations: []
 
 # Speech (ADR-0042): Speaches serving Kokoro for text to speech (and Whisper for ADR-0043). Off by default;
 # the voices and Whisper are downloaded into the volume on first use (see docs/configuration.md).

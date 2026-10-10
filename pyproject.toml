@@ -9,7 +9,7 @@ dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8", "pyright>=1.1.380", "ht
 
 [tool.uv.workspace]
 members = ["services/*", "packages/contracts", "packages/platform-sdk", "products/*"]
-exclude = ["products/hello", "products/media-demo", "services/speech-indic", "services/stt-indic", "services/lipsync-musetalk"]   # config-only samples; a container-only service
+exclude = ["products/hello", "products/media-demo", "services/speech-indic", "services/stt-indic", "services/lipsync-musetalk", "services/comfyui"]   # config-only samples; a container-only service
 
 [tool.uv.sources]
 wd-api = { workspace = true }
@@ -34,7 +34,7 @@ extend-immutable-calls = ["fastapi.Depends"]
 [tool.pyright]
 include = ["services", "packages", "products"]
 # its libraries (torch, parler-tts) exist only inside its container image
-exclude = ["services/speech-indic", "services/stt-indic", "services/lipsync-musetalk", ".lipsync", "**/node_modules", "**/.venv"]
+exclude = ["services/speech-indic", "services/stt-indic", "services/lipsync-musetalk", "services/comfyui", ".lipsync", "**/node_modules", "**/.venv"]
 typeCheckingMode = "standard"
 # Test helper modules (conftest, fake_comfyui) are imported by name; pytest puts their folders on
 # sys.path, so tell pyright too.

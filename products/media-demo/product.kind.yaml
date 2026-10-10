@@ -1,0 +1,7 @@
+# Selected with PRODUCT_ENV=kind (the local kind overlay): no models, so a real ComfyUI job can run on a laptop.
+id: media-demo
+capabilities:
+  image.generate:
+    provider: comfyui
+    workflow: solid-image
+    defaults: { width: 256, height: 256, steps: 4 }
