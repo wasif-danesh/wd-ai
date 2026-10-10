@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Install the lip sync server's engine: MuseTalk v1.5 (MIT) and its weights, about 4 GB (ADR-0044).
-# Everything goes into one folder (default ~/MuseTalk-Spike); nothing is installed into the repo.
+# Everything goes into one folder (default .lipsync/musetalk in the repo, which git and the container
+# builds ignore): the cloned MuseTalk code, its virtualenv and the weights.
 # Weights: MuseTalk v1.5 (MIT, free for commercial use), sd-vae-ft-mse (MIT), whisper-tiny (MIT),
 # the BiSeNet face parser and ResNet18 (the project's own links). face-alignment downloads its
 # 170 MB detector and landmark model by itself on first use.
 set -euo pipefail
-DIR="${MUSETALK_HOME:-$HOME/MuseTalk-Spike}"
+DIR="${MUSETALK_HOME:-$(cd "$(dirname "$0")/../.." && pwd)/.lipsync/musetalk}"
 COMMIT=0a89dec   # the version this was tested with
 mkdir -p "$DIR"
 cd "$DIR"

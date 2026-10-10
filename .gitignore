@@ -22,6 +22,7 @@ dist/
 coverage/
 
 # Models and generated media (never commit weights or outputs)
+.lipsync/
 *.safetensors
 *.gguf
 *.ckpt

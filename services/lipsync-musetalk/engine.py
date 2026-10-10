@@ -18,9 +18,8 @@ import cv2
 import numpy as np
 import torch
 
-MUSETALK_DIR = Path(
-    os.environ.get("MUSETALK_DIR", Path.home() / "MuseTalk-Spike" / "src")
-).resolve()
+_DEFAULT = Path(__file__).resolve().parents[2] / ".lipsync" / "musetalk" / "src"
+MUSETALK_DIR = Path(os.environ.get("MUSETALK_DIR", _DEFAULT)).resolve()
 MAX_SIDE = int(os.environ.get("LIPSYNC_MAX_SIDE", "768"))  # the picture is scaled down to this
 MARGIN = 10  # extra pixels below the chin MuseTalk v1.5 asks for
 

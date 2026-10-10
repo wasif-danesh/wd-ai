@@ -34,7 +34,7 @@ extend-immutable-calls = ["fastapi.Depends"]
 [tool.pyright]
 include = ["services", "packages", "products"]
 # its libraries (torch, parler-tts) exist only inside its container image
-exclude = ["services/speech-indic", "services/stt-indic", "services/lipsync-musetalk", "**/node_modules", "**/.venv"]
+exclude = ["services/speech-indic", "services/stt-indic", "services/lipsync-musetalk", ".lipsync", "**/node_modules", "**/.venv"]
 typeCheckingMode = "standard"
 # Test helper modules (conftest, fake_comfyui) are imported by name; pytest puts their folders on
 # sys.path, so tell pyright too.
