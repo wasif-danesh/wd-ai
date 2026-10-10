@@ -277,6 +277,7 @@ the job queue is Redis Streams (`wd:jobs`, `wd:done`), and logs and metrics are 
 ```bash
 make monitoring-up      # Prometheus, Alertmanager, Grafana, Loki; part of make kind-up
 make monitoring-drill   # stop the worker and expect an alert on Telegram, then a resolve
+make monitoring-drill-meta   # stop Prometheus and expect Healthchecks.io to message you
 ```
 
 Alerts go to Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` in `.env`), and a heartbeat to Healthchecks.io

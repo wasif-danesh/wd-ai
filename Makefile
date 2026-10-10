@@ -1,7 +1,7 @@
 CONTAINER_ENGINE ?= podman
 export CONTAINER_ENGINE
 
-.PHONY: test-comfyui test-integration setup setup-k8s preflight dev down logs migrate test lint format contracts helm-lint kind-up kind-test kind-e2e kind-down monitoring-up monitoring-drill urls
+.PHONY: test-comfyui test-integration setup setup-k8s preflight dev down logs migrate test lint format contracts helm-lint kind-up kind-test kind-e2e kind-down monitoring-up monitoring-drill monitoring-drill-meta urls
 setup:
 	./scripts/setup.sh
 setup-k8s:
@@ -46,6 +46,9 @@ urls:
 	@uv run python scripts/urls.py   # every URL of the running system, for the mode it is in
 monitoring-up:
 	./scripts/monitoring-up.sh   # Prometheus, Alertmanager, Grafana, Loki; alerts to Telegram (ADR-0048)
+monitoring-drill-meta:
+	@scripts/monitoring-drill-meta.sh
+
 monitoring-drill:
 	./scripts/monitoring-drill.sh   # stop the worker, expect a Telegram alert, start it again
 kind-e2e:

@@ -33,10 +33,10 @@ thresholds are chart values (`metrics.alerts.*`).
 1. **Worker down:** `make monitoring-drill`. It stops the media worker, waits for `MediaWorkerDown`, checks that
    Alertmanager sent a Telegram notification, starts the worker and waits for the alert to resolve. You should
    get an ALERT and then a RESOLVED message.
-2. **Whole cluster or monitoring dead:** stop Prometheus, which ends the Watchdog and so the heartbeat:
-   `kubectl -n monitoring patch prometheus monitoring-prometheus --type merge -p '{"spec":{"replicas":0}}'`.
-   Within the check's grace time (5 minutes) Healthchecks.io messages Telegram that the heartbeat stopped. Restore
-   with `-p '{"spec":{"replicas":1}}'`.
+2. **Whole cluster or monitoring dead:** `make monitoring-drill-meta`. It stops Prometheus (and the operator that
+   would restart it), which ends the Watchdog and so the heartbeat, waits `DRILL_WAIT_MIN` minutes (default 12)
+   and starts it again. Healthchecks.io messages Telegram from outside the cluster that the heartbeat stopped, and
+   again when it is back.
 
 ## Rules for metrics
 

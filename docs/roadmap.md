@@ -31,7 +31,8 @@ cluster), a ComfyUI image and a lip sync image that did not exist, the ComfyUI p
 to compile on a CPU image.
 Not covered by kind (and left for staging): GPU scheduling and time-slicing, CUDA images for ComfyUI and the lip sync
 server (the Containerfiles take a build argument for it), real image, music and video generation (placeholders on
-kind), and the Indic speech servers (they need the `hf-token` Secret). Lip Sync with the safeguards on refuses
+kind). The Indic speech servers do run on kind (`KIND_SPEECH=all`, token from `.env`; Bengali text to speech to
+text round trip exact on 2026-10-10). Lip Sync with the safeguards on refuses
 photographs, so only illustrations work: a product decision for staging and the GCP test.
 
 Original blockers list (kept for the record): the chart has no `LIPSYNC_SERVER_URL`
