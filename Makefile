@@ -1,7 +1,7 @@
 CONTAINER_ENGINE ?= podman
 export CONTAINER_ENGINE
 
-.PHONY: test-comfyui test-integration setup setup-k8s preflight dev down logs migrate test lint format contracts helm-lint kind-up kind-test kind-down
+.PHONY: test-comfyui test-integration setup setup-k8s preflight dev down logs migrate test lint format contracts helm-lint kind-up kind-test kind-e2e kind-down
 setup:
 	./scripts/setup.sh
 setup-k8s:
@@ -42,6 +42,8 @@ helm-lint:
 		helm lint deploy/helm/wd-ai $$f >/dev/null && helm template t deploy/helm/wd-ai $$f >/dev/null && echo "ok: helm $$f" || exit 1; done
 kind-up:
 	./scripts/kind-up.sh
+kind-e2e:
+	uv run python scripts/kind-e2e.py   # makes something with each of the six products
 kind-test:
 	./scripts/kind-smoke.sh
 kind-down:

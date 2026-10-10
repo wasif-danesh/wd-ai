@@ -4,6 +4,36 @@ Build a **walking skeleton** first: the thinnest slice through every layer, depl
 Kubernetes early. The riskiest assumptions are portability and the delivery pipeline, so
 prove them while the code is small.
 
+## v1 plan (decided 2026-10-10)
+
+v1 is **not a production launch**. Feature work is frozen; the aim is to prove the whole system deploys and works,
+then take it down again. Four stages, each with an exit criterion:
+
+| # | Stage | Done when |
+|---|---|---|
+| 1 | **End to end on local kind** (`make kind-up`) | All 6 products (music, image, video, text to speech, speech to text, lip sync) work in the cluster, with placeholder media from the worker and the CPU speech servers; a smoke test creates something with each; CI is green. |
+| 2 | **Monitoring** | Metrics and dashboards for job queues, failures, GPU seconds and request rates, with a few alerts; first on kind. Basic metrics (`/metrics`, queue depth) come first, then Prometheus, Grafana and alert rules. |
+| 3 | **Staging on the 24 GB NVIDIA box, built with OpenTofu** | The box already runs Linux with NVIDIA drivers. One `tofu apply` goes from that to k3s, Argo CD and the chart, running the real models (ComfyUI, Ollama, MuseTalk). Needs a CUDA image for the lip sync server and a ComfyUI image. |
+| 4 | **GCP test, then shutdown** | The same OpenTofu against GCP, on one spot GPU, private (no public address), safeguards **on** (ADR-0047, `safeguards.forceOn: true`), a budget alert, and `tofu destroy` leaves nothing billing. The deployment is then shut down: nothing is promoted to production in v1. |
+
+Decisions: the safeguards switch is on in the GCP test and off in staging (a private home lab). Terms of Use,
+takedown handling and billing stay out of v1 because there is no public launch.
+
+**Stage 1 status (2026-10-10): met on a Mac, with two items open.** `make kind-up` plus `make kind-test` (27 checks)
+and `make kind-e2e` (a real creation with each of the 6 products) pass: with placeholder GPU media, with the production
+safeguards on (`KIND_SAFEGUARDS=1`), with the CPU speech servers for real (`KIND_SPEECH=1`: text to speech 3 s, speech
+to text 17 s) and with the real lip sync server on the host (a 3 second voice in 32 s). Found and fixed on the way: no
+lip sync address in the chart, no independent real/placeholder switch for speech, and nothing installed the speech
+models (every speech job answered 404 in Compose and in the cluster; now `scripts/speech-models.sh` and a chart Job).
+Open: the Indic speech servers are untested in the cluster (need the `hf-token` Secret), and Lip Sync with the
+safeguards on refuses photographs (only illustrations work), a product decision for staging and the GCP test.
+
+Original blockers list (kept for the record): the chart has no `LIPSYNC_SERVER_URL`
+(the lip sync server runs natively on a Mac); the worker's `comfyuiMode: stub` also stubs the speech servers, so real
+speech in kind needs its own setting; kind publishes `localhost:3000`, so stop the Compose stack first; the Podman VM
+needs about 16 GB for kind plus the speech servers; the smoke test checks that pages and APIs answer but does not
+create anything with the 6 products.
+
 ## Phase 0: Foundations
 
 - [ ] Git repo, monorepo layout (see `CLAUDE.md`), `.gitignore`, `.env.example`
