@@ -93,3 +93,11 @@ jobs:
             buildah manifest push --all ghcr.io/${{ github.repository }}/$n:${{ github.sha }} docker://ghcr.io/${{ github.repository }}/$n:${{ github.sha }}
             buildah manifest push --all ghcr.io/${{ github.repository }}/$n:${{ github.sha }} docker://ghcr.io/${{ github.repository }}/$n:latest
           done
+          # The model servers are for the NVIDIA hosts (staging, GCP), so amd64 only: the arm64 build under QEMU
+          # would take hours and nothing runs it.
+          for s in services/lipsync-musetalk services/comfyui; do
+            n=$(basename $s)
+            buildah build --platform linux/amd64 --manifest ghcr.io/${{ github.repository }}/$n:${{ github.sha }} -f $s/Containerfile .
+            buildah manifest push --all ghcr.io/${{ github.repository }}/$n:${{ github.sha }} docker://ghcr.io/${{ github.repository }}/$n:${{ github.sha }}
+            buildah manifest push --all ghcr.io/${{ github.repository }}/$n:${{ github.sha }} docker://ghcr.io/${{ github.repository }}/$n:latest
+          done

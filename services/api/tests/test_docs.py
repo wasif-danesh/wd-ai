@@ -1,5 +1,6 @@
 """The README's URL table is generated from scripts/urls.py; this fails when they drift apart."""
 
+import importlib.util
 import re
 import subprocess
 import sys
@@ -22,8 +23,10 @@ def test_the_readme_url_table_matches_the_script():
 
 
 def test_every_service_has_a_name_and_a_url_in_some_mode():
-    sys.path.insert(0, str(ROOT / "scripts"))
-    import urls
+    spec = importlib.util.spec_from_file_location("urls", ROOT / "scripts" / "urls.py")
+    assert spec and spec.loader
+    urls = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(urls)
 
     for name, _what, compose, cmd, kind_url, _notes in urls.SERVICES:
         assert name and (compose or kind_url), name
