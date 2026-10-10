@@ -174,7 +174,10 @@ def checks():
 
 def main() -> int:
     failed = 0
+    only = os.environ.get("E2E_ONLY", "").lower()  # e.g. E2E_ONLY="lip sync"
     for name, check in checks():
+        if only and only not in name:
+            continue
         started = time.monotonic()
         try:
             detail = check()
@@ -182,7 +185,7 @@ def main() -> int:
         except Exception as exc:  # report every product, not only the first failure
             failed += 1
             print(f"✗ {name:15} {exc}")
-    print(f"\n{6 - failed} of 6 products made something" + ("" if not failed else "; see above"))
+    print(f"\n{failed} failed" if failed else "\nall made something")
     return 1 if failed else 0
 
 

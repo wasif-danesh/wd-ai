@@ -1,0 +1,19 @@
+# ComfyUI for the media pipeline (ADR-0025): the worker drives it over HTTP and WebSocket.
+# CPU by default (what a laptop cluster has: it starts and runs graphs that need no models); for an NVIDIA GPU
+# host build with the CUDA wheels:
+#   --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cu126
+# Models, outputs and inputs live in the volume mounted at /data, never in the image. Build from the repository
+# root:  podman build -f services/comfyui/Containerfile -t wd-ai/comfyui .
+FROM python:3.11-slim
+ARG COMFYUI_REF=v0.39.2
+ARG TORCH_INDEX=https://download.pytorch.org/whl/cpu
+RUN apt-get update && apt-get install -y --no-install-recommends git libgl1 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone -q --depth 1 --branch ${COMFYUI_REF} https://github.com/comfyanonymous/ComfyUI.git /opt/comfyui
+WORKDIR /opt/comfyui
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url ${TORCH_INDEX} \
+    && pip install --no-cache-dir -r requirements.txt
+ENV COMFYUI_ARGS="--cpu"
+EXPOSE 8188
+# `--base-directory /data` puts models, input, output and custom nodes in the volume.
+CMD ["sh", "-c", "mkdir -p /data/models /data/input /data/output /data/temp /data/user /data/custom_nodes && exec python main.py --listen 0.0.0.0 --port 8188 --base-directory /data ${COMFYUI_ARGS}"]
