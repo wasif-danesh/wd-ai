@@ -12,7 +12,7 @@ then take it down again. Four stages, each with an exit criterion:
 | # | Stage | Done when |
 |---|---|---|
 | 1 | **End to end on local kind** (`make kind-up`) | All 6 products (music, image, video, text to speech, speech to text, lip sync) work in the cluster, with placeholder media from the worker and the CPU speech servers; a smoke test creates something with each; CI is green. |
-| 2 | **Monitoring** | Metrics and dashboards for job queues, failures, GPU seconds and request rates, with a few alerts; first on kind. Basic metrics (`/metrics`, queue depth) come first, then Prometheus, Grafana and alert rules. |
+| 2 | **Monitoring** (built, ADR-0048 accepted) | Metrics and dashboards for job queues, failures, GPU seconds and request rates, with alerts to Telegram and an outside heartbeat; installed on kind with `make monitoring-up`, fire drill with `make monitoring-drill` (passed 2026-10-10: alert, Telegram notification, resolve). Runbook: `docs/runbooks/monitoring.md`. |
 | 3 | **Staging on the 24 GB NVIDIA box, built with OpenTofu** | The box already runs Linux with NVIDIA drivers. One `tofu apply` goes from that to k3s, Argo CD and the chart, running the real models (ComfyUI, Ollama, MuseTalk). Needs a CUDA image for the lip sync server and a ComfyUI image. |
 | 4 | **GCP test, then shutdown** | The same OpenTofu against GCP, on one spot GPU, private (no public address), safeguards **on** (ADR-0047, `safeguards.forceOn: true`), a budget alert, and `tofu destroy` leaves nothing billing. The deployment is then shut down: nothing is promoted to production in v1. |
 

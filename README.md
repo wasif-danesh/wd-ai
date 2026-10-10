@@ -4,23 +4,21 @@ A self-hosted, cloud-portable platform for launching AI products quickly.
 
 The **platform core** provides the shared machinery every AI product needs: an API with
 streaming, a stateful agent runtime, a model gateway, GPU media workers, storage, and
-auth, and (later) billing and observability. Each **product** is a thin layer on top: a few
+auth, monitoring, and (later) billing. Each **product** is a thin layer on top: a few
 LangGraph graphs, a Next.js UI and a config file.
 
-> **Status: prototype.** The platform and five products work end to end on a laptop: **music**
-> (lyrics you approve, a 60-second track and a cover), **images** (text to image, image to image),
-> **video** (text to video, image to video, made in the background) and **text to speech** (eight
-> languages including Bengali, a male and a female voice each) and **speech to text** (upload or record, 51 languages). Everything made lands in one
-> library, **My creations**, which you can search by meaning in any language. Models run through
-> Ollama, ComfyUI and open speech servers. It runs in containers and installs on a local
-> Kubernetes cluster from a Helm chart. Still to come: the home-lab (k3s + Argo CD) rollout, billing and a production deployment. See the
-> [roadmap](docs/roadmap.md).
+> **Status: prototype (v1 in progress).** Six products run end to end: **music**, **images**, **video**,
+> **text to speech**, **speech to text** and **lip sync**. Everything a user makes lands in one library,
+> **My creations**, searchable by meaning in any language. The whole system runs in containers and installs on
+> a local Kubernetes cluster from a Helm chart, with monitoring and alerts to Telegram. Next are staging on a
+> GPU box and a short GCP test, built with OpenTofu. See the [roadmap](docs/roadmap.md).
 
 ## Contents
 
 - [How it works](#how-it-works)
 - [Products](#products)
 - [Quick start](#quick-start) (including [what to install first](#before-you-start-manual-prerequisites))
+- [Monitoring](#monitoring)
 - [Using the API](#using-the-api)
 - [Project layout](#project-layout)
 - [Configuration](#configuration)
@@ -36,9 +34,13 @@ LangGraph graphs, a Next.js UI and a config file.
 Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─► Ollama / vLLM
                                         │
                                         ├─► Postgres (pgvector, checkpoints, jobs)
-                                        ├─► Redis (job queue, pub/sub) ─► Media worker ─► ComfyUI
-                                        │                                           └─► Speech servers (Kokoro, Indic Parler-TTS)
+                                        ├─► Redis (job queue, pub/sub) ─► Media worker ─┬─► ComfyUI (images, music, video)
+                                        │                                               ├─► Speech servers (Kokoro, Whisper,
+                                        │                                               │   Indic Parler-TTS, IndicConformer)
+                                        │                                               └─► Lip sync server (MuseTalk)
                                         └─► Object storage (SeaweedFS / S3 / GCS / Azure Blob)
+
+Prometheus, Alertmanager, Grafana and Loki watch all of it and alert to Telegram.
 ```
 
 1. The browser talks only to the **Next.js** app, which handles sign-in (Auth.js). Its route
@@ -46,53 +48,28 @@ Browser ─► Next.js (UI + BFF) ─► FastAPI + LangGraph ─► LiteLLM ─�
    pass the event stream through unchanged.
 2. **FastAPI** runs the product's **LangGraph** graph and streams progress to the browser as
    Server-Sent Events: node status, tokens, interrupts, job progress, and a final result.
-3. Graphs ask for **capabilities** (`text.chat`, `text.lyrics`, `music.generate`, `image.generate`, `speech.synthesize`),
-   never for specific models. Config binds each capability to a provider.
+3. Graphs ask for **capabilities** (`text.chat`, `music.generate`, `image.generate`, `speech.synthesize`,
+   `video.lipsync`), never for specific models. Config binds each capability to a provider.
 4. Text goes through **LiteLLM**, an OpenAI-compatible gateway that maps aliases to Ollama
    (dev, staging) or vLLM / hosted APIs (prod).
-5. Slow work (music, images, video, speech) is never awaited inline. The graph enqueues a job in
-   **Redis**, a **media worker** drives ComfyUI (or a speech server), and the graph resumes when the job finishes.
+5. Slow work (music, images, video, speech, lip sync) is never awaited inline. The graph enqueues a job in
+   **Redis**, a **media worker** drives ComfyUI or a speech or lip sync server, and the graph resumes when the
+   job finishes.
 6. Graph state is checkpointed in **Postgres**, so a run can pause for user input and resume.
-
-### What works today
-
-| Area | State |
-|---|---|
-| Streaming run API (`/products/{id}/runs`, reconnect, resume) | Working |
-| LangGraph runtime with Postgres checkpointer, one-node `hello` graph | Working |
-| LiteLLM gateway to local Ollama (default model `gemma4:e4b`) | Working |
-| Next.js page + BFF streaming tokens end to end | Working |
-| Typed contracts: Pydantic models and generated TypeScript types | Working |
-| Database migrations (tenants, users, identities, threads, jobs, usage events, songs) | Working |
-| Container images and local compose stack | Working |
-| Capability layer (`litellm`, `comfyui`, `fake`), validated product config | Working |
-| Usage events: token counts written per LLM call | Working |
-| Image and audio input to the model (`Image`/`Audio` parts, files from storage); secure picture upload with choose, drag and drop, and paste ([ADR-0035](docs/decisions/0035-image-uploads.md), [ADR-0039](docs/decisions/0039-picture-input.md)) | Working; audio upload comes with Speech to Text |
-| Object storage interface (S3 API via SeaweedFS), presigned URLs | Working locally; not in the Helm chart yet |
-| RAG helpers on pgvector with embeddings (`nomic-embed-text`) | Working (library; no HTTP endpoints) |
-| Media pipeline: Redis queue, worker, ComfyUI client, live `job_progress`, queue positions | Working; real ComfyUI verified locally (60 s song in about 77 s, 1024x1024 cover in about 25 s on an Apple Silicon Mac), GPU on k3s untested |
-| Song graph: guardrail, lyrics, approval, music, cover, daily quota | Working with real models ([ADR-0022](docs/decisions/0022-song-graph-and-guardrail.md), [ADR-0024](docs/decisions/0024-real-model-validation.md)) |
-| Song downloads: the MP3 with its cover and lyrics inside, the cover, and a video of the cover with the song playing ([ADR-0034](docs/decisions/0034-song-downloads.md)) | Working |
-| Studio home ("WD AI Studio") with a card per product; inside a product a **side panel** (products, library, admin, breadcrumb, ⌘K search); `wd-music-ai` under `/music`, `wd-image-ai` under `/image`, `wd-video-ai` under `/video`, `wd-tts-ai` under `/text-to-speech` | Working ([ADR-0033](docs/decisions/0033-studio-home-and-product-urls.md), [ADR-0046](docs/decisions/0046-product-side-panel.md)) |
-| **My creations** (`/creations`): songs, images, clips and speech together, as cards or a sortable table, with multilingual semantic search | Working ([ADR-0040](docs/decisions/0040-one-library.md), [ADR-0041](docs/decisions/0041-semantic-search.md)) |
-| **Speech to text**: upload or record, 39 languages (Whisper turbo, language found by large-v3), transcripts with timestamps, as text, SRT, VTT or JSON | Working; Bengali and Hindi are weak with Whisper, the Indian-languages engine is next ([ADR-0043](docs/decisions/0043-speech-to-text.md)) |
-| **Text to speech**: eight languages, a male and a female voice each (Kokoro; Bengali with Indic Parler-TTS), MP3 download | Working; Bengali was reviewed by a native listener and is slow on a CPU; Japanese and Chinese are not offered yet ([ADR-0042](docs/decisions/0042-text-to-speech.md)) |
-| Web UI built from shadcn/ui, Tailwind CSS and TanStack Table, in light and dark | Working ([ADR-0045](docs/decisions/0045-ui-components.md)) |
-| Sign-in (Auth.js with Google, GitHub, Microsoft; signed API tokens; users table) | Working; verified with a real GitHub login. Google and Microsoft are wired but not tried ([ADR-0030](docs/decisions/0030-authentication.md)) |
-| Admin area (`/admin`): users, songs, usage, audit log, model access, as sortable, filterable, paged tables | Working; LLM providers (Gemini, Groq, Cerebras, OpenRouter, any OpenAI-compatible or LiteLLM model, or local) are changed at run time, the guardrail model is vetted first. Media backends (local ComfyUI, Comfy Cloud / Comfy API v2, OpenAI-compatible image APIs) are chosen per product capability at `/admin/media` ([ADR-0032](docs/decisions/0032-media-backends.md); tested against stand-in servers, not yet the real Comfy Cloud) |
-| Helm chart, local Kubernetes (kind), CI smoke test | Working |
-| k3s home lab with Argo CD | Manifests and runbook written, not yet run (Phase 2) |
+7. A set of **safeguards** (content moderation and per-user quotas) is one system-wide switch in the admin area:
+   off by default for development, forced on in production
+   ([ADR-0047](docs/decisions/0047-safeguards-switch.md)).
 
 ## Products
 
-| Product | Status | Description |
-|---|---|---|
-| [`wd-music-ai`](products/wd-music-ai/README.md) | MVP working | Turns a song idea into lyrics, a 60-second track and cover art |
-| [`wd-image-ai`](products/wd-image-ai/README.md) | Working | Text to image and image to image on FLUX.2 klein 4B, with secure uploads |
-| [`wd-video-ai`](products/wd-video-ai/README.md) | Working | Text to video and image to video (2 or 5 seconds) on LTX-Video 2B, made in the background |
-| [`wd-tts-ai`](products/wd-tts-ai/README.md) | Working | Text to speech in eight languages with a male and a female voice (Kokoro; Bengali with Indic Parler-TTS) |
-| [`wd-stt-ai`](products/wd-stt-ai/README.md) | Working (first slice) | Speech to text: upload or record, 51 languages (Whisper, and IndicConformer for the Indian languages), transcripts with timestamps as text, SRT, VTT or JSON |
-| [`wd-lipsync-ai`](products/wd-lipsync-ai/README.md) | Working (prototype) | Lip Sync: a character picture and a voice, a song or a script (up to 5 minutes) become a talking clip: MuseTalk on a native server, about 5 seconds of compute per second of video on a Mac ([ADR-0044](docs/decisions/0044-lip-sync.md)) |
+| Product | What it does |
+|---|---|
+| [`wd-music-ai`](products/wd-music-ai/README.md) | A song idea becomes lyrics you approve, a 60-second track and cover art |
+| [`wd-image-ai`](products/wd-image-ai/README.md) | Text to image and image to image (FLUX.2 klein 4B) |
+| [`wd-video-ai`](products/wd-video-ai/README.md) | Text to video and image to video, 2 or 5 seconds (LTX-Video 2B), made in the background |
+| [`wd-tts-ai`](products/wd-tts-ai/README.md) | Text to speech in eight languages, a male and a female voice each (Kokoro; Bengali with Indic Parler-TTS) |
+| [`wd-stt-ai`](products/wd-stt-ai/README.md) | Speech to text from a file or the microphone, 51 languages (Whisper; IndicConformer for the Indian languages) |
+| [`wd-lipsync-ai`](products/wd-lipsync-ai/README.md) | A character picture and a voice, a song or a script (up to 5 minutes) become a talking clip (MuseTalk) |
 
 A product is a folder under `products/` with its `product.yaml`, graphs, prompts and ComfyUI
 workflows. Adding a product adds no API endpoints: the graph registry exposes registered
@@ -109,10 +86,11 @@ make setup      # installs missing tools, starts Podman + Ollama, pulls the mode
 make dev        # starts the stack, waits for Postgres, runs migrations, follows logs
 ```
 
-Then open http://localhost:3000, choose **Create a song**, describe a song, and watch it get written. You approve the lyrics, then
-the music and cover are made. By default they are placeholders; set `COMFYUI_MODE=real` in `.env`
-and run ComfyUI with the ACE-Step and FLUX.2 klein models for real ones (see
-[products/wd-music-ai](products/wd-music-ai/README.md) and [Hardware notes](#hardware-notes)).
+Then open http://localhost:3000, choose a product and make something. GPU media (music, images, video) are
+placeholders by default; set `COMFYUI_MODE=real` in `.env` and run ComfyUI with the models for real ones (see
+[products/wd-music-ai](products/wd-music-ai/README.md) and [Hardware notes](#hardware-notes)). Lip Sync runs on
+its own server, which `make dev` starts once it is installed (`services/lipsync-musetalk/setup.sh`, about 4 GB;
+see [products/wd-lipsync-ai](products/wd-lipsync-ai/README.md)).
 
 Sign-in is off by default (`AUTH_MODE=stub` in `.env.example`: everyone is the dev user). To turn it on,
 set `AUTH_MODE=jwt`, the two secrets and a provider's client id and secret: see
@@ -222,6 +200,8 @@ missing and points back to `make setup`.
   about five times slower than real time on a CPU, so give the Podman VM about **12 GB** (`podman machine set
   --memory 12288`). Its model is gated: accept the terms on its Hugging Face page and put a read token in
   `.env` as `HF_TOKEN` ([products/wd-tts-ai](products/wd-tts-ai/README.md)).
+- The lip sync server (MuseTalk) runs natively on the Mac so it can use the Apple GPU: about 12 GB of memory
+  and 5 seconds of compute per second of video. `make dev` starts and `make down` stops it.
 - Ollama runs natively on the host so it can use the GPU. On Apple Silicon it uses Metal. On
   Intel Macs and machines without a supported GPU it runs on CPU, so replies are slow.
 - Linux and WSL: Ollama listens on `127.0.0.1` by default, which containers may not reach.
@@ -237,25 +217,42 @@ missing and points back to `make setup`.
 | LiteLLM | http://localhost:4000 |
 | Object storage (S3 API) | http://localhost:8333 |
 | Speech servers: Kokoro and Whisper (Speaches) / Indic Parler-TTS / IndicConformer | http://localhost:8100 / :8101 / :8102 |
+| Lip sync server (MuseTalk, native) | http://localhost:8191 |
 | Postgres / Redis | `localhost:5432` / `localhost:6379` |
 
 `make logs` follows container logs, and `make down` stops everything.
 
 ### Run on Kubernetes (kind)
 
-Runs the same Helm chart used for staging, on a local cluster. `make setup-k8s` installs
-`kind`, `helm` and `kubectl`; on macOS the Podman VM needs about 6 GB RAM (setup offers to
-resize it). On Linux with rootless Podman see [runbooks/linux-kind.md](docs/runbooks/linux-kind.md).
+Runs the same Helm chart used for staging, on a local cluster. `make setup-k8s` installs `kind`, `helm` and
+`kubectl`. On Linux with rootless Podman see [runbooks/linux-kind.md](docs/runbooks/linux-kind.md).
 
 ```bash
-make kind-up      # builds images, creates the cluster, installs the chart
-make kind-test    # smoke test: migrations, web, and a streamed run
+make down         # the Compose stack and kind both use localhost:3000
+make kind-up      # builds images, creates the cluster, installs the chart and the monitoring stack
+make kind-test    # smoke test: migrations, every product's pages and APIs, the pods that replace native services
+make kind-e2e     # makes something with each of the six products
 make kind-down    # delete the cluster
 ```
 
-Open http://localhost:3000. Locally, pods use the Ollama already running on your machine;
-in staging the chart runs Ollama in the cluster. Home lab setup with k3s and Argo CD:
-[runbook](docs/runbooks/homelab-k3s.md).
+The default `KIND_MODE=full` runs **every service as a pod, nothing native**: Ollama with its models, the CPU
+speech servers, the lip sync server (CPU) and ComfyUI, plus Prometheus, Alertmanager, Grafana and Loki. It needs a
+Podman VM of about 24 GB of memory and 100 GB of disk (`podman machine set --memory 32768 --disk-size 160`) and
+downloads about 20 GB of models on the first start. There is no GPU in the cluster, so GPU media (images, music,
+video) are placeholders, apart from one model-free ComfyUI graph the smoke test runs for real. `KIND_MODE=light`
+is what CI runs: no models. `KIND_SAFEGUARDS=1` turns the production safeguards on. Home lab setup with k3s and
+Argo CD: [runbook](docs/runbooks/homelab-k3s.md).
+
+### Monitoring
+
+```bash
+make monitoring-up      # Prometheus, Alertmanager, Grafana, Loki; part of make kind-up
+make monitoring-drill   # stop the worker and expect an alert on Telegram, then a resolve
+```
+
+Alerts go to Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` in `.env`), and a heartbeat to Healthchecks.io
+(`HEALTHCHECKS_PING_URL`) tells you when the whole cluster is down. Dashboards, alert list and fire drills:
+[runbook](docs/runbooks/monitoring.md), [ADR-0048](docs/decisions/0048-monitoring-and-alerting.md).
 
 ### Develop with live reload
 
@@ -295,6 +292,7 @@ Without a valid token every route except `/health` answers `401`. Responses for 
 | `GET /products/wd-video-ai/videos`, `GET/DELETE /products/wd-video-ai/videos/{id}`, `.../download` | The signed-in user's clips, including ones still being made ([ADR-0037](docs/decisions/0037-video-product.md)) |
 | `GET /products/wd-image-ai/images`, `GET/DELETE /products/wd-image-ai/images/{id}`, `.../download` | The signed-in user's images ([ADR-0036](docs/decisions/0036-image-product.md)) |
 | `GET /products/wd-music-ai/songs`, `GET /products/wd-music-ai/songs/{id}` | The signed-in user's songs, with presigned audio and cover links (product-provided routes, [ADR-0023](docs/decisions/0023-product-provided-routes.md)) |
+| `GET/PUT /admin/safeguards` | Admin only: the system-wide safeguards switch ([ADR-0047](docs/decisions/0047-safeguards-switch.md)) |
 
 Try it without the browser, through the Next.js BFF:
 
@@ -311,17 +309,6 @@ event: token
 data: {"run_id":"…","thread_id":"…","seq":2,"ts":"…","node":"hello","text":"Hello"}
 ```
 
-The `hello` run also accepts `image_key` and/or `audio_key`: relative paths of files already in
-your object storage (for example `uploads/cat.png`), which are sent to the multimodal model:
-
-```bash
-curl -N -X POST localhost:3000/api/products/hello/runs -H 'content-type: application/json' \
-  -d '{"input":{"message":"What colour is this?","image_key":"uploads/green.png"}}'
-```
-
-There is no upload endpoint yet, so place the file with the storage interface for now
-(see [ADR-0020](docs/decisions/0020-multimodal-input.md)).
-
 Event types are `node`, `token`, `interrupt`, `job_progress`, `error` and `done`. Full protocol:
 [SSE event contract](docs/contracts/sse-events.md). Interactive docs are at
 http://localhost:8000/docs.
@@ -330,10 +317,12 @@ http://localhost:8000/docs.
 
 ```
 wd-ai/
-├─ apps/web/                 # Next.js app (shadcn/ui, Tailwind, TanStack Table): product UIs, side panel, admin, BFF route handlers
+├─ apps/web/                 # Next.js app (shadcn/ui, Tailwind, TanStack Table): product UIs, side panel, admin, BFF
 ├─ services/
-│  ├─ api/                   # FastAPI + LangGraph runtime (graphs, runs, identity, migrations)
-│  ├─ media-worker/          # Redis consumer that drives ComfyUI and the speech servers (stub or real mode)
+│  ├─ api/                   # FastAPI + LangGraph runtime (graphs, runs, identity, migrations, metrics)
+│  ├─ media-worker/          # Redis consumer that drives ComfyUI, the speech servers and the lip sync server
+│  ├─ comfyui/               # ComfyUI container image (CPU by default, CUDA by build argument)
+│  ├─ lipsync-musetalk/      # the lip sync server (MuseTalk): image, setup script, model fetcher
 │  ├─ speech-indic/          # small speech server for Indic Parler-TTS (Bengali)
 │  └─ stt-indic/             # small transcription server for IndicConformer (Indian languages)
 ├─ packages/
@@ -341,21 +330,23 @@ wd-ai/
 │  ├─ contracts-ts/          # TypeScript types generated from the OpenAPI schema
 │  └─ platform-sdk/          # Capabilities, providers, product config, storage, usage, graph registry
 ├─ products/
-│  ├─ hello/                 # sample product: config only (graph lives in the API)
-│  ├─ media-demo/            # sample product: config only (one image job, used by the smoke tests)
-│  ├─ wd-music-ai/           # product package: graph, guardrail, prompts, workflows, evals, tests
+│  ├─ hello/, media-demo/    # sample products: config only (used by the smoke tests)
+│  ├─ wd-music-ai/           # song graph, guardrail, prompts, workflows, evals, tests
 │  ├─ wd-image-ai/           # text to image and image to image
 │  ├─ wd-video-ai/           # text to video and image to video
-│  └─ wd-tts-ai/             # text to speech: voice catalog, graph, guardrail, tests
+│  ├─ wd-tts-ai/             # text to speech: voice catalog, graph, guardrail
+│  ├─ wd-stt-ai/             # speech to text: languages, transcripts, formats
+│  └─ wd-lipsync-ai/         # lip sync: graph, guardrails, store, search
 ├─ deploy/
 │  ├─ compose/               # LiteLLM config for the local stack
 │  ├─ helm/wd-ai/            # Helm chart + values overlays (local, staging, prod, cloud/*)
+│  ├─ monitoring/            # values for the monitoring stack and the Alertmanager template
 │  ├─ kind/                  # local cluster config
 │  └─ argocd/                # Argo CD Application for staging
-├─ scripts/                  # setup, preflight, dev, kind and install helpers; export_openapi.py
-├─ docs/                     # architecture, ADRs, contracts, roadmap
+├─ scripts/                  # setup, preflight, dev, kind, monitoring and install helpers
+├─ docs/                     # architecture, ADRs, contracts, runbooks, roadmap
 ├─ compose.yaml              # local dev stack
-└─ Makefile                  # setup, dev, test, lint, contracts, migrate, kind-*
+└─ Makefile                  # setup, dev, test, lint, contracts, migrate, kind-*, monitoring-*
 ```
 
 Python packages are snake_case (`wd_api`); folders and URLs are kebab-case.
@@ -388,7 +379,8 @@ make preflight   # read-only readiness check
 make dev / down  # start (with migrations) / stop the container stack
 make migrate     # alembic upgrade head only (Postgres on localhost)
 make helm-lint   # lint and render the chart with every overlay
-make kind-up / kind-test / kind-down   # local Kubernetes (see above)
+make kind-up / kind-test / kind-e2e / kind-down   # local Kubernetes (see above)
+make monitoring-up / monitoring-drill             # monitoring stack and fire drill
 ```
 
 - **Tooling:** Python 3.12 with `uv`, `ruff`, `pyright`, `pytest`, Alembic. TypeScript with
@@ -430,9 +422,10 @@ make kind-up / kind-test / kind-down   # local Kubernetes (see above)
 |---|---|---|
 | Dev | macOS, Linux or Windows (WSL2), Podman | Day-to-day development |
 | Staging | Home lab k3s, 24 GB NVIDIA GPU | Integration and test runs |
-| Prod | Managed Kubernetes, GCP first (AWS and Azure kept deployable) | Production |
+| GCP test | Managed Kubernetes on GCP, built with OpenTofu, safeguards on, shut down after the test | Prove the deployment; not a launch |
+| Prod | Managed Kubernetes, GCP first (AWS and Azure kept deployable) | Production, later |
 
-The same container images run in all three. Only infrastructure and configuration differ.
+The same container images run everywhere. Only infrastructure and configuration differ.
 
 ## Documentation
 
@@ -446,6 +439,7 @@ The same container images run in all three. Only infrastructure and configuratio
 | [Windows (WSL2)](docs/windows.md) | Running the project on Windows |
 | [Home lab runbook](docs/runbooks/homelab-k3s.md) | k3s, Argo CD and Tailscale setup for staging |
 | [kind on Linux](docs/runbooks/linux-kind.md) | Rootless Podman prerequisites for the local cluster |
+| [Monitoring runbook](docs/runbooks/monitoring.md) | The stack, the alerts, where to look, fire drills |
 | [Roadmap](docs/roadmap.md) | Build phases, checklists and planned work |
 | [Decisions](docs/decisions/README.md) | Architecture decision records (ADRs) |
 | [`wd-music-ai`](products/wd-music-ai/README.md) | The first product's spec |
@@ -466,21 +460,16 @@ The same container images run in all three. Only infrastructure and configuratio
 
 ## Roadmap
 
-| Phase | Goal | State |
-|---|---|---|
-| 0 | Foundations: monorepo, tooling, migrations, containers, CI | Done |
-| 1 | Walking skeleton on the Mac: SSE contract, hello graph, LiteLLM, web streaming | Done |
-| 2 | Skeleton on Kubernetes: Helm, `kind`, home lab k3s, Argo CD | Chart and kind done; home lab pending |
-| 3 | Platform core: capability layer, storage, usage events, RAG | Done |
-| 4 | Media pipeline: Redis queue, worker, ComfyUI, GPU sharing | Done except GPU on k3s (needs the lab) |
-| 5 | `wd-music-ai` MVP: song graph, auth, quota, UI, real models | Done |
-| 5b | Image, video, text-to-speech and speech-to-text products, one searchable library, shadcn/ui front end | Done, including Lip Sync (MuseTalk) |
-| 6 | Production on GCP | Planned |
+v1 is a working, deployable system, not a production launch. Four stages:
 
-Planned next: long transcripts in search and a native Mac speed-up for Speech to Text ([ADR-0043](docs/decisions/0043-speech-to-text.md)), and a container image for the Lip Sync server
-([ADR-0044](docs/decisions/0044-lip-sync.md)), the other Indic languages for text to speech, and the proposed ADRs: SEO, first-party analytics and
-Google Analytics ([0026](docs/decisions/0026-seo.md), [0027](docs/decisions/0027-first-party-analytics.md),
-[0028](docs/decisions/0028-google-analytics-and-consent.md)), and billing with Stripe
-([0029](docs/decisions/0029-billing-and-payments.md)).
+| Stage | Goal | State |
+|---|---|---|
+| 1 | End to end on local kind, nothing native (all six products) | Done |
+| 2 | Monitoring: metrics, dashboards, alerts to Telegram, an outside heartbeat | Done |
+| 3 | Staging on the 24 GB NVIDIA box, built with OpenTofu | Next |
+| 4 | GCP test with the safeguards on, then shut down | Planned |
+
+After v1: the Indic speech servers on staging, real GPU media, a CUDA image for the lip sync server, long
+transcripts in search, SEO, analytics and billing (proposed ADRs 0026 to 0029).
 
 Details and checklists: [docs/roadmap.md](docs/roadmap.md).

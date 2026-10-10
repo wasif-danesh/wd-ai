@@ -203,6 +203,13 @@ migration).
 `SEARCH_RECONCILE_EVERY_S` (300) and `SEARCH_RECONCILE_BATCH` (200) set how often the background indexer checks for
 creations that are missing from the index and how many it embeds each time.
 
+### Metrics
+
+The API and the media worker serve Prometheus metrics on `METRICS_PORT` (default 9464, separate from the API's
+public port; `0` turns it off). Nothing but the cluster's Prometheus reaches it. See `docs/runbooks/monitoring.md`
+and ADR-0048. The alert thresholds are chart values (`metrics.alerts.*`) and the stack is installed with
+`make monitoring-up`, from `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `HEALTHCHECKS_PING_URL` in `.env`.
+
 ### A separate ComfyUI for video
 
 `COMFYUI_VIDEO_BASE_URL` (worker and API; empty by default) is the ComfyUI that `video.*` jobs go to when the

@@ -1,6 +1,6 @@
 # ADR-0048: Monitoring and alerting
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-10
 
 ## Context
@@ -28,9 +28,8 @@ The constraints that decide the design:
 
 1. **The monitoring stack runs in the cluster it watches**, in its own `monitoring` namespace, installed from the
    `kube-prometheus-stack` chart: Prometheus (metrics), Alertmanager (routing) and Grafana (dashboards), plus
-   Loki for logs. It is cloud-neutral and the same chart serves kind, staging and GCP. Defaults: 15 days of
-   metrics, 7 days of logs, small volumes. On kind only Prometheus, Alertmanager and Grafana run (no Loki), to
-   keep the cluster light.
+   Loki for logs, **in every environment including kind** (the owner's decision). It is cloud-neutral and the same
+   chart serves kind, staging and GCP. Defaults: 15 days of metrics, 7 days of logs, small volumes.
 2. **Applications expose metrics.** The API and the media worker serve `/metrics` (Prometheus text format, on
    a separate port for the worker). Metric names are stable and low-cardinality: labels are the product, the
    capability, the outcome and the HTTP route template, **never a user id, a prompt or any content**.
@@ -71,7 +70,7 @@ The constraints that decide the design:
 1. On kind, the dashboards show real numbers while `make kind-e2e` runs: runs per product, job durations, queue
    depth.
 2. A fire drill on kind: stop the media worker; within 10 minutes the Telegram chat receives the critical alert,
-   and it resolves when the worker is back.
+   and it resolves when the worker is back. A log line for the same run can be found in Grafana by its request id.
 3. A second drill: stop Prometheus; within 5 minutes the external heartbeat service messages the same chat.
 4. No metric label carries a user id or content (a test scrapes `/metrics` after a run and checks).
 
@@ -95,12 +94,20 @@ The constraints that decide the design:
   rule examples, the chart) is the common denominator; revisit if memory on staging becomes a problem.
 - **Alerts by email only:** too slow for a one-person on-call; Telegram reaches a phone.
 
-## Questions for the owner
+## Owner's answers (2026-10-10)
 
-1. Is Telegram the only channel? A bot token and a chat id are needed (BotFather, about five minutes).
-2. Healthchecks.io's free tier (a hosted heartbeat) or Uptime Kuma on another machine for the outside check?
-3. Loki for logs on staging and the GCP test: yes (as proposed), or metrics only for now?
-4. Is "no public ingress, reach it over Tailscale" right for Grafana on staging?
+1. **Telegram is the only channel.** The owner's Telegram user id is the destination (kept in `.env` as
+   `TELEGRAM_CHAT_ID`, not in the repository). The bot token comes from BotFather and is kept in `.env` as
+   `TELEGRAM_BOT_TOKEN`; the owner must press Start on the bot once before it can send.
+2. **Healthchecks.io's free tier** is the outside heartbeat. Its ping URL is a secret (`HEALTHCHECKS_PING_URL`).
+3. **Loki for logs everywhere**, including kind.
+4. **Grafana, Prometheus and Alertmanager are private:** no public ingress, reached over Tailscale or
+   `kubectl port-forward`.
+
+## Secrets this needs
+
+`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `HEALTHCHECKS_PING_URL` and the Grafana admin password. They live in
+`.env` locally and in a Kubernetes Secret (External Secrets later); none is in a values file or the repository.
 
 ## Docs to update if accepted
 
