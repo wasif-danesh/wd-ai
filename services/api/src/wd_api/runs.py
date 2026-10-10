@@ -23,6 +23,8 @@ from wd_platform_sdk import (
     set_context,
 )
 
+from wd_api.metrics import record_run
+
 log = logging.getLogger(__name__)
 
 
@@ -126,9 +128,19 @@ class RunManager:
                         await self._emit(rec, NodeEvent, node=node, status="completed", label=node)
             state = await graph.aget_state(config)
             await self.store.set_state(rec.tenant_id, rec.run_id, "done")
+            refusal = (
+                (state.values.get("refusal") or {})
+                if state.values.get("status") == "refused"
+                else {}
+            )
+            if refusal:
+                record_run(rec.product_id, "refused", refusal=str(refusal.get("code", "")))
+            else:
+                record_run(rec.product_id, "done")
             await self._emit(rec, DoneEvent, outputs=dict(state.values))
         except JobFailed as e:
             err = e.result.error
+            record_run(rec.product_id, "error", code=err.code if err else "job_failed")
             await self.store.set_state(rec.tenant_id, rec.run_id, "error")
             await self._emit(
                 rec,
@@ -139,12 +151,14 @@ class RunManager:
                 job_id=e.result.job_id,
             )
         except RunError as e:
+            record_run(rec.product_id, "error", code=e.code)
             await self.store.set_state(rec.tenant_id, rec.run_id, "error")
             await self._emit(rec, ErrorEvent, code=e.code, message=e.message, retryable=e.retryable)
         except asyncio.CancelledError:
             raise
         except Exception:
             log.exception("run failed", extra={"run_id": rec.run_id})
+            record_run(rec.product_id, "error", code="run_failed")
             await self.store.set_state(rec.tenant_id, rec.run_id, "error")
             await self._emit(
                 rec, ErrorEvent, code="run_failed", message="The run failed.", retryable=True

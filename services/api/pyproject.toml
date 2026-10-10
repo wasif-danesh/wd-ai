@@ -18,6 +18,7 @@ dependencies = [
   "wd-contracts",
   "wd-platform-sdk",
   "pyjwt>=2.9",
+  "prometheus-client>=0.21",
 ]
 
 [build-system]

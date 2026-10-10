@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     comfyui_video_base_url: str = ""  # the ComfyUI video runs on (ADR-0037); empty: the one above
     ollama_base_url: str = "http://host.containers.internal:11434"
     log_level: str = "INFO"
+    metrics_port: int = 9464  # Prometheus scrapes this port (ADR-0048); 0 turns the listener off
     media_secrets_key: str = ""  # encrypts media provider API keys saved in the admin area
 
     # Search over My creations (ADR-0041). The embedder is the `creation-embedder` alias; the index

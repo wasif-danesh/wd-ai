@@ -67,6 +67,8 @@ from wd_api.jobs_consumer import JobCompletionConsumer
 from wd_api.litellm_admin import BackendError, InMemoryModelBackend, LiteLLMBackend
 from wd_api.logging import configure_logging, request_id
 from wd_api.media_access import MediaAccess, media_capabilities_from
+from wd_api.metrics import MetricsMiddleware
+from wd_api.metrics import serve as serve_metrics
 from wd_api.model_access import ModelAccess, load_defaults
 from wd_api.model_checks import RegistryCheckRunner
 from wd_api.rag import DIMENSIONS, RagService
@@ -143,9 +145,12 @@ def create_app(
     if settings.auth_mode == "stub":
         logging.getLogger("wd_api").warning("AUTH_MODE=stub: every request is the dev user")
     products_registry = registry or default_registry()
+    injected_for_metrics = event_log is not None or run_store is not None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        if not injected_for_metrics:  # a test app must not open a port
+            serve_metrics(settings.metrics_port)
         reg = products_registry
         pdir = products_dir or Path(settings.products_dir)
         db = engine or create_async_engine(settings.database_url)
@@ -327,6 +332,7 @@ def create_app(
                 await db.dispose()
 
     app = FastAPI(title="wd-ai API", lifespan=lifespan)
+    app.add_middleware(MetricsMiddleware)
 
     @app.middleware("http")
     async def add_request_id(request: Request, call_next):

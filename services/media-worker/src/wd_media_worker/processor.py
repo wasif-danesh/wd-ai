@@ -25,6 +25,7 @@ from websockets.exceptions import WebSocketException
 
 from wd_media_worker.comfy import ComfyClient, ComfyError, ProgressFn, use_picture
 from wd_media_worker.gpu import GpuLock, unload_llms
+from wd_media_worker.metrics import record_job
 from wd_media_worker.settings import WorkerSettings
 from wd_media_worker.state import JobState
 from wd_media_worker.stub import run_stub
@@ -229,6 +230,7 @@ class JobProcessor:
                 job, "job_failed", "The generation failed.", _gpu(runner, elapsed), retryable=True
             )
 
+        record_job(job.capability, result.status, elapsed, result.gpu_seconds or 0.0)
         await self._record_usage(job, result, runner, elapsed)
         await self.state.finish(job.tenant_id, job.job_id, result)
         await self.emit(job, result.status, progress=1.0 if result.status == "completed" else None)

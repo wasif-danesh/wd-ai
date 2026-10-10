@@ -20,6 +20,7 @@ from wd_media_worker.backends import BackendRouter
 from wd_media_worker.comfy import ComfyClient
 from wd_media_worker.consumer import Worker
 from wd_media_worker.gpu import RedisGpuLock
+from wd_media_worker.metrics import WORKER_UP, serve, watch_queue
 from wd_media_worker.processor import ComfyRunner, JobProcessor, StubRunner
 from wd_media_worker.settings import WorkerSettings
 from wd_media_worker.state import RedisJobState
@@ -81,6 +82,9 @@ async def main() -> None:
     )
     worker = Worker(redis, processor)
 
+    serve(s.metrics_port)
+    WORKER_UP.set(1)
+    queue_task = asyncio.create_task(watch_queue(redis))
     task = asyncio.create_task(worker.run_forever())
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):
@@ -90,6 +94,8 @@ async def main() -> None:
     except asyncio.CancelledError:
         log.info("worker stopping")
     finally:
+        WORKER_UP.set(0)
+        queue_task.cancel()
         await comfy.aclose()
         await router.aclose()
         await http.aclose()

@@ -45,6 +45,7 @@ class WorkerSettings(BaseSettings):
     job_timeout_s: int = 1200  # a 5 s clip takes about 8 minutes on a Mac (ADR-0037)
     max_attempts: int = 3
     log_level: str = "INFO"
+    metrics_port: int = 9464  # Prometheus scrapes this port (ADR-0048); 0 turns the listener off
 
     storage_endpoint: str = "http://localhost:8333"
     storage_bucket: str = "wd-ai"

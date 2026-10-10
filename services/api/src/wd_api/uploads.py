@@ -27,6 +27,7 @@ from wd_platform_sdk import (
 from wd_platform_sdk.usage import record_safely
 
 from wd_api.identity import Identity, get_identity
+from wd_api.metrics import UPLOADS
 
 log = logging.getLogger(__name__)
 router = APIRouter(tags=["uploads"])
@@ -75,10 +76,12 @@ async def upload_image(
         # decoding and re-encoding is CPU work: keep it off the event loop
         image = await asyncio.to_thread(process_image, data)
     except UploadError as exc:
+        UPLOADS.labels("image", "refused").inc()
         raise HTTPException(exc.status, exc.message) from None
     storage: ScopedStorage | None = state.storage
     if storage is None:
         raise HTTPException(503, "file storage is not available")
+    UPLOADS.labels("image", "accepted").inc()
     record = new_upload(identity.tenant_id, product_id, identity.user_id, len(image.png))
     await storage.put_for(record.owner, record.key, image.png, "image/png")
     await state.uploads.add(record)
@@ -126,10 +129,12 @@ async def upload_media(
         # decoding is CPU work in a child process: keep it off the event loop
         audio = await asyncio.to_thread(process_audio, data, rule.max_seconds)
     except UploadError as exc:
+        UPLOADS.labels("audio", "refused").inc()
         raise HTTPException(exc.status, exc.message) from None
     storage: ScopedStorage | None = state.storage
     if storage is None:
         raise HTTPException(503, "file storage is not available")
+    UPLOADS.labels("audio", "accepted").inc()
     record = new_upload(
         identity.tenant_id, product_id, identity.user_id, len(audio.wav), "audio", audio.seconds
     )
