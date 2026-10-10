@@ -211,6 +211,9 @@ process-wide flag, so video runs on its own ComfyUI (ADR-0037), started with `sc
 8189). Both ComfyUIs share one GPU and one `GPU_ID`, so jobs still run one at a time. `JOB_TIMEOUT_S` (default 1200)
 is the longest a job may run; a 5 second clip takes about 8 minutes on a Mac.
 
+In Helm the lip sync server can be a pod (`lipsync.enabled=true`, image `lipsync-musetalk`, built from
+`services/lipsync-musetalk/Containerfile`: CPU by default, `--build-arg BASE=... --build-arg TORCH_INDEX=` for CUDA;
+its models are fetched on first start into a volume) and the worker's `LIPSYNC_SERVER_URL` is then set for you.
 `LIPSYNC_SERVER_URL` (worker; empty by default) is the lip sync server, `services/lipsync-musetalk`, that
 `video.lipsync` jobs go to (ADR-0044): MuseTalk, run natively on a Mac with `scripts/lipsync-server.sh`. With it empty a
 lip sync is a placeholder in stub mode and fails in real mode.

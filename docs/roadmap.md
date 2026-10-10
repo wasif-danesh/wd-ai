@@ -19,14 +19,20 @@ then take it down again. Four stages, each with an exit criterion:
 Decisions: the safeguards switch is on in the GCP test and off in staging (a private home lab). Terms of Use,
 takedown handling and billing stay out of v1 because there is no public launch.
 
-**Stage 1 status (2026-10-10): met on a Mac, with two items open.** `make kind-up` plus `make kind-test` (27 checks)
-and `make kind-e2e` (a real creation with each of the 6 products) pass: with placeholder GPU media, with the production
-safeguards on (`KIND_SAFEGUARDS=1`), with the CPU speech servers for real (`KIND_SPEECH=1`: text to speech 3 s, speech
-to text 17 s) and with the real lip sync server on the host (a 3 second voice in 32 s). Found and fixed on the way: no
-lip sync address in the chart, no independent real/placeholder switch for speech, and nothing installed the speech
-models (every speech job answered 404 in Compose and in the cluster; now `scripts/speech-models.sh` and a chart Job).
-Open: the Indic speech servers are untested in the cluster (need the `hf-token` Secret), and Lip Sync with the
-safeguards on refuses photographs (only illustrations work), a product decision for staging and the GCP test.
+**Stage 1 status (2026-10-10): met, with nothing native.** `make kind-up` (default `KIND_MODE=full`) puts every service
+in a pod: Ollama with its models, the CPU speech servers (Kokoro, Whisper), the lip sync server (MuseTalk, CPU) and
+ComfyUI, plus the platform. `make kind-test` (27 checks plus 6 that each replacement pod really works) and
+`make kind-e2e` (a real creation with each of the 6 products) pass: text to speech 1 s, speech to text 20 s, lip sync
+195 s for a 5 second voice on a CPU, and a real ComfyUI graph run by the worker in the ComfyUI pod. `KIND_MODE=light`
+(no models) is what CI runs. It needs a Podman VM of about 24 GB (set to 32 GB) and about 20 GB of model downloads on
+a first start; a 93 GB VM disk is tight. Found and fixed: no lip sync address or image for the chart, no independent
+switch for real speech, nothing that installed the speech models (404 on every speech job, in Compose and in the
+cluster), a ComfyUI image and a lip sync image that did not exist, the ComfyUI pod asking for a GPU, and Torch trying
+to compile on a CPU image.
+Not covered by kind (and left for staging): GPU scheduling and time-slicing, CUDA images for ComfyUI and the lip sync
+server (the Containerfiles take a build argument for it), real image, music and video generation (placeholders on
+kind), and the Indic speech servers (they need the `hf-token` Secret). Lip Sync with the safeguards on refuses
+photographs, so only illustrations work: a product decision for staging and the GCP test.
 
 Original blockers list (kept for the record): the chart has no `LIPSYNC_SERVER_URL`
 (the lip sync server runs natively on a Mac); the worker's `comfyuiMode: stub` also stubs the speech servers, so real
