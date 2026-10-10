@@ -65,10 +65,30 @@ if [ -z "$OLLAMA_EXTERNAL_URL" ]; then
 fi
 ok "Ollama URL for pods: $OLLAMA_EXTERNAL_URL"
 
+# The lip sync server runs natively on the Mac (its GPU is not reachable from a container): if it answers on
+# this machine, point the worker at it by the same host address as Ollama.
+LIPSYNC_EXTERNAL_URL="${LIPSYNC_EXTERNAL_URL:-}"
+if [ -z "$LIPSYNC_EXTERNAL_URL" ] && curl -fsS -m 3 "http://127.0.0.1:8191/health" >/dev/null 2>&1; then
+  LIPSYNC_EXTERNAL_URL="http://${OLLAMA_EXTERNAL_URL#http://}"; LIPSYNC_EXTERNAL_URL="${LIPSYNC_EXTERNAL_URL%:*}:8191"
+fi
+if [ -n "$LIPSYNC_EXTERNAL_URL" ]; then ok "Lip sync server for pods: $LIPSYNC_EXTERNAL_URL"
+else warn "No lip sync server on 127.0.0.1:8191 (make dev or scripts/lipsync-server.sh start): lip sync is a placeholder"; fi
+
+# KIND_SPEECH=1 runs the CPU speech servers (Kokoro and Whisper, about 6 GB of memory and a few GB of model
+# downloads on first use) for real; KIND_SPEECH=all adds the Indic ones (needs the hf-token Secret).
+extra=()
+case "${KIND_SPEECH:-0}" in
+  1) extra+=(--set speech.enabled=true --set mediaWorker.speechMode=real) ;;
+  all) extra+=(--set speech.enabled=true --set speechIndic.enabled=true --set sttIndic.enabled=true --set mediaWorker.speechMode=real) ;;
+esac
+[ "${KIND_SAFEGUARDS:-0}" = "1" ] && extra+=(--set safeguards.forceOn=true)
+
 step "Installing the chart"
 helm upgrade --install wd-ai deploy/helm/wd-ai -n "$NS" \
   -f deploy/helm/wd-ai/values/local.yaml \
   --set "ollama.externalUrl=$OLLAMA_EXTERNAL_URL" \
+  ${LIPSYNC_EXTERNAL_URL:+--set "lipsync.serverUrl=$LIPSYNC_EXTERNAL_URL"} \
+  ${extra[@]+"${extra[@]}"} \
   --wait --timeout 10m
 
 printf '\n%sReady.%s Open %shttp://localhost:3000%s. Check with: make kind-test. Remove with: make kind-down\n' \

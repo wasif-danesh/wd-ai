@@ -28,6 +28,12 @@ spec:
             - { name: REDIS_URL, value: "redis://{{ .Release.Name }}-redis:6379/0" }
             - { name: COMFYUI_MODE, value: {{ .Values.mediaWorker.comfyuiMode | quote }} }
             - { name: COMFYUI_BASE_URL, value: {{ include "wd.comfyuiUrl" . | quote }} }
+            {{- with .Values.mediaWorker.speechMode }}
+            - { name: SPEECH_MODE, value: {{ . | quote }} }
+            {{- end }}
+            {{- with .Values.lipsync.serverUrl }}
+            - { name: LIPSYNC_SERVER_URL, value: {{ . | quote }} }
+            {{- end }}
             # Lets the worker free the GPU of LLMs before each generation job.
             - { name: OLLAMA_BASE_URL, value: {{ include "wd.ollamaUrl" . | quote }} }
             {{- $servers := list }}

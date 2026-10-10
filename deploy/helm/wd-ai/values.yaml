@@ -48,6 +48,9 @@ mediaWorker:
   # stub: placeholder images/audio, no GPU or ComfyUI. real: drive ComfyUI (set comfyui.enabled or
   # env.COMFYUI_BASE_URL). One job at a time per GPU id; workers sharing a GPU share `gpuId`.
   comfyuiMode: stub
+  # real | stub for the speech servers on their own; empty follows comfyuiMode. A laptop cluster sets real
+  # (with speech.enabled) to run the CPU speech servers for real while the GPU models stay placeholders.
+  speechMode: ""
   gpuId: gpu0
   jobTimeoutSeconds: 900
   resources:
@@ -122,12 +125,24 @@ comfyui:
   nodeSelector: {}
   tolerations: []
 
+# Lip Sync (ADR-0044): the address of the lip sync server (MuseTalk, services/lipsync-musetalk). On a Mac it runs
+# natively (scripts/lipsync-server.sh); scripts/kind-up.sh sets this to an address the cluster can reach. Empty:
+# a lip sync is a placeholder clip.
+lipsync:
+  serverUrl: ""
+
 # Speech (ADR-0042): Speaches serving Kokoro for text to speech (and Whisper for ADR-0043). Off by default;
 # the voices and Whisper are downloaded into the volume on first use (see docs/configuration.md).
 speech:
   enabled: false
   image: ghcr.io/speaches-ai/speaches:latest-cpu   # pin to a version before relying on it
   whisperComputeType: int8
+  # Installed into the volume by a Job after each install or upgrade (the server downloads on request).
+  # About 5 GB in all. Keep in step with scripts/speech-models.sh.
+  models:
+    - speaches-ai/Kokoro-82M-v1.0-ONNX
+    - deepdml/faster-whisper-large-v3-turbo-ct2
+    - Systran/faster-whisper-large-v3
   storage: 10Gi
   storageClass: ""
   resources:

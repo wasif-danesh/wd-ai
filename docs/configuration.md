@@ -180,8 +180,9 @@ never shown, logged or audited. Remote backends take no GPU lock; their time is 
 Text to speech (ADR-0042) calls an OpenAI-compatible speech server. `SPEECH_SERVERS` on the media worker maps
 an engine name to its address (`kokoro=http://speech:8000`). `compose.yaml` runs the `speech` service
 (Speaches, CPU image) with `WHISPER__COMPUTE_TYPE=int8`, which keeps Whisper inside a 6 GB machine. In Helm,
-`speech.enabled=true` adds the same service and sets the variable. The voice model is downloaded once into
-the `speechmodels` volume: `curl -X POST localhost:8100/v1/models/speaches-ai%2FKokoro-82M-v1.0-ONNX`.
+`speech.enabled=true` adds the same service and sets the variable. The models are installed on request: `make dev` runs `scripts/speech-models.sh` (Kokoro, Whisper large-v3-turbo
+and large-v3, about 5 GB, once, into the `speechmodels` volume), and in Helm a Job per release does the same from
+`speech.models`. Without them every speech job answers 404.
 Speech to text uses the same server under the engine name `whisper` (`whisper=http://speech:8000`): Whisper
 large-v3-turbo transcribes and large-v3 finds the language, both downloaded into the volume on first use. The 22 Indian
 languages go to `stt-indic` instead (`indic-stt=http://stt-indic:8000`: IndicConformer, our adapter; needs `HF_TOKEN`
