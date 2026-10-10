@@ -243,6 +243,35 @@ video) are placeholders, apart from one model-free ComfyUI graph the smoke test 
 is what CI runs: no models. `KIND_SAFEGUARDS=1` turns the production safeguards on. Home lab setup with k3s and
 Argo CD: [runbook](docs/runbooks/homelab-k3s.md).
 
+### Where everything is
+
+`make urls` prints this for the mode that is running and says what answers right now.
+
+<!-- urls:start -->
+| Service | What it is | Compose (`make dev`) | kind (`make kind-up`) |
+|---|---|---|---|
+| Web app | the six products, My creations, admin | `http://localhost:3000` | `http://localhost:3000` |
+| Admin area | users, models, media backends, safeguards, audit | `http://localhost:3000/admin` | `http://localhost:3000/admin` |
+| API docs | Swagger UI for the API | `http://localhost:8000/docs` | `kubectl -n wd-ai port-forward svc/wd-ai-api 8000:8000`, then `http://localhost:8000/docs` |
+| LiteLLM | the model gateway | `http://localhost:4000` | `kubectl -n wd-ai port-forward svc/wd-ai-litellm 4000:4000`, then `http://localhost:4000` |
+| Object storage | S3 API (SeaweedFS) | `http://localhost:8333` | `kubectl -n wd-ai port-forward svc/wd-ai-storage 8333:8333`, then `http://localhost:8333` |
+| Speech: Kokoro, Whisper | text to speech, speech to text | `http://localhost:8100` | `kubectl -n wd-ai port-forward svc/wd-ai-speech 8100:8000`, then `http://localhost:8100` |
+| Speech: Indic Parler-TTS | Bengali and other Indic voices | `http://localhost:8101` | not in the cluster |
+| Speech: IndicConformer | speech to text for Indian languages | `http://localhost:8102` | not in the cluster |
+| Lip sync server | MuseTalk | `http://localhost:8191` | `kubectl -n wd-ai port-forward svc/wd-ai-lipsync 8191:8000`, then `http://localhost:8191` |
+| ComfyUI | images, music (and video on :8189) | `http://localhost:8188` | `kubectl -n wd-ai port-forward svc/wd-ai-comfyui 8188:8188`, then `http://localhost:8188` |
+| Ollama | the language models | `http://localhost:11434` | `kubectl -n wd-ai port-forward svc/wd-ai-ollama 11434:11434`, then `http://localhost:11434` |
+| Postgres | database, checkpoints, usage events | `localhost:5432` | `kubectl -n wd-ai port-forward svc/wd-ai-postgres 5432:5432`, then `localhost:5432` |
+| Redis | job queue and run events | `localhost:6379` | `kubectl -n wd-ai port-forward svc/wd-ai-redis 6379:6379`, then `localhost:6379` |
+| Grafana | dashboards and logs | not installed | `kubectl -n monitoring port-forward svc/monitoring-grafana 3001:80`, then `http://localhost:3001` |
+| Prometheus | metrics and alert rules | not installed | `kubectl -n monitoring port-forward svc/monitoring-prometheus 9090:9090`, then `http://localhost:9090` |
+| Alertmanager | what is firing, where it goes | not installed | `kubectl -n monitoring port-forward svc/monitoring-alertmanager 9093:9093`, then `http://localhost:9093` |
+| Healthchecks.io | the outside heartbeat | not installed | `https://healthchecks.io` |
+<!-- urls:end -->
+
+LangGraph has no interface of its own: it runs inside the API. Run state is in Postgres (the checkpoint tables),
+the job queue is Redis Streams (`wd:jobs`, `wd:done`), and logs and metrics are in Grafana.
+
 ### Monitoring
 
 ```bash
