@@ -50,5 +50,7 @@
 | [0046](0046-product-side-panel.md) | Product side panel (navigation inside a product) | Accepted |
 | [0047](0047-safeguards-switch.md) | A system-wide safeguards switch (Admin on/off) | Accepted |
 | [0048](0048-monitoring-and-alerting.md) | Monitoring and alerting (Prometheus stack in cluster, Telegram, external heartbeat) | Accepted |
+| [0049](0049-data-inspection-tools.md) | Redis and Postgres viewers in every environment | Accepted |
+| [0050](0050-langfuse-llm-observability.md) | LLM observability, analytics and cost tracking with Langfuse | Accepted |
 
 New ADRs: run `/new-adr <title>` in Claude Code, or copy the structure of ADR-0001. Accepted ADRs are not edited; supersede them.
