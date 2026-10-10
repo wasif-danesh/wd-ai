@@ -1,0 +1,39 @@
+# Alertmanager routing (ADR-0048). scripts/monitoring-up.sh fills __CHAT_ID__ from .env and stores the result
+# in the `alertmanager-wd-config` Secret. The token and the heartbeat URL are read from files, never written here.
+global:
+  resolve_timeout: 5m
+route:
+  receiver: telegram
+  group_by: [alertname]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # The Watchdog always fires: every minute it pings the outside heartbeat; when the pings stop, that
+    # service messages Telegram. It is the only way to hear that the cluster itself is dead.
+    - matchers: [alertname="Watchdog"]
+      receiver: heartbeat
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 1m
+    - matchers: [severity="warning"]
+      receiver: telegram
+      group_wait: 5m
+      repeat_interval: 12h
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token_file: /etc/alertmanager/secrets/alert-secrets/telegram-token
+        chat_id: __CHAT_ID__
+        send_resolved: true
+        parse_mode: ""
+        message: |-
+          {{ if eq .Status "firing" }}ALERT{{ else }}RESOLVED{{ end }} {{ .CommonLabels.alertname }} ({{ .CommonLabels.severity }})
+          {{ range .Alerts }}{{ .Annotations.summary }}
+          {{ if .Annotations.runbook }}Check: {{ .Annotations.runbook }}{{ end }}
+          {{ end }}
+  - name: heartbeat
+    webhook_configs:
+      - url_file: /etc/alertmanager/secrets/alert-secrets/heartbeat-url
+        send_resolved: false
+inhibit_rules: []

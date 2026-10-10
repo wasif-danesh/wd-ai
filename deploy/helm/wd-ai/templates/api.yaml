@@ -22,7 +22,7 @@ spec:
         - name: api
           image: {{ include "wd.image" (dict "root" . "name" "api") }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports: [{ name: http, containerPort: 8000 }]
+          ports: [{ name: http, containerPort: 8000 }, { name: metrics, containerPort: 9464 }]
           env: {{- include "wd.apiEnv" . | nindent 12 }}
           readinessProbe:
             httpGet: { path: /health, port: http }
@@ -41,7 +41,9 @@ metadata:
   labels: {{- include "wd.labels" . | nindent 4 }}
 spec:
   selector: {{- include "wd.selector" (dict "root" . "component" "api") | nindent 4 }}
-  ports: [{ name: http, port: 8000, targetPort: http }]
+  ports:
+    - { name: http, port: 8000, targetPort: http }
+    - { name: metrics, port: 9464, targetPort: metrics }   # Prometheus only: no ingress reaches it
 ---
 # Applies Alembic migrations after install/upgrade. Retries until Postgres accepts connections.
 apiVersion: batch/v1

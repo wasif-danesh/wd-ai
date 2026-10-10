@@ -114,6 +114,11 @@ else
     --wait --timeout 10m
 fi
 
+if [ "$MODE" = "full" ] && [ "${KIND_MONITORING:-1}" = "1" ]; then
+  # needs the telegram and heartbeat values in .env; without them the cluster is still usable
+  scripts/monitoring-up.sh || warn "monitoring was not installed (see above); run make monitoring-up when ready"
+fi
+
 if [ "$MODE" = "full" ]; then
   step "Waiting for the model downloads (Ollama, speech, lip sync: a first start takes a while)"
   kubectl -n "$NS" wait --for=condition=complete job --all --timeout=90m

@@ -58,6 +58,16 @@ spec:
             - { name: LOG_LEVEL, value: {{ .Values.env.LOG_LEVEL | quote }} }
             {{- include "wd.mediaSecretsEnv" . | nindent 12 }}
             {{- include "wd.storageEnv" . | nindent 12 }}
+          ports: [{ name: metrics, containerPort: 9464 }]
           securityContext: { allowPrivilegeEscalation: false }
           resources: {{- toYaml .Values.mediaWorker.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-media-worker
+  labels: {{- include "wd.labels" . | nindent 4 }}
+spec:
+  selector: {{- include "wd.selector" (dict "root" . "component" "media-worker") | nindent 4 }}
+  ports: [{ name: metrics, port: 9464, targetPort: metrics }]
 {{- end }}

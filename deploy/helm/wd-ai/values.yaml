@@ -127,6 +127,19 @@ comfyui:
   nodeSelector: {}
   tolerations: []
 
+# Monitoring (ADR-0048). The monitoring stack itself is installed separately (scripts/monitoring-up.sh); this
+# chart only describes what to scrape and when to alert. The objects are created only when the cluster has the
+# Prometheus Operator CRDs, so a plain cluster still installs.
+metrics:
+  enabled: true
+  releaseLabel: monitoring    # the kube-prometheus-stack release name: its Prometheus selects objects by it
+  alerts:
+    workerDownFor: 2m         # shorter than the ADR's example so a drill is quick; tune per environment
+    queueStuckFor: 10m
+    failureRatioCritical: "0.5"
+    failureRatioWarning: "0.2"
+    volumeFullPercent: 90
+
 # Lip Sync (ADR-0044): the address of the lip sync server (MuseTalk, services/lipsync-musetalk). On a Mac it runs
 # natively (scripts/lipsync-server.sh); scripts/kind-up.sh sets this to an address the cluster can reach. Empty:
 # a lip sync is a placeholder clip.

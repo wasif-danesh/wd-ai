@@ -66,6 +66,15 @@ print(urllib.request.urlopen(r, timeout=10).status)" >/dev/null 2>&1
   check "ComfyUI pod really executed the graph" "kubectl -n $NS exec deploy/wd-ai-comfyui -- python -c \"import json,urllib.request; assert json.load(urllib.request.urlopen('http://localhost:8188/history', timeout=5))\""
 fi
 
+# Monitoring (ADR-0048), when installed: Prometheus must see the API and the worker and the alert rules.
+if kubectl get ns monitoring >/dev/null 2>&1 && kubectl -n monitoring get pod prometheus-monitoring-prometheus-0 >/dev/null 2>&1; then
+  step "Monitoring"
+  prom() { kubectl -n monitoring exec prometheus-monitoring-prometheus-0 -c prometheus -- wget -qO- "http://localhost:9090$1"; }
+  check "Prometheus scrapes the API and the worker" "prom '/api/v1/targets' | python3 -c \"import json,sys; t=[x for x in json.load(sys.stdin)['data']['activeTargets'] if 'wd-ai' in x['labels'].get('service','')]; sys.exit(0 if len(t)>=2 and all(x['health']=='up' for x in t) else 1)\""
+  check "the alert rules are loaded (with the Watchdog)" "prom '/api/v1/rules' | grep -q Watchdog"
+  check "Alertmanager has a Telegram receiver and a heartbeat receiver" "kubectl -n monitoring get secret alertmanager-wd-config -o jsonpath='{.data.alertmanager\\.yaml}' | base64 -d | grep -q telegram_configs"
+fi
+
 # The music product through the real guardrail and lyrics models: must reach the approval step.
 if [ "${SMOKE_EXPECT_DONE:-0}" = "1" ]; then
   song="$(curl -sN -m 300 -X POST http://localhost:3000/api/products/wd-music-ai/runs \

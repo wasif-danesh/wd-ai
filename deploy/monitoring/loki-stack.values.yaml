@@ -1,0 +1,23 @@
+# Loki and Promtail for logs (ADR-0048), release `loki`. The chart is the simple single-binary one (it is marked
+# deprecated upstream; the replacement, Loki with Alloy, can be swapped in without changing the dashboards).
+loki:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 5Gi
+  config:
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 168h        # 7 days
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 700Mi }
+promtail:
+  enabled: true
+  resources:
+    requests: { cpu: 25m, memory: 64Mi }
+    limits: { memory: 200Mi }
+grafana:
+  enabled: false                    # Grafana comes with kube-prometheus-stack
+prometheus:
+  enabled: false

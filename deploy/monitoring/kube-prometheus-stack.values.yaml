@@ -1,0 +1,59 @@
+# Prometheus, Alertmanager and Grafana (ADR-0048). Installed by scripts/monitoring-up.sh as release `monitoring`
+# in the `monitoring` namespace, with the Secrets that script creates. Environment differences (retention, size)
+# go in an overlay file passed after this one.
+fullnameOverride: monitoring
+
+# Our own small rule set lives in the application chart (templates/monitoring.yaml, ten alerts and a Watchdog).
+# The stack's several hundred default rules would send a message for things nobody needs to act on.
+defaultRules:
+  create: false
+
+# A laptop or single-node cluster has no separate control-plane endpoints to scrape.
+kubeEtcd: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeControllerManager: { enabled: false }
+kubeProxy: { enabled: false }
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    resources:
+      requests: { cpu: 100m, memory: 400Mi }
+      limits: { memory: 1500Mi }
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources: { requests: { storage: 8Gi } }
+
+alertmanager:
+  alertmanagerSpec:
+    # The routing and the Telegram receiver are in a Secret that scripts/monitoring-up.sh builds from .env: it
+    # holds the chat id. The bot token and the heartbeat URL are files in the `alert-secrets` Secret.
+    configSecret: alertmanager-wd-config
+    secrets: [alert-secrets]
+    resources:
+      requests: { cpu: 10m, memory: 40Mi }
+      limits: { memory: 200Mi }
+
+grafana:
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki:3100
+  resources:
+    requests: { cpu: 50m, memory: 150Mi }
+    limits: { memory: 500Mi }
+
+prometheus-node-exporter:
+  resources:
+    requests: { cpu: 10m, memory: 24Mi }
