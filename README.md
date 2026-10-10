@@ -503,3 +503,9 @@ After v1: the Indic speech servers on staging, real GPU media, a CUDA image for 
 transcripts in search, SEO, analytics and billing (proposed ADRs 0026 to 0029).
 
 Details and checklists: [docs/roadmap.md](docs/roadmap.md).
+
+## Licence
+
+Apache License 2.0, see [LICENSE](LICENSE). Third-party software and the AI models you download keep their own
+licences, some of which restrict commercial use; they are listed in [NOTICE](NOTICE). Check the current terms of
+every model you enable.

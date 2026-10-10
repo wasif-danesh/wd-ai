@@ -1,0 +1,28 @@
+wd-ai
+Copyright 2026 Wasif Danesh
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party software and models are not covered by that licence. They keep their own licences, which you must
+follow when you run, host or redistribute them. The ones recorded in this repository (the decision records in
+docs/decisions/ have the details and the sources):
+
+  Software run as separate services
+    ComfyUI                      GPL-3.0     (run as its own container; this project does not link to it)
+    Ollama, LiteLLM, Whisper and
+    faster-whisper               MIT
+    Kokoro (ONNX)                Apache-2.0
+    imageio-ffmpeg               BSD-2-Clause; its bundled ffmpeg build is GPL
+
+  Models (weights are downloaded by the operator, not shipped in this repository)
+    MuseTalk 1.5                 MIT
+    IndicConformer 600M          MIT
+    bge-m3                       MIT
+    Wan 2.2                      Apache-2.0
+    LTX-Video 2B 0.9.5           OpenRAIL-M (use-based restrictions apply)
+    Indic Parler-TTS             gated on Hugging Face: accept its terms with your own token
+    Gemma                        Google's Gemma terms of use
+    Piper voices                 each voice has its own licence
+
+Model licences can change and some restrict commercial use or certain applications. Check the current terms of
+every model you enable, in particular before offering this software to other people.
