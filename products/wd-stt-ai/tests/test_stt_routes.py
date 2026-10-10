@@ -31,7 +31,10 @@ def transcript(n, user="u1", tenant="t1", status="done", language="en", words=No
             {"start": 1.5, "end": 3.0, "text": f"number {n}."},
         ] if status == "done" else [],
         error="It broke." if status == "failed" else None,
-        created_at=T0 + timedelta(minutes=n),
+        # a row being made is recent: after half an hour it counts as a run that died
+        created_at=datetime.now(UTC) - timedelta(minutes=1)
+        if status == "working"
+        else T0 + timedelta(minutes=n),
     )  # fmt: skip
 
 
@@ -71,7 +74,12 @@ def test_the_form_gets_the_languages_with_their_quality_and_the_upload_limits(cl
 
 def test_the_list_is_the_callers_own_newest_first_with_a_short_preview(client):
     body = client.get(f"{BASE}/transcripts").json()
-    assert [t["id"] for t in body["transcripts"]] == [uid(4), uid(3), uid(2), uid(1)]
+    assert [t["id"] for t in body["transcripts"]] == [
+        uid(3),
+        uid(4),
+        uid(2),
+        uid(1),
+    ]  # the one being made is the newest
     first = body["transcripts"][-1]
     assert first["preview"].startswith("This is transcript number 1.") and "text" not in first
     bengali = next(t for t in body["transcripts"] if t["id"] == uid(2))
