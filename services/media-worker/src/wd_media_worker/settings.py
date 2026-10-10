@@ -23,11 +23,18 @@ class WorkerSettings(BaseSettings):
         "whisper=http://speech:8000,indic-stt=http://stt-indic:8000"
     )
     comfyui_mode: str = "real"  # real | stub (stub returns placeholder files, no GPU needed)
+    # Speech has its own switch so a laptop cluster can run the (CPU) speech servers for real while
+    # the GPU models are placeholders. Empty: follows `comfyui_mode`.
+    speech_mode: str = ""
 
     media_secrets_key: str = ""  # decrypts the API keys saved in the admin area (ADR-0025)
 
     ollama_base_url: str = ""  # set to unload LLMs from the GPU before each job
     unload_llm: bool = True
+
+    @property
+    def speech_is_stub(self) -> bool:
+        return (self.speech_mode or self.comfyui_mode) == "stub"
 
     @property
     def speech_server_map(self) -> dict[str, str]:

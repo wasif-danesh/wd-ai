@@ -307,16 +307,12 @@ class BackendRouter:
         b = await self._binding(job)
         from wd_media_worker.processor import ComfyRunner  # circular at import time
 
-        if (
-            b is None
-            and job.workflow == "lipsync"
-            and self._s.comfyui_mode != "stub"
-            and self._s.lipsync_server_url
-        ):
+        # a lip sync is real exactly when its server is configured (a placeholder otherwise)
+        if b is None and job.workflow == "lipsync" and self._s.lipsync_server_url:
             from wd_media_worker.lipsync import LipSyncRunner
 
             return LipSyncRunner(self._s.lipsync_server_url, self._s.lipsync_timeout_s, self._http)
-        if b is None and job.capability.startswith("speech.") and self._s.comfyui_mode != "stub":
+        if b is None and job.capability.startswith("speech.") and not self._s.speech_is_stub:
             if job.capability == "speech.transcribe":
                 from wd_media_worker.transcribe import OpenAITranscriptionRunner
 

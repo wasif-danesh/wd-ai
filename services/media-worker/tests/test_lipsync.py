@@ -89,14 +89,14 @@ async def test_only_jobs_from_the_lip_sync_provider_go_to_the_server():
     assert not isinstance(other, LipSyncRunner)
 
 
-async def test_stub_mode_and_an_unset_address_keep_the_placeholder():
-    stub = router(WorkerSettings(comfyui_mode="stub", lipsync_server_url="http://lip:8191"))
-    assert isinstance(await stub.resolve(job()), StubRunner)
+async def test_without_the_server_address_a_lip_sync_stays_a_placeholder():
     unset = router(
-        WorkerSettings(
-            comfyui_mode="real",
-            lipsync_server_url="",
-            comfyui_video_base_url="",
-        )
+        WorkerSettings(comfyui_mode="real", lipsync_server_url="", comfyui_video_base_url="")
     )
     assert isinstance(await unset.resolve(job()), StubRunner)
+
+
+async def test_the_server_is_used_even_when_the_gpu_models_are_placeholders():
+    """A laptop cluster runs ComfyUI as a placeholder but can reach the native lip sync server."""
+    r = router(WorkerSettings(comfyui_mode="stub", lipsync_server_url="http://lip:8191"))
+    assert isinstance(await r.resolve(job()), LipSyncRunner)
