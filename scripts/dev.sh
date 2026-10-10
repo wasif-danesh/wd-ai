@@ -9,6 +9,9 @@ cd "$ROOT"
 step "Starting the stack"
 "$CONTAINER_ENGINE" compose up -d --build
 
+step "Lip sync server (native, uses the Mac's GPU)"
+"$ROOT/scripts/lipsync-server.sh" start || warn "the lip sync server did not start; Lip Sync will not work"
+
 step "Waiting for Postgres"
 for _ in $(seq 1 60); do
   "$CONTAINER_ENGINE" compose exec -T postgres pg_isready -U wd -d wd >/dev/null 2>&1 && break
