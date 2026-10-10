@@ -32,6 +32,7 @@ fi
 step "Building images"
 IMAGES=("api:services/api" "media-worker:services/media-worker" "web:apps/web")
 [ "$MODE" = "full" ] && IMAGES+=("lipsync-musetalk:services/lipsync-musetalk" "comfyui:services/comfyui")
+[ "${KIND_SPEECH:-0}" = "all" ] && IMAGES+=("speech-indic:services/speech-indic" "stt-indic:services/stt-indic")
 for pair in "${IMAGES[@]}"; do
   name="${pair%%:*}"; dir="${pair##*:}"
   "$CONTAINER_ENGINE" build -q -f "$dir/Containerfile" -t "$REG/$name:$TAG" . >/dev/null
@@ -91,6 +92,15 @@ case "${KIND_SPEECH:-0}" in
   1) extra+=(--set speech.enabled=true --set mediaWorker.speechMode=real) ;;
   all) extra+=(--set speech.enabled=true --set speechIndic.enabled=true --set sttIndic.enabled=true --set mediaWorker.speechMode=real) ;;
 esac
+if [ "${KIND_SPEECH:-0}" = "all" ]; then
+  # the Hugging Face token comes from .env and goes straight into a Secret; it is never printed
+  hf="$(grep -E '^HF_TOKEN=' .env 2>/dev/null | head -1 | cut -d= -f2-)"
+  if [ -n "$hf" ]; then
+    kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    kubectl -n "$NS" create secret generic hf-token --from-literal=token="$hf" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+    ok "hf-token Secret set from .env"
+  else warn "KIND_SPEECH=all needs HF_TOKEN in .env; the Indic servers will not start"; fi
+fi
 [ "${KIND_SAFEGUARDS:-0}" = "1" ] && extra+=(--set safeguards.forceOn=true)
 
 step "Installing the chart"
